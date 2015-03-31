@@ -23,10 +23,7 @@ class ClientHandler(asyncore.dispatcher_with_send):
             return
 
         self.buffer = self.buffer + data
-        print("buffer = '{}'".format(self.buffer))
-
-        self.kick("I don't like you")
-        return
+        print("buffer of client {}: '{}'".format(self.longName, self.buffer))
 
         # UNLOGGED
         if self.type == ClientType.unknown:
@@ -35,21 +32,20 @@ class ClientHandler(asyncore.dispatcher_with_send):
                 nick = s[5:].strip()
                 if isValidNick(nick) and self.gameServer.addPlayer(self):
                     self.nick = nick
+                    self.longName = "{} ({})".format(self.nick, self.id)
                     self.type = ClientType.player
                 else:
-                    self.sendString("error: you can't log in when the game is running")
-                    self.kick() #todo: implement kick
+                    self.kick("impossible to log in while the game is running")
             elif s[:4] == 'visu':
                 nick = s[4:].strip()
                 if isValidNick(nick) and self.gameServer.addVisu(self):
                     self.nick = nick
+                    self.longName = "{} ({})".format(self.nick, self.id)
                     self.type = ClientType.visu
                 else:
-                    self.sendString("error: you can't log in when the game is running")
-                    self.kick() #todo : implement kick
+                    self.kick("impossible to log in while the game is running")
             elif s != '':
-                self.sendString("error: invalid string received: '{}'".format(s))
-                print("error: invalid string ({}) received from client {}".format(s, self.longName))
+                self.kick("invalid string received ({})".format(s))
 
         # PLAYER
         elif self.type == ClientType.player:
@@ -60,8 +56,7 @@ class ClientHandler(asyncore.dispatcher_with_send):
             print("Received something from a visu (buffer='{}')".format(self.buffer))
 
         if len(self.buffer) > 512:
-            self.sendString('error: buffer size exceeded')
-            self.close()
+            self.kick('buffer size exceeded')
 
     def handle_close(self):
         print('Client {} disconnected'.format(self.longName))
@@ -75,10 +70,15 @@ class ClientHandler(asyncore.dispatcher_with_send):
         self.onDisconnect()
 
     def onDisconnect(self):
-        if self.type != ClientType.lost:
+        if self.type != ClientType.lost:    
+            if self.type == ClientType.player:
+                self.gameServer.removePlayer(self)
+            elif self.type == ClientType.visu:
+                self.gameServer.removeVisu(self)
+            else:
+                self.gameServer.removeUnloggedClient(self)
             self.type = ClientType.lost
-            #todo: 
-
+            
     # Returns the string on the buffer if there is one, '' otherwise
     def getString(self):
         for i in range(len(self.buffer)):
@@ -101,21 +101,12 @@ class GameServer(asyncore.dispatcher):
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
         self.set_reuse_addr()
         self.bind((host, port))
-        self.setGameLaunched(False)
-        self.unloggedClients = []
-        self.players = {}
-        self.visus = {}
+        self.gameLaunched = False
+        self.unknownClients = []
+        self.players = []
+        self.visus = []
         self.nextClientID = 0
         self.listen(5)
-        self.clients = {}
-
-    def setGameLaunched(self, b):
-        self.gameLaunched = b
-
-    def addUnloggedClient(self, client):
-        assert(not self.gameLaunched)
-        print('New client: {}'.format(client.addr))
-        self.unloggedClients.append(client)
 
     def addPlayer(self, client):
         if not self.gameLaunched:
@@ -133,6 +124,15 @@ class GameServer(asyncore.dispatcher):
             return True
         return False
 
+    def removeUnloggedClient(self, client):
+        self.unloggedClients.remove(client)
+
+    def removePlayer(self, client):
+        self.players.remove(client)
+
+    def removeVisu(self, client):
+        self.visus.remove(client)
+
     def handle_accept(self):
         pair = self.accept()
         if pair is not None:
@@ -145,7 +145,6 @@ class GameServer(asyncore.dispatcher):
                 client.addr = addr
 
                 self.nextClientID = self.nextClientID + 1
-                self.clients[client.id] = client
                 self.unloggedClients.append(client)
             else:
                 try:
