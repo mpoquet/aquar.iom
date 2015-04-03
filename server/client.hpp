@@ -8,6 +8,7 @@ enum class Stamp : std::uint8_t;
 
 class Client : public QObject
 {
+    friend class Server;
     Q_OBJECT
 public:
     enum ClientType
@@ -18,12 +19,6 @@ public:
     };
 
     Client(QTcpSocket * sock, quint16 _id, const QString & name, Server * parent);
-    /**
-     * @brief Reads a null-terminated latin1 string from the current buffer
-     * @param clearBuffer If true, the bytes read (and the '\0') are removed from the buffer. If false or if there is no '\0' in the buffer, the buffer remains the same.
-     * @return The string (as a QByteArray which does NOT contain '\0') if '\0' was found on the buffer, "" otherwise
-     */
-    QByteArray readNTString(bool clearBuffer, int beginPos = 0);
 
     /**
      * @brief Validates a given nickname or not
@@ -56,11 +51,6 @@ private slots:
     void onDisconnected();
     void onError(QAbstractSocket::SocketError socketError);
 
-public slots:
-    void beAnUnknown();
-    void beAPlayer(const QString & nick);
-    void beAVisu(const QString & nick);
-
     /**
      * @brief Kicks a client
      * @param reason The reason why the poor client is forced to leave
@@ -77,12 +67,16 @@ public slots:
      * @param data The data to send to the client
      * @pre _type in {PLAYER, VISU}
      */
-    void setUpToDateTurnMessage(quint32 turn, const QByteArray & data); //todo: rename this method
+    void setUpToDateTurnMessage(quint32 turn, const QByteArray & data);
 
 private:
     void sendStamp(const Stamp & stamp);
     void sendSizedString(const QString & s);
     void sendTurnMessage(quint32 turn, const QByteArray & data);
+
+    void beAnUnknown();
+    void beAPlayer(const QString & nick);
+    void beAVisu(const QString & nick);
 
 public:
     QTcpSocket * _socket = nullptr;

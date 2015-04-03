@@ -39,7 +39,7 @@ void Server::onClientDisconnected(QTcpSocket *socket)
 
 void Server::onClientWantToBeAPlayer(const QString &nick)
 {
-    Client * c = (Client *)sender();
+    Client * c = dynamic_cast<Client *>(sender());
     Q_ASSERT(c != nullptr);
     Q_ASSERT(c->type() == Client::UNKNOWN);
 

@@ -1,0 +1,26 @@
+digraph G
+{
+	nStart[shape=point,style=invis]
+
+	n0[label="Unlogged\nclient"]
+	n1[label="Waiting login\nanswer"]
+	n2[label="Logged\nclient"]
+	n3[label="Welcomed\nplayer"]
+	n4[label="Ready for action"]
+	n5[label="Thinking..."]
+	n6[label="Game over"]
+
+	nStart -> n0;
+	n0 -> n1[label=" !LOGIN_PLAYER"]
+	n0 -> n1[label=" !LOGIN_VISU"]
+	n1 -> n2[label=" ?LOGIN_ACK"]
+	n2 -> n3[label=" ?WELCOME"]
+	n3 -> n4[label=" ?GAME_STARTS"]
+	n2 -> n4[label=" ?GAME_STARTS"]
+
+	n4 -> n5[label= " ?TURN  "]
+	n5 -> n4[label= " !TURN_ACK"]
+
+	n4 -> n6[label=" ?GAME_ENDS"]
+	n6 -> n0[label=" ?LOGOUT"]
+}

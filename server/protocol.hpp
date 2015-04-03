@@ -20,13 +20,15 @@ enum class Stamp : std::uint8_t
     LOGIN_PLAYER=0      //! Client(U) -> Server. Content=(nick:string)
     ,LOGIN_VISU         //! Client(U) -> Server. Content=(nick:string)
     ,LOGIN_ACK          //! Server -> Client(U->P). Content=()
-    ,KICK               //! Server -> Client(*). Content=(reason:string)
     ,LOGOUT             //! Server -> Client((P|V)->U). Content=()
+    ,KICK               //! Server -> Client(*). Content=(reason:string)
 
     // Client sockets emit signals corresponding to these stamps.
     // These signals must be handled by the game.
-    ,WELCOME        //! Server -> Client(P|V). Content=(contentSize:uint32,GAME_DEPENDENT)
-    ,GAME_STARTS    //! Server -> Client(P|V). Content=(contentSize:uint32,GAME_DEPENDENT)
-    ,TURN           //! Server -> Client(P|V). Content=(contentSize:uint32,turn:uint32,GAME_DEPENDENT)
-    ,TURN_ACK       //! Client(P|V) -> Server. Content=(contentSize:uint32,turn:uint32,GAME_DEPENDENT)
+    ,WELCOME        //! Server -> Client(P|V). Content=(size(GAME_DEPENDENT):uint32,GAME_DEPENDENT)
+    ,GAME_STARTS    //! Server -> Client(P|V). Content=(size(GAME_DEPENDENT):uint32,GAME_DEPENDENT)
+    ,GAME_ENDS      //! Server -> Client(P|V). Content=(size(GAME_DEPENDENT):uint32,GAME_DEPENDENT)
+    ,TURN           //! Server -> Client(P|V). Content=(size(GAME_DEPENDENT):uint32,turn:uint32,GAME_DEPENDENT)
+
+    ,TURN_ACK       //! Client(P|V) -> Server. Content=(size(GAME_DEPENDENT):uint32,turn:uint32,GAME_DEPENDENT)
 };

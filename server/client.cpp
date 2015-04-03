@@ -16,24 +16,6 @@ Client::Client(QTcpSocket *sock, quint16 id, const QString &name, Server *parent
 {
 }
 
-QByteArray Client::readNTString(bool clearBuffer, int beginPos)
-{
-    for (int i = beginPos; i < _buffer.size(); ++i)
-    {
-        if (_buffer[i] == '\0')
-        {
-            auto res = _buffer.mid(beginPos, i);
-
-            if (clearBuffer)
-                _buffer.remove(beginPos, i+1);
-
-            return res;
-        }
-    }
-
-    return "";
-}
-
 bool Client::isNickValid(const QString &nick)
 {
     QRegularExpression regex("^[\\w ]{1,16}$");
@@ -111,20 +93,20 @@ void Client::onReadyRead()
             if (_buffer.size() < bytesRead + 4)
                 return;
 
-            int messageSize = *((quint32*)(_buffer.data()+bytesRead));
+            int gameDependentSize = *((quint32*)(_buffer.data()+bytesRead));
             bytesRead += 4;
-            messageSize = qFromLittleEndian(messageSize);
+            gameDependentSize = qFromLittleEndian(gameDependentSize);
 
             // If the message cannot be read entirely
-            if (_buffer.size() < bytesRead + messageSize)
+            if (_buffer.size() < bytesRead + 4 + gameDependentSize)
                 return;
 
             int turn = *((quint32*)(_buffer.data()+bytesRead));
             bytesRead += 4;
             turn = qFromLittleEndian(turn);
 
-            QByteArray message = _buffer.mid(bytesRead, messageSize - 4);
-            bytesRead += messageSize;
+            QByteArray message = _buffer.mid(bytesRead, gameDependentSize - 4);
+            bytesRead += gameDependentSize;
 
             _buffer = _buffer.mid(bytesRead);
 
@@ -180,10 +162,10 @@ void Client::sendSizedString(const QString &s)
 
 void Client::sendTurnMessage(quint32 turn, const QByteArray &data)
 {
-    const quint32 msgSize = data.size() + 4;
+    const quint32 gameDependentSize = data.size();
 
     sendStamp(Stamp::TURN);
-    _socket->write((const char*)&msgSize, 4);
+    _socket->write((const char*)&gameDependentSize, 4);
     _socket->write((const char*)&turn, 4);
     _socket->write(data);
 
