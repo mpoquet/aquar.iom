@@ -17,8 +17,11 @@ TEMPLATE = app
 
 SOURCES += main.cpp \
     server.cpp \
-    client.cpp
+    client.cpp \
+    logger.cpp
 
 HEADERS += \
     server.hpp \
-    client.hpp
+    client.hpp \
+    logger.hpp \
+    protocol.hpp
