@@ -1,5 +1,8 @@
 Network protocol description
 
+0. Introduction
+	This protocol is based on TCP and uses binary data.
+
 1. Data types
 	name    meaning
     --------------------------------------------------------------------
@@ -26,13 +29,15 @@ Network protocol description
 	8	TURN 			(GDC.size:ui32, turn:ui32, GDC)	The server announces the client that a game round begins
 	9	TURN_ACK		(GDC.size:ui32, turn:ui32, GDC)	The client answers the game round
 
-4. Expected client behaviour
+3. Expected client behaviour
 	The client behaviour must match a certain behaviour.
 	This behaviour is described by a graph in file 'client_behaviour.png'
-	The graph nodes are client states. Graph edges can be:
-		- "? TYPE" : the client can receive a message of type TYPE
-		- "! TYPE" : the client can send a message of type TYPE
+	Please note that certain edges are not displayed in it. These edges are showed in 'client_behaviour_full.png'.
 
-	Clients that do not respect the protocol are kicked:
-		1. A message of type KICK is sent to them,
-		2. Their socket is closed.
+	The graph nodes are client states. Graph edges can be:
+		- "? TYPE": the client receives a message of type TYPE
+		- "! TYPE": the client sends a message of type TYPE
+
+	A client that do not respect the protocol is kicked:
+		1. A message of type KICK is sent to him,
+		2. The socket is closed.

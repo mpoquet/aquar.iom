@@ -9,6 +9,7 @@ digraph G
 	n4[label="Ready for action"]
 	n5[label="Thinking..."]
 	n6[label="Game over"]
+	n7[label="Kicked"]
 
 	nStart -> n0;
 	n0 -> n1[label=" !LOGIN_PLAYER"]
@@ -23,4 +24,12 @@ digraph G
 
 	n4 -> n6[label=" ?GAME_ENDS"]
 	n6 -> n0[label=" ?LOGOUT"]
+
+	n0 -> n7[label=" ?KICK"]
+	n1 -> n7[label=" ?KICK"]
+	n2 -> n7[label=" ?KICK"]
+	n3 -> n7[label=" ?KICK"]
+	n4 -> n7[label=" ?KICK"]
+	n5 -> n7[label=" ?KICK"]
+	n6 -> n7[label=" ?KICK"]
 }
