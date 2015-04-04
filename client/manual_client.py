@@ -7,15 +7,16 @@ IP = 'localhost'
 PORT = 4242
 
 class Stamp(Enum):
-	LOGIN_PLAYER = 0
+	LOGIN_PLAYER = 0  
 	LOGIN_VISU   = 1
-	LOGIN_ACK    = 2      
-	KICK         = 3
-	LOGOUT       = 4
+	LOGIN_ACK    = 2
+	LOGOUT       = 3
+	KICK         = 4
 	WELCOME      = 5
 	GAME_STARTS  = 6
-	TURN         = 7
-	TURN_ACK     = 8
+	GAME_ENDS    = 7
+	TURN         = 8
+	TURN_ACK     = 9
 
 class Client:
 	def __init__(self, ip, port):
@@ -32,7 +33,7 @@ class Client:
 		self.sendUInt8(s.value)
 
 	def sendSizedString(self, msg):
-		data = msg.encode('ascii')
+		data = msg
 		self.sendUInt32(len(data))
 		self.sock.sendall(data)
 
@@ -44,25 +45,31 @@ class Client:
 		self.sendStamp(Stamp.LOGIN_VISU)
 		self.sendSizedString(nick)
 
+	def sendTurnAck(self, turn, data):
+		self.sendStamp(Stamp.TURN_ACK)
+		self.sendUInt32(len(data) + 4)
+		self.sendUInt32(turn)
+		self.sock.sendall(data)
+
 
 	def readUInt8(self):
 		rawmsg = self.sock.recv(1)
-		print('s=',rawmsg)
+		#print('s=',rawmsg)
 		(i,) = struct.Struct('B').unpack(rawmsg)
-		print('read uint8:', i)
+		#print('read uint8:', i)
 		return i
 
 	def readUInt32(self):
 		rawmsg = self.sock.recv(4)
-		print('s=',rawmsg)
+		#print('s=',rawmsg)
 		(i,) = struct.Struct('<I').unpack(rawmsg)
-		print('read uint32:', i)
+		#print('read uint32:', i)
 		return i
 
 	def readSizedString(self):
 		length = self.readUInt8()
 		s = str(self.sock.recv(length))
-		print('read string:',s)
+		#print('read string:',s)
 		return s
 
 
@@ -75,10 +82,18 @@ class Client:
 			print('KICK:', reason)
 		elif stamp == Stamp.LOGOUT.value:
 			print('LOGOUT')
+		elif stamp == Stamp.TURN.value:
+			contentSize = self.readUInt32()
+			turn = self.readUInt32()
+			data = self.sock.recv(contentSize)
+			print('TURN {}: {}'.format(turn, data))
 		else:
 			print('unhandled stamp:', stamp)
 
 c = Client(IP, PORT)
 
-c.sendLoginPlayer('noob')
+c.sendLoginPlayer(b'noob')
+c.recvMessage()
+
+c.sendTurnAck(10, b'')
 c.recvMessage()
