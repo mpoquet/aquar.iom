@@ -44,7 +44,9 @@ signals:
      * @brief This signal is emitted when a TURN_ACK message had been received
      * @param message The complete content of the message
      */
-    void messageTurnAckReceived(const QByteArray & message);
+    void messageTurnAckReceived(int turn, const QByteArray & message);
+
+    void disconnected(QTcpSocket * socket);
 
 private slots:
     void onReadyRead();
@@ -67,14 +69,19 @@ private slots:
      * @param data The data to send to the client
      * @pre _type in {PLAYER, VISU}
      */
-    void setUpToDateTurnMessage(quint32 turn, const QByteArray & data);
+    void sendTurn(quint32 turn, const QByteArray & data);
 
 private:
     void sendStamp(const Stamp & stamp);
     void sendSizedString(const QString & s);
-    void sendTurnMessage(quint32 turn, const QByteArray & data);
+    void sendWelcome(const QByteArray & data);
+    void sendGameStarts(const QByteArray & data);
 
-    void beAnUnknown();
+    void sendGameEnds(const QByteArray & data);
+
+    void internalSendTurn(quint32 turn, const QByteArray & data);
+
+    void logout();
     void beAPlayer(const QString & nick);
     void beAVisu(const QString & nick);
 

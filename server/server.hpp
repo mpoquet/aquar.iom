@@ -21,13 +21,15 @@ signals:
     void playerDisconnected(Client * client);
     void visuConnected(Client * client);
     void visuDisconnected(Client * client);
+    void playerTurnAckReceived(Client * client, int turn, const QByteArray & data);
+    void visuTurnAckReceived(Client * client, int turn, const QByteArray & data);
 
 private slots:
-    void onNewConnection();
-
+    void onClientConnected();
     void onClientDisconnected(QTcpSocket * socket);
     void onClientWantToBeAPlayer(const QString & nick);
     void onClientWantToBeAVisu(const QString & nick);
+    void onClientTurnAckReceived(int turn, const QByteArray & data);
 
     /**
      * @brief This slot must be called when the game starts.
@@ -41,9 +43,16 @@ private slots:
      */
     void onGameFinished();
 
+    void kick(Client * client, const QString & reason);
+    void sendWelcome(Client * client, const QByteArray & data);
+    void sendGameStarts(Client * client, const QByteArray & data);
+    void sendGameEnds(Client * client, const QByteArray & data);
+    void sendTurn(Client * client, const QByteArray & data);
+
 private:
     QTcpServer * _server;
-    QMap<QTcpSocket*, Client*> _clients;
+    QMap<QTcpSocket*, Client*> _socketToClient;
+    QSet<Client *> _clients;
 
     const int _maxClients = 512;
     const int _maxClientID = 65535;

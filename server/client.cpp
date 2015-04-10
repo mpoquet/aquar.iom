@@ -101,7 +101,7 @@ void Client::onReadyRead()
             if (_buffer.size() < bytesRead + 4 + gameDependentSize)
                 return;
 
-            int turn = *((quint32*)(_buffer.data()+bytesRead));
+            quint32 turn = *((quint32*)(_buffer.data()+bytesRead));
             bytesRead += 4;
             turn = qFromLittleEndian(turn);
 
@@ -111,12 +111,18 @@ void Client::onReadyRead()
             _buffer = _buffer.mid(bytesRead);
 
             qDebug() << "TurnAck message of length" << message.size() << ", content=" << message;
-            _lastTurnAcknowledged = turn;
-            emit messageTurnAckReceived(message);
 
-            // Now that the TURN_ACK had been received, let's send the most up-to-date TURN message if needed
-            if (_turnToSend > _lastTurnAcknowledged)
-                sendTurnMessage(_turnToSend, _sendBuffer);
+            if (turn == _lastTurnSent)
+            {
+                _lastTurnAcknowledged = turn;
+                emit messageTurnAckReceived(turn, message);
+
+                // Now that the TURN_ACK had been received, let's send the most up-to-date TURN message if needed
+                if (_turnToSend > _lastTurnAcknowledged)
+                    internalSendTurn(_turnToSend, _sendBuffer);
+            }
+            else
+                kick(QString("invalid TURN_ACK message received: wrong turn (%1 instead of %2").arg(turn).arg(_lastTurnSent));
         }
         else
             kick(QString("invalid message type received (stamp=%1)").arg((quint32)stamp));
@@ -130,10 +136,9 @@ void Client::kick(const QString & reason)
     _socket->close();
 }
 
-void Client::setUpToDateTurnMessage(quint32 turn, const QByteArray & data)
+void Client::sendTurn(quint32 turn, const QByteArray & data)
 {
     Q_ASSERT(_type == PLAYER || _type == VISU);
-    Q_ASSERT(turn + 1 > turn);
 
     // If the client did not acknowledged the last message
     if (_lastTurnAcknowledged != _lastTurnSent)
@@ -142,7 +147,7 @@ void Client::setUpToDateTurnMessage(quint32 turn, const QByteArray & data)
         _turnToSend = turn;
     }
     else
-        sendTurnMessage(turn, data);
+        internalSendTurn(turn, data);
 }
 
 void Client::sendStamp(const Stamp & stamp)
@@ -160,7 +165,34 @@ void Client::sendSizedString(const QString &s)
     _socket->write(qba);
 }
 
-void Client::sendTurnMessage(quint32 turn, const QByteArray &data)
+void Client::sendWelcome(const QByteArray &data)
+{
+    const quint32 gameDependentSize = data.size();
+
+    sendStamp(Stamp::WELCOME);
+    _socket->write((const char *) &gameDependentSize, 4);
+    _socket->write(data);
+}
+
+void Client::sendGameStarts(const QByteArray &data)
+{
+    const quint32 gameDependentSize = data.size();
+
+    sendStamp(Stamp::GAME_STARTS);
+    _socket->write((const char *) &gameDependentSize, 4);
+    _socket->write(data);
+}
+
+void Client::sendGameEnds(const QByteArray &data)
+{
+    const quint32 gameDependentSize = data.size();
+
+    sendStamp(Stamp::GAME_ENDS);
+    _socket->write((const char *) &gameDependentSize, 4);
+    _socket->write(data);
+}
+
+void Client::internalSendTurn(quint32 turn, const QByteArray &data)
 {
     const quint32 gameDependentSize = data.size();
 
@@ -175,6 +207,7 @@ void Client::sendTurnMessage(quint32 turn, const QByteArray &data)
 void Client::onDisconnected()
 {
     emit message(QString("Client %1 disconnected").arg(_name));
+    emit disconnected(_socket);
 }
 
 void Client::onError(QAbstractSocket::SocketError socketError)
@@ -183,7 +216,7 @@ void Client::onError(QAbstractSocket::SocketError socketError)
         emit message(QString("Client %1 error:%1").arg(_name, socketError));
 }
 
-void Client::beAnUnknown()
+void Client::logout()
 {
     _type = UNKNOWN;
     _nick = "Anonymous";

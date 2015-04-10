@@ -19,11 +19,15 @@ SOURCES += main.cpp \
     server.cpp \
     client.cpp \
     logger.cpp \
-    game.cpp
+    game.cpp \
+    tank_game.cpp \
+    tank_map.cpp
 
 HEADERS += \
     server.hpp \
     client.hpp \
     logger.hpp \
     protocol.hpp \
-    game.hpp
+    game.hpp \
+    tank_game.hpp \
+    tank_map.hpp

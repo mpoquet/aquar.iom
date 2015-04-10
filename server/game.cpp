@@ -15,7 +15,7 @@ Game::~Game()
 void Game::onPlayerConnected(Client *client)
 {
     if (!_isRunning)
-        _players.push_back({client, true});
+        _playerClients.push_back({client, true});
     else
     {
         emit message("Unexpected case: the game received a new player whereas the game is running. This player is ignored");
@@ -26,7 +26,7 @@ void Game::onPlayerConnected(Client *client)
 void Game::onVisuConnected(Client *client)
 {
     if (!_isRunning)
-        _visus.push_back({client, true});
+        _visuClients.push_back({client, true});
     else
     {
         emit message("Unexpected case: the game received a new visu whereas the game is running. This visu is ignored");
@@ -34,27 +34,27 @@ void Game::onVisuConnected(Client *client)
     }
 }
 
-void Game::onPlayerDisonnected(Client *client)
+void Game::onPlayerDisconnected(Client *client)
 {
-    int i = _players.indexOf({client,true});
+    int i = _playerClients.indexOf({client,true});
     if (i != -1)
     {
         if (_isRunning)
-            _players[i].connected = false;
+            _playerClients[i].connected = false;
         else
-            _players.remove(i);
+            _playerClients.remove(i);
     }
 }
 
 void Game::onVisuDisconnected(Client *client)
 {
-    int i = _visus.indexOf({client,true});
+    int i = _visuClients.indexOf({client,true});
     if (i != -1)
     {
         if (_isRunning)
-            _visus[i].connected = false;
+            _visuClients[i].connected = false;
         else
-            _visus.remove(i);
+            _visuClients.remove(i);
     }
 }
 

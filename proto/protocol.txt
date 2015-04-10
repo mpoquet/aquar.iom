@@ -12,7 +12,7 @@ Network protocol description
 	string	(s.size:ui32, s[0]:char, s[1]:char, ..., s[s.size-1]:char)
 
 2. Messages
-	Every message is composed of a type (sent as uint8) directly followed by a content.
+	Every message is composed of a type (sent as ui8) directly followed by a content.
 	The content of some messages is game-dependent (GDC stands for GAME_DEPENDENT_CONTENT).
 	The following table show all possible messages.
 
@@ -32,7 +32,7 @@ Network protocol description
 3. Expected client behaviour
 	The client behaviour must match a certain behaviour.
 	This behaviour is described by a graph in file 'client_behaviour.png'
-	Please note that certain edges are not displayed in it. These edges are showed in 'client_behaviour_full.png'.
+	Please note that some edges are not displayed in it. These edges are showed in 'client_behaviour_full.png'.
 
 	The graph nodes are client states. Graph edges can be:
 		- "? TYPE": the client receives a message of type TYPE
