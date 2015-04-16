@@ -3,6 +3,8 @@
 
 #include "game.hpp"
 
+class TankMap;
+
 class TankGame : public Game
 {
     Q_OBJECT
@@ -84,7 +86,7 @@ public:
         bool tankBelongsToMe(quint32 tankID) const; //! Returns true if the player owns the tank. Otherwise returns false.
     };
 
-    explicit TankGame(QObject *parent = 0);
+    explicit TankGame(TankMap * tankMap, QObject *parent = 0);
     ~TankGame();
 
     virtual bool canBeStarted() const;
@@ -102,6 +104,7 @@ private slots:
 private:
     QVector<Player*> _players;
     QVector<Tank*> _tanks;
+    TankMap * _tankMap = nullptr;
 
     QList<Move> _currentTurnMoves; //! The moves that must be done on turn end
 };

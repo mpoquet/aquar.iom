@@ -18,16 +18,16 @@ TEMPLATE = app
 SOURCES += main.cpp \
     server.cpp \
     client.cpp \
-    logger.cpp \
     game.cpp \
     tank_game.cpp \
-    tank_map.cpp
+    tank_map.cpp \
+    cli.cpp
 
 HEADERS += \
     server.hpp \
     client.hpp \
-    logger.hpp \
     protocol.hpp \
     game.hpp \
     tank_game.hpp \
-    tank_map.hpp
+    tank_map.hpp \
+    cli.hpp

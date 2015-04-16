@@ -49,15 +49,25 @@ private slots:
     void sendGameEnds(Client * client, const QByteArray & data);
     void sendTurn(Client * client, const QByteArray & data);
 
+    void setServerMaxClients(quint32 maxClients);
+    void setServerMaxPlayers(quint32 maxPlayers);
+    void setServerMaxVisus(quint32 maxVisus);
+
+    void listServerClients();
+    void listServerPlayers();
+    void listServerVisus();
+    void resetClients();
+    void resetAndChangeServerPort(quint16 port);
+
 private:
     QTcpServer * _server;
     QMap<QTcpSocket*, Client*> _socketToClient;
     QSet<Client *> _clients;
 
-    const int _maxClients = 512;
+    int _maxClients = 512;
     const int _maxClientID = 65535;
-    const int _maxPlayers = 32;
-    const int _maxVisus = 1;
+    int _maxPlayers = 32;
+    int _maxVisus = 1;
 
     bool _isGameRunning = false;
 

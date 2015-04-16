@@ -48,6 +48,12 @@ public:
 
     bool loadFile(const QString & filename);
 
+    bool isLoaded() const { return _isLoaded; }
+
+public slots:
+    void lock() { _isLocked = true; }
+    void unlock() { _isLocked = false; }
+
 private:
     void findBases();
 
@@ -60,6 +66,9 @@ private:
     quint32 _height;
     quint32 _maxPlayers;
     quint32 _numTankPerPlayer;
+
+    bool _isLoaded = false; // The last call to loadfile was successful
+    bool _isLocked = false; // If true, loadFile won't load anything
 
     QVector<Cell> _cells;
     QVector<QVector<Position> > _spawnPositionsPerPlayer;

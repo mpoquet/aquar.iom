@@ -4,7 +4,7 @@
 #include <QtEndian>
 
 #include "server.hpp"
-#include "logger.hpp"
+#include "cli.hpp"
 #include "protocol.hpp"
 
 Client::Client(QTcpSocket *sock, quint16 id, const QString &name, Server *parent) :
@@ -24,9 +24,9 @@ bool Client::isNickValid(const QString &nick)
 
 void Client::onReadyRead()
 {
-    qDebug() << "buffer length before read: " << _buffer.size();
+    //qDebug() << "buffer length before read: " << _buffer.size();
     _buffer += _socket->read(_socket->bytesAvailable());
-    qDebug() << "received " << _buffer.size() << " bytes";
+    //qDebug() << "received " << _buffer.size() << " bytes";
 
     if (_buffer.size() > _bufferMaxSize)
     {
@@ -110,7 +110,7 @@ void Client::onReadyRead()
 
             _buffer = _buffer.mid(bytesRead);
 
-            qDebug() << "TurnAck message of length" << message.size() << ", content=" << message;
+            //qDebug() << "TurnAck message of length" << message.size() << ", content=" << message;
 
             if (turn == _lastTurnSent)
             {

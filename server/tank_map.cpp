@@ -63,6 +63,11 @@ TankMap::~TankMap()
 
 bool TankMap::loadFile(const QString &filename)
 {
+    if (_isLocked)
+    {
+        return false;
+    }
+
     QFile f(filename);
 
     if (!f.open(QIODevice::ReadOnly))
@@ -84,6 +89,7 @@ bool TankMap::loadFile(const QString &filename)
         if (width != _width)
         {
             emit message(QString("Invalid file '%s': line %2 has width=%3 (expected %4)").arg(filename).arg(_height).arg(width).arg(_width));
+            _isLoaded = false;
             return false;
         }
 
@@ -93,12 +99,14 @@ bool TankMap::loadFile(const QString &filename)
     if (_width < 3 || _height < 3)
     {
         emit message(QString("Invalid file '%s': width and height must be at least 3 (got width=%1, height=%2)").arg(_width).arg(_height));
+        _isLoaded = false;
         return false;
     }
 
     if (!f.reset())
     {
         emit message(QString("Impossible to reset file '%s'").arg(filename));
+        _isLoaded = false;
         return false;
     }
 
@@ -115,6 +123,7 @@ bool TankMap::loadFile(const QString &filename)
             {
                 emit message(QString("Impossible to read file '%1' : invalid character '%2' at position (x=%3,y=%4)").arg(
                                     filename).arg(c).arg(x).arg(y));
+                _isLoaded = false;
                 return false;
             }
             _cells[y*_width+x] = Cell(c);
@@ -130,6 +139,7 @@ bool TankMap::loadFile(const QString &filename)
     if (_maxPlayers < 2)
     {
         emit message(QString("Invalid map '%1': there should be at least 2 bases in it"));
+        _isLoaded = false;
         return false;
     }
 
@@ -139,6 +149,7 @@ bool TankMap::loadFile(const QString &filename)
         if ((quint32)_spawnPositionsPerPlayer[i].size() != _numTankPerPlayer)
         {
             emit message(QString("Invalid map '%1': all bases must have the same size"));
+            _isLoaded = false;
             return false;
         }
     }
@@ -188,6 +199,7 @@ bool TankMap::loadFile(const QString &filename)
             {
                 emit message(QString("Invalid map '%1': base at (%2,%3) should have one and only one UNBREAKABLE_WALL neighbor (horizontally and vertically speaking), but got %4").arg(
                                 filename).arg(p.x).arg(p.y).arg(nbAdjacentUWalls));
+                _isLoaded = false;
                 return false;
             }
 
@@ -196,6 +208,7 @@ bool TankMap::loadFile(const QString &filename)
     }
 
     emit message(QString("Map '%1' loaded successfully").arg(filename));
+    _isLoaded = true;
     return true;
 }
 

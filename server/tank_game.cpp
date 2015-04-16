@@ -1,6 +1,9 @@
 #include "tank_game.hpp"
 
-TankGame::TankGame(QObject *parent) : Game(parent)
+#include "tank_map.hpp"
+
+TankGame::TankGame(TankMap *tankMap, QObject *parent) : Game(parent),
+    _tankMap(tankMap)
 {
 
 }

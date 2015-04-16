@@ -37,6 +37,8 @@ void Server::onClientDisconnected(QTcpSocket *socket)
 
         _clients.remove(client);
         _socketToClient.erase(mit);
+
+        socket->deleteLater();
     }
 }
 
@@ -153,6 +155,98 @@ void Server::sendTurn(Client *client, const QByteArray &data)
         client->sendGameEnds(data);
 }
 
+void Server::setServerMaxClients(quint32 maxClients)
+{
+    _maxClients = maxClients;
+
+    if (_clients.size() <= _maxClients)
+        emit message(QString("Maximum number of clients set to %1").arg(_maxClients));
+    else
+        emit message(QString("Maximum number of clients set to %1. They are however %2 currently connected clients").arg(_maxClients).arg(_clients.size()));
+}
+
+void Server::setServerMaxPlayers(quint32 maxPlayers)
+{
+    _maxPlayers = maxPlayers;
+
+    if (_nbPlayers <= _maxPlayers)
+        emit message(QString("Maximum number of players set to %1").arg(_maxPlayers));
+    else
+        emit message(QString("Maximum number of players set to %1. They are however %2 currently connected players").arg(_maxPlayers).arg(_nbPlayers));
+}
+
+void Server::setServerMaxVisus(quint32 maxVisus)
+{
+    _maxVisus = maxVisus;
+
+    if (_nbVisus <= _maxVisus)
+        emit message(QString("Maximum number of visus set to %1").arg(_maxVisus));
+    else
+        emit message(QString("Maximum number of visus set to %1. They are however %2 currently connected visus").arg(_maxVisus).arg(_nbVisus));
+}
+
+void Server::listServerClients()
+{
+    QString resu = "Unlogged clients:\n";
+    QString resp = "Players:\n";
+    QString resv = "Visus:\n";
+
+    for (Client * client : _clients)
+    {
+        if (client->_type == Client::ClientType::UNKNOWN)
+            resu += QString("(%1:%2)\n").arg(client->_socket->peerAddress().toString()).arg(client->_socket->localPort());
+        else if (client->_type == Client::ClientType::PLAYER)
+            resp += QString("%3 (%1:%2)\n").arg(client->_socket->peerAddress().toString()).arg(client->_socket->localPort()).arg(client->_nick);
+        else
+            resv += QString("%3 (%1:%2)\n").arg(client->_socket->peerAddress().toString()).arg(client->_socket->localPort()).arg(client->_nick);
+    }
+
+    emit message(resu + resp + resv);
+}
+
+void Server::listServerPlayers()
+{
+    QString resp = "Players:\n";
+
+    for (Client * client : _clients)
+    {
+        if (client->_type == Client::ClientType::PLAYER)
+            resp += QString("%3 (%1:%2)\n").arg(client->_socket->peerAddress().toString()).arg(client->_socket->localPort()).arg(client->_nick);
+    }
+
+    emit message(resp);
+}
+
+void Server::listServerVisus()
+{
+    QString resv = "Visus:\n";
+
+    for (Client * client : _clients)
+    {
+        if (client->_type == Client::ClientType::VISU)
+            resv += QString("%3 (%1:%2)\n").arg(client->_socket->peerAddress().toString()).arg(client->_socket->localPort()).arg(client->_nick);
+    }
+
+    emit message(resv);
+}
+
+void Server::resetClients()
+{
+    for (Client * client : _clients)
+        client->kick("reset from console");
+}
+
+void Server::resetAndChangeServerPort(quint16 port)
+{
+    for (Client * client : _clients)
+        client->kick("reset from console");
+
+    _server->close();
+    _server->listen(QHostAddress::Any, port);
+
+    emit message(QString("Server listening to port %1").arg(port));
+}
+
 void Server::onClientConnected()
 {
     Q_ASSERT(_nextClientID+1 > _nextClientID);
@@ -161,7 +255,7 @@ void Server::onClientConnected()
     QString cname = QString("(%1:%2)").arg(sock->peerAddress().toString()).arg(sock->peerPort());
 
     auto c = new Client(sock, _nextClientID++, cname, this);
-    emit message(QString("New client %1 connected").arg(cname));
+    emit message(QString("New client: %1").arg(cname));
 
     connect(sock, SIGNAL(disconnected()), c, SLOT(onDisconnected()));
     connect(sock, SIGNAL(error(QAbstractSocket::SocketError)), c, SLOT(onError(QAbstractSocket::SocketError)));
