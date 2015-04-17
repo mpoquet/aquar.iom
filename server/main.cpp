@@ -17,6 +17,10 @@ int main(int argc, char **argv)
     a.connect(map, SIGNAL(message(QString)), cli, SLOT(displayMessage(QString)));
     a.connect(game, SIGNAL(message(QString)), cli, SLOT(displayMessage(QString)));
 
+    a.connect(s, SIGNAL(playerConnected(Client*)), game, SLOT(onPlayerConnected(Client*)));
+    a.connect(s, SIGNAL(playerDisconnected(Client*)), game, SLOT(onPlayerDisconnected(Client*)));
+    a.connect(s, SIGNAL(visuConnected(Client*)), game, SLOT(onVisuConnected(Client*)));
+    a.connect(s, SIGNAL(visuDisconnected(Client*)), game, SLOT(onVisuDisconnected(Client*)));
     a.connect(s, SIGNAL(playerTurnAckReceived(Client*,int,QByteArray)), game, SLOT(onPlayerMove(Client*,int,QByteArray)));
     a.connect(s, SIGNAL(visuTurnAckReceived(Client*,int,QByteArray)), game, SLOT(onVisuAck(Client*,int,QByteArray)));
 

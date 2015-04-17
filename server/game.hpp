@@ -32,10 +32,10 @@ signals:
     void wantToSendTurn(Client * client, const QByteArray & data);
 
 public slots:
-    virtual void onPlayerConnected(Client * client);
-    virtual void onVisuConnected(Client * client);
-    virtual void onPlayerDisconnected(Client * client);
-    virtual void onVisuDisconnected(Client * client);
+    virtual void onPlayerConnected(Client * client); // if overridden, this method must be called by the child method
+    virtual void onVisuConnected(Client * client); // if overridden, this method must be called by the child method
+    virtual void onPlayerDisconnected(Client * client); // if overridden, this method must be called by the child method
+    virtual void onVisuDisconnected(Client * client); // if overridden, this method must be called by the child method
 
     virtual void onPlayerMove(Client * client, int turn, const QByteArray & data) = 0;
     virtual void onVisuAck(Client * client, int turn, const QByteArray & data) = 0;

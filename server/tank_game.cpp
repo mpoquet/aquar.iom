@@ -47,9 +47,9 @@ void TankGame::onStart()
         return;
     }
 
-    if (_players.size() < 2)
+    if (_playerClients.size() < 2)
     {
-        emit message("Cannot start game: there must be at least 2 players");
+        emit message("Cannot start game: there must be at least 2 connected players");
         return;
     }
 

@@ -13,12 +13,10 @@ public:
 
 signals:
     void wantToLoadMap(const QString & filename);
-    void wantToSetGameTurnTimer(quint32 ms);
 
     void wantToSetServerMaxClients(quint32 maxClients);
     void wantToSetServerMaxPlayers(quint32 maxPlayers);
     void wantToSetServerMaxVisus(quint32 maxVisus);
-
     void wantToListServerClients();
     void wantToListServerPlayers();
     void wantToListServerVisus();
@@ -29,6 +27,7 @@ signals:
     void wantToPauseGame();
     void wantToResumeGame();
     void wantToStopGame();
+    void wantToSetGameTurnTimer(quint32 ms);
 
 public slots:
     void displayMessage(const QString & message);
