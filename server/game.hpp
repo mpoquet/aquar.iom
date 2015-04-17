@@ -19,7 +19,6 @@ public:
     explicit Game(QObject *parent = 0);
     virtual ~Game();
 
-    virtual bool canBeStarted() const = 0;
     bool isRunning() const { return _isRunning; }
 
 signals:
@@ -40,7 +39,12 @@ public slots:
 
     virtual void onPlayerMove(Client * client, int turn, const QByteArray & data) = 0;
     virtual void onVisuAck(Client * client, int turn, const QByteArray & data) = 0;
-    virtual void startGame() = 0;
+
+    virtual void onStart() = 0;
+    virtual void onPause() = 0;
+    virtual void onResume() = 0;
+    virtual void onStop() = 0;
+    virtual void onTurnTimerChanged(quint32 ms) = 0;
 
 protected:
     // These two attributes store players and visus. If the game is running, the size of those attributes won't change.

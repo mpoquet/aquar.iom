@@ -89,14 +89,17 @@ public:
     explicit TankGame(TankMap * tankMap, QObject *parent = 0);
     ~TankGame();
 
-    virtual bool canBeStarted() const;
-
 signals:
 
 private slots:
     virtual void onPlayerMove(Client * client, int turn, const QByteArray & data);
     virtual void onVisuAck(Client * client, int turn, const QByteArray & data);
-    virtual void startGame();
+
+    virtual void onStart();
+    virtual void onPause();
+    virtual void onResume();
+    virtual void onStop();
+    virtual void onTurnTimerChanged(quint32 ms);
 
     //! Called at turn end
     void onTurnEnd();

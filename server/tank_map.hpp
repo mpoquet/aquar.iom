@@ -46,11 +46,10 @@ public:
     explicit TankMap(QObject *parent = 0);
     ~TankMap();
 
-    bool loadFile(const QString & filename);
-
     bool isLoaded() const { return _isLoaded; }
 
 public slots:
+    bool loadFile(const QString & filename);
     void lock() { _isLocked = true; }
     void unlock() { _isLocked = false; }
 
