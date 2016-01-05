@@ -1,0 +1,107 @@
+Une grille rectangulaire non torrique.
+Chaque joueur contrôle un ensemble de cellules.
+Chaque cellule est définie par :
+    Le joueur auquel elle appartient
+    Sa masse (entier) -> définit le rayon du disque
+    Sa position (2 flottants) -> définit le centre du disque
+    Son temps d'isolation restant (entier, en nombre de tours)
+
+À chaque pas de temps :
+    On divise les cellules qui doivent l'être
+        Pour chaque cellule C qui doit être divisée
+            On choisit la masse à utiliser dans la nouvelle cellule
+                m = max(masseActuelle/2, masseSouhaitée)
+            On réduit la masse de C et on calcule son nouveau rayon
+                mC = mC - m
+                rC = f(mC)
+            On calcule le vecteur de déplacement
+                v = posSouhaitée - posC
+                Si v est nul
+                    v = (0,1)
+                Sinon
+                    v = normalize(v)
+            On détermine la position de la nouvelle cellule
+                Soit d = rC + rN (la somme des rayons de l'ancienne et la nouvelle cellule)
+                posN = d * v
+            On crée une nouvelle cellule accollée à C
+                N = nouvelleCellule(masse = m, position = posN)
+
+    On déplace les cellules qui doivent l'être
+        Pour chaque cellule C qui souhaite être déplacée
+            On calcule le vecteur de déplacement d = dest - currentPos
+            Si d est non nul
+                d = normalize(d)
+                On va déplacer la cellule de alpha * d. Déterminons alpha
+                    alpha >= 0
+                    alpha <= f(mC) (on limite la vitesse d'une cellule en fonction de sa masse)
+                    On cherche la solution de l'inéquation
+                        currentPos + alpha*d <= dest
+                        alpha * d <= dest - currentPos
+                        alpha <= (dest - currentPos) / d
+                    Ainsi, alpha est la solution du système
+                        alpha >= 0
+                        alpha <= f(mC)
+                        alpha <= (dest - currentPos) / d
+                    Ainsi,
+                        alpha = max(0, min(f(mC), (dest - currentPos) / d))
+                Puis on applique
+                    newPos = currentPos + alpha*d
+
+    On détecte des collisions !
+        
+
+
+Soient A et B deux cellules de joueurs différents.
+A absorbe B sous les conditions suivantes :
+    - le centre de B est à l'intérieur du disque de A
+    - A est au moins 25% plus grand que B : mA > 1.25 mB
+
+Soient A et B deux cellules du même joueur.
+A absorbe B sous les conditions suivantes :
+    - le centre de B est à l'intérieur du disque de A
+    - A n'est pas soumise à une isolation
+    - B n'est pas soumise à une isolation
+
+Les actions d'un joueur sont les suivantes :
+    Déplacer une cellule
+        Paramètres
+            Le numéro de la cellule
+            La position de la destination souhaitée de la cellule
+        Description
+            La cellule sera déplacée vers cette destination
+            Si la cellule peut atteindre la destination en un pas de temps, elle s'y arrête
+            Si la cellule ne peut pas atteindre cette destination en un pas de temps, elle va le plus loin possible dans cette direction.
+        Contraintes
+            La cellule doit appartenir au joueur qui en donne l'ordre. Sinon, l'ordre est ignoré.
+
+    Diviser une cellule
+        Paramètres
+            Le numéro de la cellule cible C
+            La destination souhaitée de la nouvelle cellule
+            La masse mN de la nouvelle cellule N
+        Description
+            On ôte de la masse de la cellule cible afin d'en créer une nouvelle
+            Le rayon de la cellule cible est diminué
+            La nouvelle cellule apparaît "collée" à l'ancienne, dans la direction souhaitée
+            Si la destination souhaitée est identique à la position de la cellule cible, la
+        Contraintes
+            La cellule C doit appartenir au joueur qui en donne l'ordre. Sinon, l'ordre est ignoré.
+            mN <= mC/2 et mN >= 2. Sinon, l'ordre est ignoré.
+            Le joueur qui a donné l'ordre a 15 cellules ou moins.
+
+    Créer un virus
+        Paramètres
+            Le numéro de la cellule cible C
+            La destination souhaitée du virus
+            La masse mV du nouveau virus V
+        Description
+            Une cellule qui crée un virus perd 20% de sa masse + la masse du virus à créer
+            Le virus créé est accollé à la cellule cible
+        Contraintes
+            La cellule C doit appartenir au joueur qui en donne l'ordre. Sinon, l'ordre est ignoré.
+            mC >= 10 et mV >= 1 et (int(0.8*mC) - mV > 0). Sinon, l'ordre est ignoré.
+
+
+
+Vitesse de déplacement : plus la cellule est grosse plus elle est lente.
+Une division envoie la cellule à une certaine distance, qui ne dépend pas de la masse. Relativement à sa taille, on ira donc loin en début de partie, et on restera collé à l'autre moitié en étant très gros.
