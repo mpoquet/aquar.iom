@@ -1,10 +1,4 @@
-Une grille rectangulaire non torrique.
-Chaque joueur contrôle un ensemble de cellules.
-Chaque cellule est définie par :
-    Le joueur auquel elle appartient
-    Sa masse (entier) -> définit le rayon du disque
-    Sa position (2 flottants) -> définit le centre du disque
-    Son temps d'isolation restant (entier, en nombre de tours)
+Algo d'un tour de jeu côté serveur :
 
 À chaque pas de temps :
     On divise les cellules qui doivent l'être
@@ -48,19 +42,81 @@ Chaque cellule est définie par :
                     newPos = currentPos + alpha*d
 
     On détecte des collisions !
-        
 
+Description des règles
+
+Une grille rectangulaire non torrique à coordonnées flottantes.
+Chaque joueur contrôle un ensemble de cellules.
+Chaque cellule est définie par :
+    Un numéro d'identification unique (entier)
+    Le joueur auquel elle appartient
+    Sa masse (flottant) -> définit le rayon du disque (flottant)
+    Sa position (2 flottants) -> définit le centre du disque
+    Son temps d'isolation restant (entier positif ou nul, en nombre de tours)
+
+Score : le score de chaque joueur est la somme de sa masse totale au cours du temps :
+    Le score commence à 0.
+    À chaque pas de temps t, soit m(t,j) la somme de la masse des cellules qui appartiennent au joueur J au moment t.
+    Le score du joueur j est incrémenté de m(t,j) pour tout t.
+
+Vitesse de déplacement : plus la cellule est grosse plus elle est lente (fonction à déterminer)
 
 Soient A et B deux cellules de joueurs différents.
 A absorbe B sous les conditions suivantes :
     - le centre de B est à l'intérieur du disque de A
     - A est au moins 25% plus grand que B : mA > 1.25 mB
+Si A absorbe B, alors :
+    - La masse de A augmente : mA = mA + max(1, 0.8 mB)
+    - Le centre de A est déplacé (barycentre des centres de A et B pondérés par leurs masses)
+    - B disparaît
 
 Soient A et B deux cellules du même joueur.
 A absorbe B sous les conditions suivantes :
     - le centre de B est à l'intérieur du disque de A
     - A n'est pas soumise à une isolation
     - B n'est pas soumise à une isolation
+Si A absorbe B alors :
+    - La masse de A augmente : mA = mA + mB
+    - Le centre de A est déplacé (barycentre des centres de A et B pondérés par leurs masses)
+    - B disparaît
+
+Soit A une cellule et V un virus.
+A peut franchir V librement si et seulement si (mA <= mV + 1).
+Sinon, si le centre de V est à l'intérieur du disque de A (et que mA > mV + 1), A explose :
+    - En bref :
+        - A est divisé en plusieurs cellules : une cellule centrale et différentes (jusqu'à 8) cellules orbitales.
+        - L'explosion conduit à une perte de masse pour la cellule ayant rencontré le virus.
+        - Si le joueur qui contrôle A ne peut pas accueillir toutes les nouvelles cellules orbitales, il perd encore plus de masse.
+        - Toutes les cellules fragmentées sont isolées pendant un certain temps (à déterminer)
+    - Détails
+        - V disparaît pendant l'explosion
+        - A perd d'abord mV masse : mA = mA - mV
+        - A est ensuite divisé en plusieurs parties (une centrale et des cellules orbitales) :
+            - A perd la moitié de sa masse : mOld = mA; mA = mA/2. Le rayon de la cellule A est ajusté en fonction de sa nouvelle masse.
+            - N cellules placées symétriquement autour de A.
+                - On détermine N ainsi :
+                    - N = min(8, 16 - nbCellulesDuJoueurDeA) : on autorise jusqu'à 8 cellules orbitales, on limite le nombre de cellules du joueur à 16.
+                - On détermine la masse de chaque cellule orbitale ainsi :
+                    - On part du principe que 8 cellules orbitales vont être crées.
+                    - On part du principe que l'on veut répartir équitablement (mOld - mA) masse dans 8 cellules.
+                    - Chaque cellule doit être de masse supérieure ou égale à 1.
+                    - Ainsi, mN = max(1, (mOld - mA) / 8)
+                - On crée donc les cellules avec l'algo suivant :
+                    - i = 0
+                    - masseARepartir = mOld - mA
+                    - nbCellules = 0
+                    - tant que (i < N) et que (masseARepartir > 0):
+                        - nouvelleCelluleOrbitale(masse = min(mN, masseARepartir))
+                        - masseARepartir = masseARepartir - masseDeLaNouvelleCellule
+                        - nbCellules = nbCellules + 1
+                - On place ensuite les nbCellules cellules symétriquement autour de A (en commençant par au-dessus de A).
+        - Toutes les cellules (A et les cellules orbitales) sont isolées pendant une certaine durée (à déterminer)
+        - Le but de l'algorithme de division est de punir un joueur qui a trop de cellules lorsqu'il rencontre un virus :
+            - Si le joueur a peu de cellules, il peut avoir un division "propre" en 9 cellules sans perdre beaucoup de masse.
+                - Le joueur va tout de même en perdre, sauf si sa masse initiale est multiple d'une valeur très précise (afin que la division euclidienne par 8 tombe juste)
+            - Sinon, le joueur perdra de la masse (plus il a de cellules et plus il en perdra).
+
+
 
 Les actions d'un joueur sont les suivantes :
     Déplacer une cellule
@@ -80,28 +136,41 @@ Les actions d'un joueur sont les suivantes :
             La destination souhaitée de la nouvelle cellule
             La masse mN de la nouvelle cellule N
         Description
-            On ôte de la masse de la cellule cible afin d'en créer une nouvelle
-            Le rayon de la cellule cible est diminué
-            La nouvelle cellule apparaît "collée" à l'ancienne, dans la direction souhaitée
-            Si la destination souhaitée est identique à la position de la cellule cible, la
+            On ôte de la masse de la cellule C afin de créer une nouvelle cellule N : mC = mC - mN
+            Le rayon de la cellule C est ajusté pour le nouveau mC
+            La nouvelle cellule N apparaît "collée" à C, dans la direction souhaitée
+            Si la destination souhaitée est identique à la position de la cellule C, N apparaît au-dessus de C
         Contraintes
             La cellule C doit appartenir au joueur qui en donne l'ordre. Sinon, l'ordre est ignoré.
-            mN <= mC/2 et mN >= 2. Sinon, l'ordre est ignoré.
-            Le joueur qui a donné l'ordre a 15 cellules ou moins.
+            mN <= mC/2 et mN >= 1. Sinon, l'ordre est ignoré.
+            Le joueur qui a donné l'ordre a 15 cellules ou moins. Sinon, l'ordre est ignoré.
 
     Créer un virus
         Paramètres
             Le numéro de la cellule cible C
             La destination souhaitée du virus
-            La masse mV du nouveau virus V
+            La masse mV du virus V que l'on souhaite créer
         Description
-            Une cellule qui crée un virus perd 20% de sa masse + la masse du virus à créer
-            Le virus créé est accollé à la cellule cible
+            Une cellule qui crée un virus perd 20% de sa masse + mV : mC = 0.8 mC - mV
+            Le virus V créé est accollé à la cellule C dans la direction souhaitée
+            Si la destination souhaitée est identique à la position de la cellule C, V apparaît au-dessus de C
         Contraintes
             La cellule C doit appartenir au joueur qui en donne l'ordre. Sinon, l'ordre est ignoré.
-            mC >= 10 et mV >= 1 et (int(0.8*mC) - mV > 0). Sinon, l'ordre est ignoré.
+            mC >= 10 et mV >= 1 et (int(0.8*mC) - mV > 1). Sinon, l'ordre est ignoré.
+            Le virus créé doit être à une distance raisonnable (à déterminer) des cellules n'appartenant pas au joueur (afin d'éviter de faire apparaître le virus directement dans une cellule ennemie).
 
 
+Retro-ingeniering du diamètre par rapport à la masse
+25% larger (mass) than another blob to absorb it (that means your diameter must be ~11% larger than another blob to absorb it)
 
-Vitesse de déplacement : plus la cellule est grosse plus elle est lente.
-Une division envoie la cellule à une certaine distance, qui ne dépend pas de la masse. Relativement à sa taille, on ira donc loin en début de partie, et on restera collé à l'autre moitié en étant très gros.
+    masse     diamètre
+A    1            X
+B    1.25       1.11X
+C    mC     1.11/1.25 * mC * X
+
+
+Valeurs à tester :
+    Rayon de la cellule : rC = mC * 0.5 + 1
+    Temps d'isolation (en nombre de tours) : 30 + mC*0.2
+    La masse de chaque cellule décroît de 0.02% par tour.
+    La masse de départ des cellules est 10.
