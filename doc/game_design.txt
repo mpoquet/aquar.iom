@@ -1,6 +1,7 @@
 Algo d'un tour de jeu côté serveur :
 
 À chaque pas de temps :
+
     On divise les cellules qui doivent l'être
         Pour chaque cellule C qui doit être divisée
             On choisit la masse à utiliser dans la nouvelle cellule
@@ -41,7 +42,15 @@ Algo d'un tour de jeu côté serveur :
                 Puis on applique
                     newPos = currentPos + alpha*d
 
+    On abandonne toutes les cellules qui doivent l'être
+        Pour chaque joueur J qui souhaite abandonner ses cellules
+            Pour chaque cellule C du joueur J
+                C.joueur = neutre
+            Faire réapparaître le joueur selon les règles de la carte
+
     On détecte des collisions !
+        Pour chaque cellule C appartenant à un joueur jC (non neutre)
+            Pour chaque cellule O appartenant à un joueur jO
 
 Description des règles
 
@@ -158,6 +167,15 @@ Les actions d'un joueur sont les suivantes :
             La cellule C doit appartenir au joueur qui en donne l'ordre. Sinon, l'ordre est ignoré.
             mC >= 10 et mV >= 1 et (int(0.8*mC) - mV > 1). Sinon, l'ordre est ignoré.
             Le virus créé doit être à une distance raisonnable (à déterminer) des cellules n'appartenant pas au joueur (afin d'éviter de faire apparaître le virus directement dans une cellule ennemie).
+
+    Abandonner ses cellules
+        Paramètres
+            Aucun
+        Description
+            Toutes les cellules appartenant au joueur deviennent neutres.
+            Il se passe ensuite la même chose que lorsqu'un joueur perd sa dernière cellule vivante.
+        Contrainte
+            Aucune
 
 
 Retro-ingeniering du diamètre par rapport à la masse
