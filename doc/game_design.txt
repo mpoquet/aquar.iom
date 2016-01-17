@@ -75,7 +75,7 @@ A absorbe B sous les conditions suivantes :
     - le centre de B est à l'intérieur du disque de A
     - A est au moins 25% plus grand que B : mA > 1.25 mB
 Si A absorbe B, alors :
-    - La masse de A augmente : mA = mA + max(1, 0.8 mB)
+    - La masse de A augmente : mA = mA + 0.8 mB
     - Le centre de A est déplacé (barycentre des centres de A et B pondérés par leurs masses)
     - B disparaît
 
@@ -151,21 +151,20 @@ Les actions d'un joueur sont les suivantes :
             Si la destination souhaitée est identique à la position de la cellule C, N apparaît au-dessus de C
         Contraintes
             La cellule C doit appartenir au joueur qui en donne l'ordre. Sinon, l'ordre est ignoré.
-            mN <= mC/2 et mN >= 1. Sinon, l'ordre est ignoré.
+            mN <= mC/2 et mN >= 2. Sinon, l'ordre est ignoré.
             Le joueur qui a donné l'ordre a 15 cellules ou moins. Sinon, l'ordre est ignoré.
 
     Créer un virus
         Paramètres
             Le numéro de la cellule cible C
             La destination souhaitée du virus
-            La masse mV du virus V que l'on souhaite créer
         Description
             Une cellule qui crée un virus perd 20% de sa masse + mV : mC = 0.8 mC - mV
             Le virus V créé est accollé à la cellule C dans la direction souhaitée
             Si la destination souhaitée est identique à la position de la cellule C, V apparaît au-dessus de C
         Contraintes
             La cellule C doit appartenir au joueur qui en donne l'ordre. Sinon, l'ordre est ignoré.
-            mC >= 10 et mV >= 1 et (int(0.8*mC) - mV > 1). Sinon, l'ordre est ignoré.
+            0.8*mC - mV >= 2. Sinon, l'ordre est ignoré.
             Le virus créé doit être à une distance raisonnable (à déterminer) des cellules n'appartenant pas au joueur (afin d'éviter de faire apparaître le virus directement dans une cellule ennemie).
 
     Abandonner ses cellules

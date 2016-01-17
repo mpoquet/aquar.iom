@@ -4,8 +4,7 @@
 #
 #-------------------------------------------------
 
-QT += core network
-QT -= gui
+QT += core network gui
 
 QMAKE_CXXFLAGS = -std=c++14 -Wall -Wextra
 
@@ -21,7 +20,8 @@ SOURCES += main.cpp \
     game.cpp \
     tank_game.cpp \
     tank_map.cpp \
-    cli.cpp
+    cli.cpp \
+    cell_game.cpp
 
 HEADERS += \
     server.hpp \
@@ -30,4 +30,5 @@ HEADERS += \
     game.hpp \
     tank_game.hpp \
     tank_map.hpp \
-    cli.hpp
+    cli.hpp \
+    cell_game.hpp

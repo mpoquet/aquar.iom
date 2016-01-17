@@ -53,6 +53,14 @@ void TankGame::onStart()
         return;
     }
 
+    if (!_tankMap->isLoaded())
+    {
+        emit message("Cannot start game: map is not loaded");
+        return;
+    }
+
+    _tankMap->lock();
+
     for (GameClient c : _playerClients)
     {
 
