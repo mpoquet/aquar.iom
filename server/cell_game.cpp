@@ -79,8 +79,15 @@ void CellGame::compute_cell_divisions()
         PlayerCell * cell = _player_cells[action->cell_id];
         Player * player = _players[cell->player_id];
 
-        // If the new cell mass is not at least 2, the action is ignored
-        if (action->new_cell_mass < 2)
+        // If the new cell mass is too low, the action is ignored
+        if (action->new_cell_mass < _parameters.minimum_pcell_mass)
+        {
+            delete action;
+            continue;
+        }
+
+        // If the cell is not big enough to be split, the action is ignored
+        if (cell->mass < _parameters.minimum_pcell_mass * 2)
         {
             delete action;
             continue;
@@ -103,6 +110,7 @@ void CellGame::compute_cell_divisions()
         // The action seems to be valid!
         // Remove mass from the targetted cell (and update its radius, speed, etc.)
         cell->removeMass(action->new_cell_mass, _parameters);
+        cell->updateQuadtreeNodes();
 
         // Compute movement vector
         QVector2D move_vector(action->desired_new_cell_destination.x - cell->position.x,
@@ -127,13 +135,12 @@ void CellGame::compute_cell_divisions()
         new_cell->position.x = std::max(0.f, std::min(cell->position.x + new_cell_translation.x(), _parameters.map_width));
         new_cell->position.y = std::max(0.f, std::min(cell->position.y + new_cell_translation.y(), _parameters.map_height));
         new_cell->updateMass(action->new_cell_mass, _parameters);
+        new_cell->responsible_node = _tree_root;
+        new_cell->responsible_node_bbox = _tree_root;
+        new_cell->updateQuadtreeNodes();
         new_cell->remaining_isolated_turns = 0;
-        new_cell->responsible_node = cell->responsible_node->find_responsible_node(new_cell->position);
-        new_cell->responsible_node_bbox = cell->responsible_node_bbox->find_responsible_node(new_cell->top_left, new_cell->bottom_right);
 
         _player_cells[new_cell->id] = new_cell;
-        new_cell->responsible_node->player_cells[new_cell->id] = new_cell;
-        new_cell->responsible_node_bbox->player_cells_bbox[new_cell->id] = new_cell;
 
         player->nb_cells++;
 
@@ -217,6 +224,7 @@ void CellGame::compute_virus_creations()
 
         // Let some mass be removed from the cell
         cell->removeMass(mass_loss, _parameters);
+        cell->updateQuadtreeNodes();
 
         // Let the new virus be created
         Virus * virus = new Virus;
@@ -268,6 +276,9 @@ void CellGame::compute_cell_moves()
                 cell->position.x = std::max(0.0f, std::min(move_vector.x() * cell->max_speed, _parameters.map_width));
                 cell->position.y = std::max(0.0f, std::min(move_vector.y() * cell->max_speed, _parameters.map_height));
             }
+
+            cell->updateBBox();
+            cell->updateQuadtreeNodes();
         }
 
         delete action;
@@ -322,31 +333,6 @@ void CellGame::compute_player_surrenders()
     }
 
     _surrender_actions.clear();
-}
-
-void CellGame::compute_cell_positions()
-{
-    // Is this necessary ? Might be computed when mass is modified.
-    for (PlayerCell * cell : _player_cells)
-    {
-        QuadTreeNode * node = cell->responsible_node->find_responsible_node(cell->position);
-        Q_ASSERT(node != nullptr);
-        if (node != cell->responsible_node)
-        {
-            cell->responsible_node->player_cells.remove(cell->id);
-            node->player_cells[cell->id] = cell;
-            cell->responsible_node = node;
-        }
-
-        node = cell->responsible_node_bbox->find_responsible_node(cell->top_left, cell->bottom_right);
-        Q_ASSERT(node != nullptr);
-        if (node != cell->responsible_node_bbox)
-        {
-            cell->responsible_node_bbox->player_cells_bbox.remove(cell->id);
-            node->player_cells_bbox[cell->id] = cell;
-            cell->responsible_node_bbox = node;
-        }
-    }
 }
 
 void CellGame::compute_mass_loss()
@@ -411,6 +397,12 @@ void CellGame::compute_cell_collisions()
 
         QSet<PlayerCell *> pcells = pcells_to_recompute;
         pcells_to_recompute.clear();
+
+        for (PlayerCell * cell : pcells)
+        {
+            cell->updateBBox();
+            cell->updateQuadtreeNodes();
+        }
 
         for (PlayerCell * cell : pcells)
         {
@@ -642,6 +634,7 @@ void CellGame::compute_viruses_collisions_inside_node(CellGame::PlayerCell * cel
             did_something = true;
 
             // The central cell mass is divided by 2
+            Q_ASSERT(total_mass / 2 >= _parameters.minimum_pcell_mass);
             cell->updateMass(total_mass / 2, _parameters);
             pcells_to_recompute.insert(cell);
 
@@ -655,6 +648,7 @@ void CellGame::compute_viruses_collisions_inside_node(CellGame::PlayerCell * cel
             {
                 // Let the satellite mass be computed
                 const float mass_by_satellite = total_mass / 2;
+                Q_ASSERT(mass_by_satellite >= _parameters.minimum_pcell_mass);
 
                 // Let the distance from cell.center to satellite.center be computed
                 const float dist_to_satellite = cell->radius + _parameters.compute_radius_from_mass(mass_by_satellite);
@@ -818,13 +812,7 @@ void CellGame::PlayerCell::updateMass(float new_mass, const CellGame::GameParame
     radius_squared = radius * radius;
     max_speed = parameters.compute_max_speed_from_mass(mass);
 
-    top_left.x = std::max(0.0f, position.x - radius);
-    top_left.y = std::max(0.0f, position.y - radius);
-
-    bottom_right.y = std::min(position.x + radius, parameters.map_width);
-    bottom_right.y = std::min(position.y + radius, parameters.map_height);
-    //todo: set new mass then compute radius, radius_squared, bbox, max speed etc.
-    // beware: must ensure the mass is >= minimum_player_cell_mass
+    updateBBox();
 }
 
 void CellGame::PlayerCell::addMass(float mass_increment, const CellGame::GameParameters &parameters)
@@ -833,9 +821,26 @@ void CellGame::PlayerCell::addMass(float mass_increment, const CellGame::GamePar
 }
 
 void CellGame::PlayerCell::removeMass(float mass_decrement, const CellGame::GameParameters &parameters)
-{;
+{
     updateMass(mass - mass_decrement, parameters);
+}
 
+void CellGame::PlayerCell::updateBBox()
+{
+    top_left.x = std::max(0.0f, position.x - radius);
+    top_left.y = std::max(0.0f, position.y - radius);
+
+    bottom_right.y = std::min(position.x + radius, parameters.map_width);
+    bottom_right.y = std::min(position.y + radius, parameters.map_height);
+}
+
+void CellGame::PlayerCell::updateQuadtreeNodes()
+{
+    responsible_node->player_cells.remove(id);
+    responsible_node_bbox->player_cells_bbox.remove(id);
+
+    responsible_node = responsible_node->find_responsible_node(position);
+    responsible_node_bbox = responsible_node_bbox->find_responsible_node(top_left, bottom_right);
 }
 
 float CellGame::PlayerCell::squared_distance_to(const CellGame::PlayerCell *oth_pcell) const

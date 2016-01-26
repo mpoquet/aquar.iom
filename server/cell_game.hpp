@@ -86,6 +86,9 @@ class CellGame : public Game
         void addMass(float mass_increment, const GameParameters & parameters);
         void removeMass(float mass_decrement, const GameParameters & parameters);
 
+        void updateBBox();
+        void updateQuadtreeNodes();
+
         float squared_distance_to(const PlayerCell * oth_pcell) const;
         float squared_distance_to(const NeutralCell * ncell) const;
         float squared_distance_to(const Virus * virus) const;
@@ -217,7 +220,6 @@ private:
     void compute_virus_creations();
     void compute_cell_moves();
     void compute_player_surrenders();
-    void compute_cell_positions();
     void compute_mass_loss();
     void update_pcells_remaining_isolated_turns();
     void update_dead_neutral_cells();
