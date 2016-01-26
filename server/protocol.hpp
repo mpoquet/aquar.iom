@@ -53,7 +53,7 @@ enum class Stamp : std::uint8_t
     // These messages are handled by the generic network
     LOGIN_PLAYER=0      //! Client(U) -> Server. Content=(nick:string)
     ,LOGIN_VISU         //! Client(U) -> Server. Content=(nick:string)
-    ,LOGIN_ACK          //! Server -> Client(U->P). Content=()
+    ,LOGIN_ACK          //! Server -> Client(U->(P|V)). Content=()
     ,LOGOUT             //! Server -> Client((P|V)->U). Content=()
     ,KICK               //! Server -> Client(*). Content=(reason:string)
 

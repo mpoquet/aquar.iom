@@ -35,9 +35,9 @@ public:
 signals:
     //! The client wants to display something
     void message(const QString & msg);
-    //! The client want to become a player (it is currently UNKNOWN)
+    //! The client wants to become a player (it is currently UNKNOWN)
     void wantToBeAPlayer(const QString & nick);
-    //! The client want to become a visu (it is currently UNKNOWN)
+    //! The client wants to become a visu (it is currently UNKNOWN)
     void wantToBeAVisu(const QString & nick);
 
     /**
@@ -60,7 +60,7 @@ private slots:
     void kick(const QString & reason);
 
     /**
-     * @brief Sets the most TURN message that must be sent to this client.
+     * @brief Sets the most up-to-date TURN message that must be sent to this client.
      * @details The new message is sent directly if this client already acknowledged the last TURN message.<br/>
      * <br/>
      * Otherwise the new message is stored as the most up-to-date one (losing the previous stored message).

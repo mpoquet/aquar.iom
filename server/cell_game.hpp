@@ -25,15 +25,16 @@ class CellGame : public Game
         float map_width;
         float map_height;
 
-        double mass_absorption; // If cell A of mass mA eats cell B of mass mB and they belong to different players, mA is incremented by mass_absorption * mB
-        double minimum_mass_ratio_to_absorb; // Cell A can eat cell B if and only if mA > minimum_mass_ratio_to_absorb * mB
+        float mass_absorption; // If cell A of mass mA eats cell B of mass mB and they belong to different players, mA is incremented by mass_absorption * mB
+        float minimum_mass_ratio_to_absorb; // Cell A can eat cell B if and only if mA > minimum_mass_ratio_to_absorb * mB
+        float minimum_pcell_mass; // The minimum allowed mass for a player cell
 
-        double radius_factor; // cell_radius = radius_factor * cell_mass
+        float radius_factor; // cell_radius = radius_factor * cell_mass
         unsigned int max_cells_per_player; // Each player cannot have more cells than this value
-        double mass_loss_per_frame; // Every cell loses mass_loss_per_frame * cell_mass mass at each frame
+        float mass_loss_per_frame; // Every cell loses mass_loss_per_frame * cell_mass mass at each frame
 
-        double base_cell_speed; // max_cell_speed = base_cell_speed - speed_loss_factor * cell_mass
-        double speed_loss_factor;
+        float base_cell_speed; // max_cell_speed = base_cell_speed - speed_loss_factor * cell_mass
+        float speed_loss_factor;
 
         unsigned int nb_neutral_cells_x;
         unsigned int nb_neutral_cells_y;
@@ -43,7 +44,7 @@ class CellGame : public Game
 
         unsigned int max_viruses; // The number of viruses cannot exceed this value
         float virus_mass;
-        double virus_creation_mass_loss; // To create a virus, the cell loses virus_creation_mass_loss * cell_mass + virus_mass units of mass
+        float virus_creation_mass_loss; // To create a virus, the cell loses virus_creation_mass_loss * cell_mass + virus_mass units of mass
         unsigned int virus_max_split;
 
         unsigned int nb_starting_cells_per_player;
@@ -54,7 +55,8 @@ class CellGame : public Game
         QVector<Position> viruses_starting_positions;
 
     public:
-        float compute_radius_from_mass(float mass);
+        float compute_radius_from_mass(float mass) const;
+        float compute_max_speed_from_mass(float mass) const;
     };
 
     struct PlayerCell
@@ -63,7 +65,7 @@ class CellGame : public Game
         int id;
         int player_id;
         Position position;
-        double mass;
+        float mass;
 
         // Secondary attributes (computed thanks to updateMass and its sisters)
         Position top_left;
@@ -71,25 +73,23 @@ class CellGame : public Game
 
         float radius;
         float radius_squared;
-        unsigned int remaining_isolated_turns;
         float max_speed;
+
+        unsigned int remaining_isolated_turns;
 
         // Attributes related to the quadtree
         QuadTreeNode * responsible_node;
         QuadTreeNode * responsible_node_bbox;
 
     public:
-        void eatCell(const PlayerCell * eaten_cell);
+        void updateMass(float new_mass, const GameParameters & parameters);
+        void addMass(float mass_increment, const GameParameters & parameters);
+        void removeMass(float mass_decrement, const GameParameters & parameters);
 
-        void updateMass(double new_mass, const GameParameters & parameters);
-        void addMass(double mass_increment, const GameParameters & parameters);
-        void removeMass(double mass_decrement, const GameParameters & parameters);
-
-        bool containsPosition(const Position & position) const;
-
-        float squared_distance_to(const PlayerCell * oth_cell) const;
+        float squared_distance_to(const PlayerCell * oth_pcell) const;
         float squared_distance_to(const NeutralCell * ncell) const;
         float squared_distance_to(const Virus * virus) const;
+        float squared_distance_to(const Position & pos) const;
     };
 
     struct NeutralCell
@@ -110,15 +110,16 @@ class CellGame : public Game
     {
         int id;
         Position position;
+        unsigned int turn_of_birth;
         QuadTreeNode * responsible_node;
     };
 
-    class Player
+    struct Player
     {
-    public:
         int id;
         unsigned long long score;
         unsigned int nb_cells;
+        bool moved_this_turn;
     };
 
     enum CellType
@@ -217,6 +218,10 @@ private:
     void compute_cell_moves();
     void compute_player_surrenders();
     void compute_cell_positions();
+    void compute_mass_loss();
+    void update_pcells_remaining_isolated_turns();
+    void update_dead_neutral_cells();
+
     void compute_cell_collisions();
 
     void compute_first_collision_pass(QSet<PlayerCell *> & pcells_to_recompute,
@@ -250,7 +255,12 @@ private:
                                                     QSet<PlayerCell *> & pcells_to_recompute,
                                                     bool & did_something);
 
-    void make_player_reappear(Player * player);
+    bool is_there_opponent_pcell_in_neighbourhood(const Position & position,
+                                                  float radius,
+                                                  int player_id);
+
+    void make_player_repop(Player * player);
+    void make_player_pop(Player * player);
 
     int next_cell_id();
     int compress_cell_ids();
@@ -268,6 +278,7 @@ private:
     QMap<int, Player*> _players;
 
     int _next_cell_id = 0;
+    int _current_turn = 0;
 
     QVector<MoveAction*> _move_actions;
     QVector<DivideAction*> _divide_actions;
