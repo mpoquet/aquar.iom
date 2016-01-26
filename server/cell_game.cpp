@@ -258,11 +258,121 @@ void CellGame::compute_cell_positions()
 
 void CellGame::compute_cell_collisions()
 {
-    QSet<PlayerCell *> cells_to_recompute;
-    QSet<PlayerCell *> cells_to_delete;
+    QSet<PlayerCell *> pcells_to_recompute;
+    QSet<PlayerCell *> pcells_to_delete;
+    QSet<PlayerCell *> pcells_to_create;
     QSet<NeutralCell *> ncells_to_delete;
     QSet<Virus *> viruses_to_delete;
-    bool did_something = false;
+    bool did_something;
+
+    compute_first_collision_pass(pcells_to_recompute, pcells_to_delete, pcells_to_create,
+                                 ncells_to_delete, viruses_to_delete, did_something);
+
+    // The first pass has been done.
+    // Let us recompute what should be done until stability is reached
+    while (did_something)
+    {
+        did_something = false;
+
+        for (PlayerCell * cell : pcells_to_create)
+        {
+            _player_cells[cell->id] = cell;
+        }
+        pcells_to_create.clear();
+
+        for (PlayerCell * cell : pcells_to_delete)
+        {
+            _player_cells.remove(cell->id);
+            delete cell;
+        }
+        pcells_to_delete.clear();
+
+        for (NeutralCell * ncell : ncells_to_delete)
+        {
+            _alive_neutral_cells.remove(ncell->id);
+            delete ncell;
+        }
+        ncells_to_delete.clear();
+
+        for (Virus * virus : viruses_to_delete)
+        {
+            _viruses.remove(virus->id);
+            delete virus;
+        }
+        viruses_to_delete.clear();
+
+        QSet<PlayerCell *> pcells = pcells_to_recompute;
+        pcells_to_recompute.clear();
+
+        for (PlayerCell * cell : pcells)
+        {
+            // If "cell" has already been eaten by some other pcell, let it be ignored
+            if (pcells_to_delete.contains(cell))
+                continue;
+
+            // Let us check if the previous "cell" growth has caused it to be absorbed by a bigger pcell
+            QuadTreeNode * growth_node = cell->responsible_node_bbox;
+            bool current_cell_has_been_eaten = false;
+
+            // We will traverse nodes towards the root except if "cell" has already been eaten
+            while (growth_node != nullptr && !current_cell_has_been_eaten)
+            {
+                current_cell_has_been_eaten = compute_pcell_outer_collisions_inside_node(cell, growth_node,
+                                                                                         pcells_to_recompute,
+                                                                                         did_something);
+                growth_node = growth_node->parent;
+            } // end of node traversal towards root
+
+            if (current_cell_has_been_eaten)
+            {
+                // If "cell" has been eaten, we can remove it from the data structures
+                cell->responsible_node->player_cells.remove(cell->id);
+                cell->responsible_node_bbox->player_cells_bbox.remove(cell->id);
+                pcells_to_delete.insert(cell);
+            }
+            else
+            {
+                // We now know that "cell" has not been eaten by a larger cell.
+                // Let us now check if "cell" growth has caused it to eat a smaller cell.
+                QuadTreeNode * node = cell->responsible_node_bbox;
+                Q_ASSERT(node != nullptr);
+
+                QQueue<QuadTreeNode *> node_queue;
+                node_queue.enqueue(cell->responsible_node_bbox);
+
+                while (!node_queue.isEmpty())
+                {
+                    node = node_queue.dequeue();
+                    if (!node->is_leaf())
+                    {
+                        node_queue.enqueue(node->child_top_left);
+                        node_queue.enqueue(node->child_top_right);
+                        node_queue.enqueue(node->child_bottom_left);
+                        node_queue.enqueue(node->child_bottom_right);
+                    }
+
+                    compute_pcells_collisions_inside_node(cell, node, pcells_to_recompute, pcells_to_delete, did_something);
+                    compute_ncells_collisions_inside_node(cell, node, pcells_to_recompute, ncells_to_delete, did_something);
+                    compute_viruses_collisions_inside_node(cell, node, pcells_to_recompute, pcells_to_create, viruses_to_delete, did_something);
+                }
+            }
+        } // end of traversal of nodes which have been modified the last round
+    }
+}
+
+void CellGame::compute_first_collision_pass(QSet<CellGame::PlayerCell *> & pcells_to_recompute,
+                                            QSet<CellGame::PlayerCell *> & pcells_to_delete,
+                                            QSet<CellGame::PlayerCell *> & pcells_to_create,
+                                            QSet<CellGame::NeutralCell *> & ncells_to_delete,
+                                            QSet<CellGame::Virus *> & viruses_to_delete,
+                                            bool &did_something)
+{
+    pcells_to_recompute.clear();
+    pcells_to_delete.clear();
+    pcells_to_create.clear();
+    ncells_to_delete.clear();
+    viruses_to_delete.clear();
+    did_something = false;
 
     // The first pass consists in computing, for each pcell "cell"
     //   - all possible collisions between "cell" and reachable player cells,
@@ -271,10 +381,11 @@ void CellGame::compute_cell_collisions()
     for (PlayerCell * cell : _player_cells)
     {
         // If "cell" has already been eaten by some other pcell, let it be ignored
-        if (cells_to_delete.contains(cell))
+        if (pcells_to_delete.contains(cell))
             continue;
 
-        // The copy region starts here
+        // Let the nodes be traversed towards leaves to test collisions with objects
+        // that can touch "cell"'s bounding box
         QuadTreeNode * node = cell->responsible_node_bbox;
         Q_ASSERT(node != nullptr);
 
@@ -292,257 +403,228 @@ void CellGame::compute_cell_collisions()
                 node_queue.enqueue(node->child_bottom_right);
             }
 
-            // Let us check if "cell" collides with other player cells.
-            // To do so, let us iterate over the oth_pcells whose position is inside the current node
-            QMutableMapIterator<int, PlayerCell *> oth_pcell_it(node->player_cells);
-            while (oth_pcell_it.hasNext())
-            {
-                oth_pcell_it.next();
-                PlayerCell * oth_pcell = oth_pcell_it.value();
-                float dist = cell->squared_distance_to(oth_pcell);
-
-                // If oth_pcell is close enough to "cell" to be absorbed by it
-                if (dist < cell->radius_squared)
-                {
-                    if (cell->player_id == oth_pcell->player_id)
-                    {
-                        if ((cell->id != oth_pcell->id) &&
-                            (cell->remaining_isolated_turns == 0) &&
-                            (oth_pcell->remaining_isolated_turns == 0))
-                        {
-                            // Two cells of the same player merge
-                            Position g = compute_barycenter(cell->position, cell->mass, oth_pcell->position, oth_pcell->mass);
-                            cell->position = g;
-                            cell->addMass(oth_pcell->mass, _parameters);
-                            cells_to_recompute.insert(cell);
-
-                            cells_to_delete.insert(oth_pcell);
-                            oth_pcell->responsible_node_bbox->player_cells_bbox.remove(oth_pcell->id);
-                            oth_pcell_it.remove();
-
-                            did_something  = true;
-                        }
-                    }
-                    else
-                    {
-                        if (cell->mass > _parameters.minimum_mass_ratio_to_absorb * oth_pcell->mass)
-                        {
-                            // "cell" absorbs oth_pcell (not belonging to the same player)
-                            Position g = compute_barycenter(cell->position, cell->mass, oth_pcell->position, oth_pcell->mass);
-                            cell->position = g;
-                            cell->addMass(oth_pcell->mass * _parameters.mass_absorption, _parameters);
-                            cells_to_recompute.insert(cell);
-
-                            cells_to_delete.insert(oth_pcell);
-                            oth_pcell->responsible_node->player_cells_bbox.remove(oth_pcell->id);
-                            oth_pcell_it.remove();
-
-                            did_something = true;
-                        }
-                    }
-                }
-            } // end of iteration through the player cells of the current node
-
-            // Let us now check if "cell" collides with neutral cells.
-            // To do so, let us iterate over the ncells whose position is inside the current node
-            QMutableMapIterator<int, NeutralCell *> ncell_it(node->alive_neutral_cells);
-            while (ncell_it.hasNext())
-            {
-                ncell_it.next();
-                NeutralCell * ncell = ncell_it.value();
-
-                float dist = cell->squared_distance_to(ncell);
-
-                // If ncell is close enough to "cell" to be absorbed by it
-                if (dist < cell->radius_squared)
-                {
-                    // The ncell is absorbed by "cell"
-
-                    Position g = compute_barycenter(cell->position, cell->mass, ncell->position, ncell->mass);
-                    cell->position = g;
-                    cell->addMass(ncell->mass * _parameters.mass_absorption, _parameters);
-                    cells_to_recompute.insert(cell);
-
-                    if (ncell->is_initial)
-                    {
-                        ncell->remaining_turns_before_apparition = _parameters.neutral_cells_repop_time;
-                        ncell_it.remove();
-                    }
-                    else
-                    {
-                        ncells_to_delete.insert(ncell);
-                        ncell_it.remove();
-                    }
-                }
-            }
-
-            // Let us now check if "cell" collides with viruses.
-            // To do so, let us iterate over the viruses whose position is inside the current node
-            QMutableMapIterator<int, Virus *> viruses_it(node->viruses);
-            while (viruses_it.hasNext())
-            {
-                viruses_it.next();
-                Virus * virus = viruses_it.value();
-
-                float dist = cell->squared_distance_to(virus);
-
-                if ((dist < cell->radius_squared) && (cell->mass > _parameters.virus_mass))
-                {
-                    // The poor "cell" just ate a virus :(
-                    // First, let the virus mass be removed from the poor "cell"
-                    cell->removeMass(_parameters.virus_mass, _parameters);
-                    float total_mass = cell->mass;
-
-                    // The central cell mass is divided by 2
-                    cell->updateMass(total_mass / 2, _parameters);
-
-                    // The central cell might be surrounded by up to virus_max_split satellite cells
-                    // but the total number of cells cannot exceed max_cells_per_player
-                    const int nb_satellites = std::min(_parameters.virus_max_split, _parameters.max_cells_per_player - _players[cell->player_id]->nb_cells);
-                    Q_ASSERT(_players[cell->player_id]->nb_cells + nb_satellites <= _parameters.max_cells_per_player);
-                    Q_ASSERT(nb_satellites >= 0);
-
-                    if (nb_satellites > 0)
-                    {
-                        // Let the satellite mass be computed
-                        const float mass_by_satellite = total_mass / 2;
-
-                        // Let the distance from cell.center to satellite.center be computed
-                        const float dist_to_satellite = cell->radius + _parameters.compute_radius_from_mass(mass_by_satellite);
-
-                        // Let the angle (in radians) between each satellite be computed
-                        const float angle_diff = (2 * M_PI) / nb_satellites;
-
-                        for (int satellite_id = 0; satellite_id < nb_satellites; ++satellite_id)
-                        {
-                            PlayerCell * satellite = new PlayerCell;
-                            satellite->id = next_cell_id();
-                            satellite->player_id = cell->player_id;
-                            satellite->position.x = cell->position.x + dist_to_satellite * std::cos(satellite_id * angle_diff);
-                            satellite->position.y = cell->position.y + dist_to_satellite * std::sin(satellite_id * angle_diff);
-                            satellite->updateMass(mass_by_satellite, _parameters);
-
-                            _players[satellite->player_id]->nb_cells++;
-
-                            // todo: add new cells in the data structures
-                        }
-                    }
-
-                    viruses_to_delete.insert(virus);
-                    viruses_it.remove();
-                }
-            }
-
-            // The copy region ends here
-        } // end of nodes traversal towards leaves
-    }
-
-    // The first pass has been done.
-    // Let us recompute what should be done until stability is reached
-    did_something = true;
-    while (did_something)
-    {
-        did_something = false;
-
-        for (PlayerCell * cell : cells_to_delete)
-        {
-            _player_cells.remove(cell->id);
-            cell->responsible_node->player_cells.remove(cell->id);
-            cell->responsible_node_bbox->player_cells_bbox.remove(cell->id);
-            delete cell;
+            compute_pcells_collisions_inside_node(cell, node, pcells_to_recompute, pcells_to_delete, did_something);
+            compute_ncells_collisions_inside_node(cell, node, pcells_to_recompute, ncells_to_delete, did_something);
+            compute_viruses_collisions_inside_node(cell, node, pcells_to_recompute, pcells_to_create, viruses_to_delete, did_something);
         }
-        cells_to_delete.clear();
+    }
+}
 
-        // todo: delete neutral cells
-        // todo: delete viruses
+void CellGame::compute_pcells_collisions_inside_node(CellGame::PlayerCell * cell,
+                                                     CellGame::QuadTreeNode * node,
+                                                     QSet<CellGame::PlayerCell *> & pcells_to_recompute,
+                                                     QSet<CellGame::PlayerCell *> & pcells_to_delete,
+                                                     bool & did_something)
+{
+    // Let us check if "cell" collides with other player cells.
+    // To do so, let us iterate over the oth_pcells whose position is inside the current node
+    QMutableMapIterator<int, PlayerCell *> oth_pcell_it(node->player_cells);
+    while (oth_pcell_it.hasNext())
+    {
+        oth_pcell_it.next();
+        PlayerCell * oth_pcell = oth_pcell_it.value();
+        float dist = cell->squared_distance_to(oth_pcell);
 
-        QSet<PlayerCell *> cells = cells_to_recompute;
-        cells_to_recompute.clear();
-
-        for (PlayerCell * cell : cells)
+        // If oth_pcell is close enough to "cell" to be absorbed by it
+        if (dist < cell->radius_squared)
         {
-            // Let us check if the previous "cell" growth has caused it to be absorbed by a bigger pcell
-            QuadTreeNode * growth_node = cell->responsible_node_bbox;
-            bool current_cell_has_been_eaten = false;
-
-            // We will traverse nodes towards the root except if "cell" has already been eaten
-            while (growth_node != nullptr && !current_cell_has_been_eaten)
+            if (cell->player_id == oth_pcell->player_id)
             {
-                // Let us traverse all other pcells whose bbox is in the node (they might eat "cell")
-                for (PlayerCell * oth_pcell : growth_node->player_cells_bbox)
+                if ((cell->id != oth_pcell->id) &&
+                    (cell->remaining_isolated_turns == 0) &&
+                    (oth_pcell->remaining_isolated_turns == 0))
                 {
-                    float dist = oth_pcell->squared_distance_to(cell);
+                    // Two cells of the same player merge
+                    Position g = compute_barycenter(cell->position, cell->mass, oth_pcell->position, oth_pcell->mass);
+                    cell->position = g;
+                    cell->addMass(oth_pcell->mass, _parameters);
+                    pcells_to_recompute.insert(cell);
 
-                    // If the oth_pcell distance to "cell" may lead to "cell" being eaten
-                    if (dist < oth_pcell->radius_squared)
-                    {
-                        if (cell->player_id == oth_pcell->player_id)
-                        {
-                            if ((cell->id != oth_pcell->id) &&
-                                (cell->remaining_isolated_turns == 0) &&
-                                (oth_pcell->remaining_isolated_turns == 0))
-                            {
-                                // Two cells of the same player merge
-                                Position g = compute_barycenter(cell->position, cell->mass, oth_pcell->position, oth_pcell->mass);
-                                oth_pcell->position = g;
-                                oth_pcell->addMass(cell->mass, _parameters);
-                                cells_to_recompute.insert(oth_pcell);
+                    pcells_to_delete.insert(oth_pcell);
+                    oth_pcell->responsible_node_bbox->player_cells_bbox.remove(oth_pcell->id);
+                    oth_pcell_it.remove();
 
-                                current_cell_has_been_eaten = true;
-                                did_something  = true;
-                            }
-                        }
-                        else
-                        {
-                            if (oth_pcell->mass > _parameters.minimum_mass_ratio_to_absorb * cell->mass)
-                            {
-                                // oth_pcell absorbs "cell" (not belonging to the same player)
-                                Position g = compute_barycenter(cell->position, cell->mass, oth_pcell->position, oth_pcell->mass);
-                                oth_pcell->position = g;
-                                oth_pcell->addMass(cell->mass * _parameters.mass_absorption, _parameters);
-                                cells_to_recompute.insert(oth_pcell);
-
-                                did_something = true;
-                                current_cell_has_been_eaten = true;
-                            }
-                        }
-                    }
-
-                    // If the current cell has been eaten, let the oth_pcells traversal be stopped
-                    if (current_cell_has_been_eaten)
-                        break;
-                } // end of oth_pcells traversal inside current node
-
-                growth_node = growth_node->parent;
-            } // end of node traversal towards root
-
-            if (current_cell_has_been_eaten)
-            {
-                // If "cell" has been eaten, we can remove it from the maps now.
-                // (It could not have been done before because we were iterating over the maps)
-                cell->responsible_node->player_cells.remove(cell->id);
-                cell->responsible_node_bbox->player_cells_bbox.remove(cell->id);
-                cells_to_delete.insert(cell);
+                    did_something  = true;
+                }
             }
             else
             {
-                // We now know that "cell" has not been eaten by a larger cell.
-                // Let us now check if "cell" growth has caused it to eat a smaller cell.
+                if (cell->mass > _parameters.minimum_mass_ratio_to_absorb * oth_pcell->mass)
+                {
+                    // "cell" absorbs oth_pcell (not belonging to the same player)
+                    Position g = compute_barycenter(cell->position, cell->mass, oth_pcell->position, oth_pcell->mass);
+                    cell->position = g;
+                    cell->addMass(oth_pcell->mass * _parameters.mass_absorption, _parameters);
+                    pcells_to_recompute.insert(cell);
 
-                // The following code MUST be copy-pasted from the first pass to avoid errors!
-                // DO NOT REMOVE "BEFORE PASTE" and "AFTER PASTE" comments.
+                    pcells_to_delete.insert(oth_pcell);
+                    oth_pcell->responsible_node->player_cells_bbox.remove(oth_pcell->id);
+                    oth_pcell_it.remove();
 
-                // BEFORE PASTE
+                    did_something = true;
+                }
+            }
+        }
+    } // end of iteration through the player cells of the current node
+}
 
-                // AFTER PASTE
+void CellGame::compute_ncells_collisions_inside_node(CellGame::PlayerCell * cell,
+                                                     CellGame::QuadTreeNode * node,
+                                                     QSet<CellGame::PlayerCell *> & pcells_to_recompute,
+                                                     QSet<CellGame::NeutralCell *> & ncells_to_delete,
+                                                     bool & did_something)
+{
+    // Let us now check if "cell" collides with neutral cells.
+    // To do so, let us iterate over the ncells whose position is inside the current node
+    QMutableMapIterator<int, NeutralCell *> ncell_it(node->alive_neutral_cells);
+    while (ncell_it.hasNext())
+    {
+        ncell_it.next();
+        NeutralCell * ncell = ncell_it.value();
+
+        float dist = cell->squared_distance_to(ncell);
+
+        // If ncell is close enough to "cell" to be absorbed by it
+        if (dist < cell->radius_squared)
+        {
+            // The ncell is absorbed by "cell"
+            Position g = compute_barycenter(cell->position, cell->mass, ncell->position, ncell->mass);
+            cell->position = g;
+            cell->addMass(ncell->mass * _parameters.mass_absorption, _parameters);
+            pcells_to_recompute.insert(cell);
+            did_something = true;
+
+            if (ncell->is_initial)
+            {
+                ncell->remaining_turns_before_apparition = _parameters.neutral_cells_repop_time;
+                ncell_it.remove();
+            }
+            else
+            {
+                ncells_to_delete.insert(ncell);
+                ncell_it.remove();
+            }
+        }
+    }
+}
+
+void CellGame::compute_viruses_collisions_inside_node(CellGame::PlayerCell * cell,
+                                                      CellGame::QuadTreeNode * node,
+                                                      QSet<CellGame::PlayerCell *> & pcells_to_recompute,
+                                                      QSet<CellGame::PlayerCell *> & pcells_to_create,
+                                                      QSet<CellGame::Virus *> & viruses_to_delete,
+                                                      bool & did_something)
+{
+    // Let us now check if "cell" collides with viruses.
+    // To do so, let us iterate over the viruses whose position is inside the current node
+    QMutableMapIterator<int, Virus *> viruses_it(node->viruses);
+    while (viruses_it.hasNext())
+    {
+        viruses_it.next();
+        Virus * virus = viruses_it.value();
+
+        float dist = cell->squared_distance_to(virus);
+
+        if ((dist < cell->radius_squared) && (cell->mass > _parameters.virus_mass))
+        {
+            // The poor "cell" just ate a virus :(
+            // First, let the virus mass be removed from the poor "cell"
+            cell->removeMass(_parameters.virus_mass, _parameters);
+            float total_mass = cell->mass;
+            did_something = true;
+
+            // The central cell mass is divided by 2
+            cell->updateMass(total_mass / 2, _parameters);
+            pcells_to_recompute.insert(cell);
+
+            // The central cell might be surrounded by up to virus_max_split satellite cells
+            // but the total number of cells cannot exceed max_cells_per_player
+            const int nb_satellites = std::min(_parameters.virus_max_split, _parameters.max_cells_per_player - _players[cell->player_id]->nb_cells);
+            Q_ASSERT(_players[cell->player_id]->nb_cells + nb_satellites <= _parameters.max_cells_per_player);
+            Q_ASSERT(nb_satellites >= 0);
+
+            if (nb_satellites > 0)
+            {
+                // Let the satellite mass be computed
+                const float mass_by_satellite = total_mass / 2;
+
+                // Let the distance from cell.center to satellite.center be computed
+                const float dist_to_satellite = cell->radius + _parameters.compute_radius_from_mass(mass_by_satellite);
+
+                // Let the angle (in radians) between each satellite be computed
+                const float angle_diff = (2 * M_PI) / nb_satellites;
+
+                for (int satellite_id = 0; satellite_id < nb_satellites; ++satellite_id)
+                {
+                    PlayerCell * satellite = new PlayerCell;
+                    satellite->id = next_cell_id();
+                    satellite->player_id = cell->player_id;
+                    satellite->position.x = cell->position.x + dist_to_satellite * std::cos(satellite_id * angle_diff);
+                    satellite->position.y = cell->position.y + dist_to_satellite * std::sin(satellite_id * angle_diff);
+                    satellite->updateMass(mass_by_satellite, _parameters);
+
+                    _players[satellite->player_id]->nb_cells++;
+
+                    satellite->responsible_node = cell->responsible_node->find_responsible_node(satellite->position);
+                    satellite->responsible_node_bbox = cell->responsible_node_bbox->find_responsible_node(satellite->top_left, satellite->bottom_right);
+                    pcells_to_create.insert(satellite);
+                    pcells_to_recompute.insert(satellite);
+                }
             }
 
-
-            QQueue<QuadTreeNode *> node_queue;
-            node_queue.enqueue(cell->responsible_node);
-
-        } // end of traversal of nodes which have been modified the last round
+            viruses_to_delete.insert(virus);
+            viruses_it.remove();
+        }
     }
+}
+
+bool CellGame::compute_pcell_outer_collisions_inside_node(CellGame::PlayerCell * cell,
+                                                          CellGame::QuadTreeNode * node,
+                                                          QSet<CellGame::PlayerCell *> & pcells_to_recompute,
+                                                          bool & did_something)
+{
+    // Let us traverse all other pcells whose bbox is in the node (they might eat "cell")
+    for (PlayerCell * oth_pcell : node->player_cells_bbox)
+    {
+        float dist = oth_pcell->squared_distance_to(cell);
+
+        // If the oth_pcell distance to "cell" may lead to "cell" being eaten
+        if (dist < oth_pcell->radius_squared)
+        {
+            if (cell->player_id == oth_pcell->player_id)
+            {
+                if ((cell->id != oth_pcell->id) &&
+                    (cell->remaining_isolated_turns == 0) &&
+                    (oth_pcell->remaining_isolated_turns == 0))
+                {
+                    // Two cells of the same player merge
+                    Position g = compute_barycenter(cell->position, cell->mass, oth_pcell->position, oth_pcell->mass);
+                    oth_pcell->position = g;
+                    oth_pcell->addMass(cell->mass, _parameters);
+                    pcells_to_recompute.insert(oth_pcell);
+
+                    did_something = true;
+                    return true;
+                }
+            }
+            else
+            {
+                if (oth_pcell->mass > _parameters.minimum_mass_ratio_to_absorb * cell->mass)
+                {
+                    // oth_pcell absorbs "cell" (not belonging to the same player)
+                    Position g = compute_barycenter(cell->position, cell->mass, oth_pcell->position, oth_pcell->mass);
+                    oth_pcell->position = g;
+                    oth_pcell->addMass(cell->mass * _parameters.mass_absorption, _parameters);
+                    pcells_to_recompute.insert(oth_pcell);
+
+                    did_something = true;
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
 }
 
 void CellGame::make_player_reappear(CellGame::Player *player)

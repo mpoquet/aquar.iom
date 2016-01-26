@@ -219,6 +219,37 @@ private:
     void compute_cell_positions();
     void compute_cell_collisions();
 
+    void compute_first_collision_pass(QSet<PlayerCell *> & pcells_to_recompute,
+                                      QSet<PlayerCell *> & pcells_to_delete,
+                                      QSet<PlayerCell *> & pcells_to_create,
+                                      QSet<NeutralCell *> & ncells_to_delete,
+                                      QSet<Virus *> & viruses_to_delete,
+                                      bool & did_something);
+
+    void compute_pcells_collisions_inside_node(PlayerCell * cell,
+                                               QuadTreeNode * node,
+                                               QSet<PlayerCell *> & pcells_to_recompute,
+                                               QSet<PlayerCell *> & pcells_to_delete,
+                                               bool & did_something);
+
+    void compute_ncells_collisions_inside_node(PlayerCell * cell,
+                                               QuadTreeNode * node,
+                                               QSet<PlayerCell *> & pcells_to_recompute,
+                                               QSet<NeutralCell *> & ncells_to_delete,
+                                               bool & did_something);
+
+    void compute_viruses_collisions_inside_node(PlayerCell * cell,
+                                                QuadTreeNode * node,
+                                                QSet<PlayerCell *> & pcells_to_recompute,
+                                                QSet<PlayerCell *> & pcells_to_create,
+                                                QSet<Virus *> & viruses_to_delete,
+                                                bool & did_something);
+
+    bool compute_pcell_outer_collisions_inside_node(PlayerCell * cell,
+                                                    QuadTreeNode * node,
+                                                    QSet<PlayerCell *> & pcells_to_recompute,
+                                                    bool & did_something);
+
     void make_player_reappear(Player * player);
 
     int next_cell_id();
