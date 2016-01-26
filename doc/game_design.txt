@@ -90,8 +90,8 @@ Si A absorbe B alors :
     - B disparaît
 
 Soit A une cellule et V un virus.
-A peut franchir V librement si et seulement si (mA <= mV + 1).
-Sinon, si le centre de V est à l'intérieur du disque de A (et que mA > mV + 1), A explose :
+A peut franchir V librement si et seulement si (mA <= mV).
+Sinon, si le centre de V est à l'intérieur du disque de A (et que mA > mV), A explose :
     - En bref :
         - A est divisé en plusieurs cellules : une cellule centrale et différentes (jusqu'à 8) cellules orbitales.
         - L'explosion conduit à une perte de masse pour la cellule ayant rencontré le virus.
