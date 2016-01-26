@@ -86,7 +86,7 @@ class CellGame : public Game
         void addMass(float mass_increment, const GameParameters & parameters);
         void removeMass(float mass_decrement, const GameParameters & parameters);
 
-        void updateBBox();
+        void updateBBox(const GameParameters &parameters);
         void updateQuadtreeNodes();
 
         float squared_distance_to(const PlayerCell * oth_pcell) const;
@@ -274,7 +274,7 @@ private:
 
     QMap<int, NeutralCell *> _initial_neutral_cells;
     QMap<int, NeutralCell *> _alive_neutral_cells;
-    QVector<NeutralCell *> _dead_initial_neutral_cells; // sorted by ascending remaining_turns_before_apparition
+    QList<NeutralCell *> _dead_initial_neutral_cells;
 
     QMap<int, Virus *> _viruses;
     QMap<int, Player*> _players;

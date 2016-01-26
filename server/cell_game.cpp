@@ -277,7 +277,7 @@ void CellGame::compute_cell_moves()
                 cell->position.y = std::max(0.0f, std::min(move_vector.y() * cell->max_speed, _parameters.map_height));
             }
 
-            cell->updateBBox();
+            cell->updateBBox(_parameters);
             cell->updateQuadtreeNodes();
         }
 
@@ -337,17 +337,40 @@ void CellGame::compute_player_surrenders()
 
 void CellGame::compute_mass_loss()
 {
-    // todo
+    for (PlayerCell * cell : _player_cells)
+    {
+        cell->removeMass(cell->mass * _parameters.mass_loss_per_frame, _parameters);
+        cell->updateQuadtreeNodes();
+    }
 }
 
 void CellGame::update_pcells_remaining_isolated_turns()
 {
-    // todo
+    for (PlayerCell * cell : _player_cells)
+    {
+        if (cell->remaining_isolated_turns > 0)
+            cell->remaining_isolated_turns--;
+    }
 }
 
 void CellGame::update_dead_neutral_cells()
 {
-    // todo
+    QMutableListIterator<NeutralCell *> ncell_it(_dead_initial_neutral_cells);
+
+    while (ncell_it.hasNext())
+    {
+        ncell_it.next();
+        NeutralCell * ncell = ncell_it.value();
+
+        ncell->remaining_turns_before_apparition--;
+
+        if (ncell->remaining_turns_before_apparition == 0)
+        {
+            _alive_neutral_cells[ncell->id] = ncell;
+            ncell->responsible_node->alive_neutral_cells[ncell->id] = ncell;
+            ncell_it.remove();
+        }
+    }
 }
 
 void CellGame::compute_cell_collisions()
@@ -400,7 +423,7 @@ void CellGame::compute_cell_collisions()
 
         for (PlayerCell * cell : pcells)
         {
-            cell->updateBBox();
+            cell->updateBBox(_parameters);
             cell->updateQuadtreeNodes();
         }
 
@@ -597,11 +620,15 @@ void CellGame::compute_ncells_collisions_inside_node(CellGame::PlayerCell * cell
             if (ncell->is_initial)
             {
                 ncell->remaining_turns_before_apparition = _parameters.neutral_cells_repop_time;
+                Q_ASSERT(ncell->remaining_turns_before_apparition > 0);
+                _dead_initial_neutral_cells.append(ncell);
+                _alive_neutral_cells.remove(ncell->id);
                 ncell_it.remove();
             }
             else
             {
                 ncells_to_delete.insert(ncell);
+                _alive_neutral_cells.remove(ncell->id);
                 ncell_it.remove();
             }
         }
@@ -812,7 +839,7 @@ void CellGame::PlayerCell::updateMass(float new_mass, const CellGame::GameParame
     radius_squared = radius * radius;
     max_speed = parameters.compute_max_speed_from_mass(mass);
 
-    updateBBox();
+    updateBBox(parameters);
 }
 
 void CellGame::PlayerCell::addMass(float mass_increment, const CellGame::GameParameters &parameters)
@@ -825,7 +852,7 @@ void CellGame::PlayerCell::removeMass(float mass_decrement, const CellGame::Game
     updateMass(mass - mass_decrement, parameters);
 }
 
-void CellGame::PlayerCell::updateBBox()
+void CellGame::PlayerCell::updateBBox(const CellGame::GameParameters & parameters)
 {
     top_left.x = std::max(0.0f, position.x - radius);
     top_left.y = std::max(0.0f, position.y - radius);
