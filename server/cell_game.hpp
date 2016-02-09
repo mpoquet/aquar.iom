@@ -1,6 +1,8 @@
 #ifndef CELLGAME_HPP
 #define CELLGAME_HPP
 
+#include <QtGlobal>
+
 #include "game.hpp"
 
 class CellGame : public Game
@@ -30,28 +32,28 @@ class CellGame : public Game
         float minimum_pcell_mass; // The minimum allowed mass for a player cell
 
         float radius_factor; // cell_radius = radius_factor * cell_mass
-        unsigned int max_cells_per_player; // Each player cannot have more cells than this value
+        quint32 max_cells_per_player; // Each player cannot have more cells than this value
         float mass_loss_per_frame; // Every cell loses mass_loss_per_frame * cell_mass mass at each frame
 
         float base_cell_speed; // max_cell_speed = base_cell_speed - speed_loss_factor * cell_mass
         float speed_loss_factor;
 
-        unsigned int nb_neutral_cells_x;
-        unsigned int nb_neutral_cells_y;
-        unsigned int nb_neutral_cells; // TODO; compute it from the two above parameters product
+        quint32 nb_neutral_cells_x;
+        quint32 nb_neutral_cells_y;
+        quint32 nb_neutral_cells; // TODO; compute it from the two above parameters product
         float neutral_cells_mass;
-        unsigned int neutral_cells_repop_time; // An eaten cell takes neutral_cells_repop_time frames to reappear
+        quint32 neutral_cells_repop_time; // An eaten cell takes neutral_cells_repop_time frames to reappear
 
-        unsigned int max_viruses; // The number of viruses cannot exceed this value
+        quint32 max_viruses; // The number of viruses cannot exceed this value
         float virus_mass;
         float virus_creation_mass_loss; // To create a virus, the cell loses virus_creation_mass_loss * cell_mass + virus_mass units of mass
-        unsigned int virus_max_split;
+        quint32 virus_max_split;
 
-        unsigned int nb_starting_cells_per_player;
+        quint32 nb_starting_cells_per_player;
         float player_cells_starting_mass;
         QVector<Position> players_starting_positions;
 
-        unsigned int nb_starting_viruses;
+        quint32 nb_starting_viruses;
         QVector<Position> viruses_starting_positions;
 
     public:
@@ -62,8 +64,8 @@ class CellGame : public Game
     struct PlayerCell
     {
         // Primary attributes
-        int id;
-        int player_id;
+        quint32 id;
+        quint32 player_id;
         Position position;
         float mass;
 
@@ -75,7 +77,7 @@ class CellGame : public Game
         float radius_squared;
         float max_speed;
 
-        unsigned int remaining_isolated_turns;
+        quint32 remaining_isolated_turns;
 
         // Attributes related to the quadtree
         QuadTreeNode * responsible_node;
@@ -97,7 +99,7 @@ class CellGame : public Game
 
     struct NeutralCell
     {
-        int id;
+        quint32 id;
         float mass;
         Position position;
         bool is_initial; // There are two types of neutral cells: the initial ones and those obtained by a player surrender action
@@ -111,7 +113,7 @@ class CellGame : public Game
 
     struct Virus
     {
-        int id;
+        quint32 id;
         Position position;
         unsigned int turn_of_birth;
         QuadTreeNode * responsible_node;
@@ -119,47 +121,35 @@ class CellGame : public Game
 
     struct Player
     {
-        int id;
+        quint32 id;
         unsigned long long score;
-        unsigned int nb_cells;
+        quint32 nb_cells;
         bool moved_this_turn;
     };
 
-    enum CellType
-    {
-        NEUTRAL_CELL,
-        PLAYER_CELL,
-        VIRUS
-    };
-
-    struct IdTypeCell
-    {
-        int id;
-        CellType type;
-    };
 
     struct MoveAction
     {
-        int cell_id;
+        quint32 cell_id;
         Position desired_destination;
     };
 
     struct DivideAction
     {
-        int cell_id;
+        quint32 cell_id;
         Position desired_new_cell_destination;
         float new_cell_mass;
     };
 
     struct CreateVirusAction
     {
-        int cell_id;
+        quint32 cell_id;
         Position desired_virus_destination;
     };
 
     struct SurrenderAction
     {
-        int player_id;
+        quint32 player_id;
     };
 
     /** A QuadTreeNode represents a rectangular region.
@@ -209,8 +199,8 @@ public:
     ~CellGame();
 
 public slots:
-    void onPlayerMove(Client * client, int turn, const QByteArray & data) override;
-    void onVisuAck(Client * client, int turn, const QByteArray & data) override;
+    void onPlayerMove(Client * client, int turn, QByteArray & data) override;
+    void onVisuAck(Client * client, int turn, QByteArray & data) override;
 
 private slots:
     void onTurnEnd(); // Called on turn end
@@ -259,12 +249,12 @@ private:
 
     bool is_there_opponent_pcell_in_neighbourhood(const Position & position,
                                                   float radius,
-                                                  int player_id);
+                                                  quint32 player_id);
 
     void make_player_repop(Player * player);
     void make_player_pop(Player * player);
 
-    int next_cell_id();
+    quint32 next_cell_id();
     int compress_cell_ids();
 
     Position compute_barycenter(const Position & a, float cA, const Position & b, float cB);
@@ -279,7 +269,7 @@ private:
     QMap<int, Virus *> _viruses;
     QMap<int, Player*> _players;
 
-    int _next_cell_id = 0;
+    quint32 _next_cell_id = 0;
     int _current_turn = 0;
 
     QVector<MoveAction*> _move_actions;

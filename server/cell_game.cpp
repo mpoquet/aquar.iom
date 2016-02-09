@@ -3,6 +3,10 @@
 #include <QVector2D>
 #include <QQueue>
 
+#include <cmath>
+
+using namespace std;
+
 CellGame::CellGame()
 {
 
@@ -13,18 +17,183 @@ CellGame::~CellGame()
 
 }
 
-void CellGame::onPlayerMove(Client *client, int turn, const QByteArray &data)
+void CellGame::onPlayerMove(Client *client, int turn, QByteArray &data)
 {
+    (void) turn;
     int player_id = _playerClients.indexOf({client,true});
     Q_ASSERT(player_id != -1);
 
     Player * player = _players[player_id];
-    Q_ASSERT(player->id == player_id);
+    Q_ASSERT(player->id == (quint32)player_id);
 
-    // todo: fill actions data structures (and check their validity before adding any action)
+    // Message parsing
+    char * reader = data.data();
+    const char * data_end = reader + data.size();
+
+    // Reading move actions
+    if (reader + sizeof(quint32) > data_end)
+    {
+        emit wantToKick(client, "Invalid TURN_ACK GDC: cannot read nb_move_actions");
+        return;
+    }
+    quint32 nb_move_actions = *((quint32*)reader);
+    reader += sizeof(quint32);
+
+    if (reader + nb_move_actions * (sizeof(quint32) + sizeof(float)*2) > data_end)
+    {
+        emit wantToKick(client, "Invalid TURN_ACK GDC: cannot read move actions");
+        return;
+    }
+
+    for (quint32 i = 0; i < nb_move_actions; ++i)
+    {
+        MoveAction * move_action = new MoveAction;
+
+        move_action->cell_id = *((quint32*)reader);
+        reader += sizeof(quint32);
+        move_action->desired_destination.x = *((float*)reader);
+        reader += sizeof(float);
+        move_action->desired_destination.y = *((float*)reader);
+        reader += sizeof(float);
+
+        // If the pcell does not exist, the action is ignored
+        if (_player_cells.contains(move_action->cell_id))
+        {
+            PlayerCell * pcell = _player_cells[move_action->cell_id];
+            Q_ASSERT(pcell->id == move_action->cell_id);
+            // If the pcell does not belong to the client, the action is ignored
+            if (pcell->player_id != (quint32)player_id)
+                delete move_action;
+            else
+            {
+                // If the coordinates are not finite, the action is ignored
+                if (isfinite(move_action->desired_destination.x) &&
+                    isfinite(move_action->desired_destination.y))
+                    _move_actions.append(move_action);
+                else
+                    delete move_action;
+            }
+        }
+        else
+            delete move_action;
+    }
+
+    // Reading divide actions
+    if (reader + sizeof(quint32) > data_end)
+    {
+        emit wantToKick(client, "Invalid TURN_ACK GDC: cannot read nb_divide_actions");
+        return;
+    }
+
+    quint32 nb_divide_actions = *((quint32*)reader);
+    reader += sizeof(quint32);
+
+    if (reader + nb_divide_actions * (sizeof(quint32) + sizeof(float)*2 + sizeof(float)) > data_end)
+    {
+        emit wantToKick(client, "Invalid TURN_ACK GDC: cannot read divide actions");
+        return;
+    }
+
+    for (quint32 i = 0; i < nb_divide_actions; ++i)
+    {
+        DivideAction * divide_action = new DivideAction;
+
+        divide_action->cell_id = *((quint32*)reader);
+        reader += sizeof(quint32);
+        divide_action->desired_new_cell_destination.x = *((float*)reader);
+        reader += sizeof(float);
+        divide_action->desired_new_cell_destination.y = *((float*)reader);
+        reader += sizeof(float);
+        divide_action->new_cell_mass = *((float*)reader);
+        reader += sizeof(float);
+
+        // If the pcell does not exist, the action is ignored
+        if (_player_cells.contains(divide_action->cell_id))
+        {
+            PlayerCell * pcell = _player_cells[divide_action->cell_id];
+            Q_ASSERT(pcell->id == divide_action->cell_id);
+            // If the pcell does not belong to the client, the action is ignored
+            if (pcell->player_id != (quint32)player_id)
+                delete divide_action;
+            else
+            {
+                // If the coordinates are not finite, the action is ignored
+                if (isfinite(divide_action->desired_new_cell_destination.x) &&
+                    isfinite(divide_action->desired_new_cell_destination.y))
+                    _divide_actions.append(divide_action);
+                else
+                    delete divide_action;
+            }
+        }
+        else
+            delete divide_action;
+    }
+
+    // Reading create virus actions
+    if (reader + sizeof(quint32) > data_end)
+    {
+        emit wantToKick(client, "Invalid TURN_ACK GDC: cannot read nb_cvirus_actions");
+        return;
+    }
+
+    quint32 nb_cvirus_actions = *((quint32*)reader);
+    reader += sizeof(quint32);
+
+    if (reader + nb_cvirus_actions * (sizeof(quint32) + sizeof(float)*2) > data_end)
+    {
+        emit wantToKick(client, "Invalid TURN_ACK GDC: cannot read create virus actions");
+        return;
+    }
+
+    for (quint32 i = 0; i < nb_cvirus_actions; ++i)
+    {
+        CreateVirusAction * cvirus_action = new CreateVirusAction;
+
+        cvirus_action->cell_id = *((quint32*)reader);
+        reader += sizeof(quint32);
+        cvirus_action->desired_virus_destination.x = *((float*)reader);
+        reader += sizeof(float);
+        cvirus_action->desired_virus_destination.y = *((float*)reader);
+        reader += sizeof(float);
+
+        // If the pcell does not exist, the action is ignored
+        if (_player_cells.contains(cvirus_action->cell_id))
+        {
+            PlayerCell * pcell = _player_cells[cvirus_action->cell_id];
+            Q_ASSERT(pcell->id == cvirus_action->cell_id);
+            // If the pcell does not belong to the client, the action is ignored
+            if (pcell->player_id != (quint32)player_id)
+                delete cvirus_action;
+            else
+            {
+                // If the coordinates are not finite, the action is ignored
+                if (isfinite(cvirus_action->desired_virus_destination.x) &&
+                    isfinite(cvirus_action->desired_virus_destination.y))
+                    _create_virus_actions.append(cvirus_action);
+                else
+                    delete cvirus_action;
+            }
+        }
+        else
+            delete cvirus_action;
+    }
+
+    if (reader + sizeof(quint8) > data_end)
+    {
+        emit wantToKick(client, "Invalid TURN_ACK GDC: cannot read surrender boolean");
+        return;
+    }
+
+    quint8 surrender = *((quint8*)reader);
+    if (surrender == 1)
+    {
+        SurrenderAction * surrender_action = new SurrenderAction;
+        surrender_action->player_id = (quint32) player_id;
+        _surrender_actions.append(surrender_action);
+    }
 }
 
-void CellGame::onVisuAck(Client *client, int turn, const QByteArray &data)
+void CellGame::onVisuAck(Client *client, int turn, QByteArray &data)
 {
     // todo
 }
@@ -205,7 +374,7 @@ void CellGame::compute_virus_creations()
         {
             Q_ASSERT(_viruses.size() > 0);
 
-            int id_min = _viruses.first()->id;
+            quint32 id_min = _viruses.first()->id;
 
             for (Virus * virus : _viruses)
             {
@@ -756,7 +925,7 @@ bool CellGame::compute_pcell_outer_collisions_inside_node(CellGame::PlayerCell *
     return false;
 }
 
-bool CellGame::is_there_opponent_pcell_in_neighbourhood(const CellGame::Position &position, float radius, int player_id)
+bool CellGame::is_there_opponent_pcell_in_neighbourhood(const CellGame::Position &position, float radius, quint32 player_id)
 {
     Position top_left(position.x - radius, position.y - radius);
     Position bottom_right(position.x + radius, position.y + radius);
@@ -796,14 +965,17 @@ void CellGame::make_player_pop(CellGame::Player *player)
     // TODO
 }
 
-int CellGame::next_cell_id()
+quint32 CellGame::next_cell_id()
 {
-    int previous_cell_id = _next_cell_id;
-    int ret = _next_cell_id++;
+    quint32 previous_cell_id = _next_cell_id;
+    quint32 ret = _next_cell_id++;
 
     // If we met reach the maximum integer
     if (previous_cell_id > ret)
+    {
         compress_cell_ids();
+        // todo: find what should be returned
+    }
 
     return ret;
 }

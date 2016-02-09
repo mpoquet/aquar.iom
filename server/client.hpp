@@ -44,7 +44,7 @@ signals:
      * @brief This signal is emitted when a TURN_ACK message had been received
      * @param message The complete content of the message
      */
-    void messageTurnAckReceived(int turn, const QByteArray & message);
+    void messageTurnAckReceived(int turn, QByteArray & message);
 
     void disconnected(QTcpSocket * socket);
 

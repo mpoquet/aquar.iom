@@ -1,0 +1,62 @@
+Cell game: network protocol description
+
+0. Introduction
+    This protocol is part of metaprotocol described in protocol.txt
+
+1. Data types
+    name     meaning
+    --------------------------------------------------------------------
+    ui8      8-bit unsigned integer
+    ui32     32-bit unsigned integer (server native-endian)
+    ui64     64-bit unsigned integer (server native-endian)
+    float32  one 32-bit IEEE 754 single-precision binary floating-point (server native-endian)
+    pos      (x:float32, y:float32)
+    bool     (b:ui8). b=1 means true, b=0 means false
+
+2. GDC messages
+
+2.1 WELCOME
+    This message is sent from the server to the client just before the game is started.
+    (Just before GAME_STARTS). This message contains all the game parameters.
+
+    Content : (map_width:float32, map_height:float32, mass_absorption:float32,
+               minimum_mass_ratio_to_absorb:float32, minimum_pcell_mass:float32,
+               radius_factor:float32, max_cells_per_player:ui32; mass_loss_per_frame:float32,
+               base_cell_speed:float32, speed_loss_factor:float32,
+               virus_mass:float32, virus_creation_mass_loss:float32,
+               virus_max_split:ui32,
+               nb_starting_cells_per_player:ui32, player_cells_starting_mass:float,
+               neutral_cells_mass:float32, neutral_cells_repop_time:ui32,
+               Initial_neutral_cells)
+
+    Initial_neutral_cells: (nb_initial_ncells, (position:pos)*nb_initial_ncells)
+
+2.2 GAME_STARTS
+    This message is sent from the server to the client when the game is started.
+
+    Content: exactly the same as a TURN message.
+
+2.3 GAME_ENDS
+    This message is sent from the server to the client when the game is finished.
+
+    Content : (win_player_id:ui32, (player_id:ui32, score:ui64))
+
+2.4 TURN
+    This message is sent from the server to the client when a new turn starts.
+
+    Content: (Initial_neutral_cells, Viruses, Player_cells, Players)
+
+    Initial_neutral_cells: (nb_initial_cells:ui32, (remaining_turns_before_apparition:ui32)*nb_initial_cells)
+    Viruses: (nb_viruses:ui32, (virus_id:ui32, position:pos)*nb_viruses)
+    Player_cells: (nb_player_cells:ui32, (pcell_id:ui32, position:pos, player_id:ui32, mass:float32, remaining_isolated_turns:ui32)*nb_player_cells)
+    Players: (nb_players:ui32, (player_id:ui32, nb_pcells:ui32, score:ui64)*nb_players)
+
+2.5 TURN_ACK
+    This message contains the player actions of one turn.
+
+    Content: (Move_actions, Divide_actions, Create_virus_actions, Surrender_actions)
+
+    Move_actions: (nb_move_actions:ui32, (pcell_id:ui32, desired_position:pos)*nb_move_actions)
+    Divide_actions: (nb_divide_actions:ui32, (pcell_id:ui32, desired_new_pcell_position:pos, new_cell_mass:float32)*nb_divide_actions)
+    Create_virus_actions: (nb_cvirus_actions:ui32, (pcell_id:ui32, desired_virus_position:pos)*nb_cvirus_actions)
+    Surrender_actions: (surrender:bool)

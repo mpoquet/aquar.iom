@@ -37,8 +37,8 @@ public slots:
     virtual void onPlayerDisconnected(Client * client); // if overridden, this method must be called by the child method
     virtual void onVisuDisconnected(Client * client); // if overridden, this method must be called by the child method
 
-    virtual void onPlayerMove(Client * client, int turn, const QByteArray & data) = 0;
-    virtual void onVisuAck(Client * client, int turn, const QByteArray & data) = 0;
+    virtual void onPlayerMove(Client * client, int turn, QByteArray & data) = 0;
+    virtual void onVisuAck(Client * client, int turn, QByteArray & data) = 0;
 
     virtual void onStart() = 0;
     virtual void onPause() = 0;

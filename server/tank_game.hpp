@@ -92,8 +92,8 @@ public:
 signals:
 
 private slots:
-    virtual void onPlayerMove(Client * client, int turn, const QByteArray & data);
-    virtual void onVisuAck(Client * client, int turn, const QByteArray & data);
+    virtual void onPlayerMove(Client * client, int turn, QByteArray & data);
+    virtual void onVisuAck(Client * client, int turn, QByteArray & data);
 
     virtual void onStart();
     virtual void onPause();
