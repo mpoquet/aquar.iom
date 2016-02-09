@@ -38,9 +38,9 @@ class CellGame : public Game
         float base_cell_speed; // max_cell_speed = base_cell_speed - speed_loss_factor * cell_mass
         float speed_loss_factor;
 
-        quint32 nb_neutral_cells_x;
-        quint32 nb_neutral_cells_y;
-        quint32 nb_neutral_cells; // TODO; compute it from the two above parameters product
+        quint32 nb_initial_neutral_cells_x;
+        quint32 nb_initial_neutral_cells_y;
+        quint32 nb_initial_neutral_cells; // TODO; compute it from the two above parameters product
         float neutral_cells_mass;
         quint32 neutral_cells_repop_time; // An eaten cell takes neutral_cells_repop_time frames to reappear
 
@@ -103,7 +103,7 @@ class CellGame : public Game
         float mass;
         Position position;
         bool is_initial; // There are two types of neutral cells: the initial ones and those obtained by a player surrender action
-        unsigned int remaining_turns_before_apparition; // If an initial cell has been eaten, it disappears instantly then reappears at the same position after a certain number of turns
+        quint32 remaining_turns_before_apparition; // If an initial cell has been eaten, it disappears instantly then reappears at the same position after a certain number of turns
         QuadTreeNode * responsible_node;
 
         float radius;
@@ -122,7 +122,7 @@ class CellGame : public Game
     struct Player
     {
         quint32 id;
-        unsigned long long score;
+        quint64 score;
         quint32 nb_cells;
         bool moved_this_turn;
     };
@@ -258,6 +258,8 @@ private:
     int compress_cell_ids();
 
     Position compute_barycenter(const Position & a, float cA, const Position & b, float cB);
+
+    void send_turn_to_everyone();
 
 private:
     QMap<int, PlayerCell *> _player_cells;

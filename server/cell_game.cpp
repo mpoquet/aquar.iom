@@ -233,8 +233,7 @@ void CellGame::onTurnEnd()
     _surrender_actions.clear();
 
     ++_current_turn;
-
-    //todo : send the new map to everyone
+    send_turn_to_everyone();
 }
 
 void CellGame::compute_cell_divisions()
@@ -1231,4 +1230,162 @@ CellGame::Position CellGame::compute_barycenter(const Position & a, float cA, co
 
     return Position(a.x + c*dx,
                     a.y + c*dy);
+}
+
+void CellGame::send_turn_to_everyone()
+{
+    QByteArray qba, message;
+
+    // Append Initial_neutral_cells
+    qba.resize(sizeof(quint32));
+    (*(quint32*)qba.data()) = _parameters.nb_initial_neutral_cells;
+    message.append(qba);
+
+    QMapIterator<int, NeutralCell*> it_initial_ncells(_initial_neutral_cells);
+    while (it_initial_ncells.hasNext())
+    {
+        it_initial_ncells.next();
+
+        qba.resize(sizeof(quint32));
+        (*(quint32*)qba.data()) = it_initial_ncells.value()->remaining_turns_before_apparition;
+        message.append(qba);
+    }
+
+    // Append Non_initial_neutral_cells
+    QByteArray non_initial_ncells_qba;
+
+    QMapIterator<int, NeutralCell*> it_alive_ncells(_alive_neutral_cells);
+    while (it_alive_ncells.hasNext())
+    {
+        it_alive_ncells.next();
+        NeutralCell * ncell = it_alive_ncells.value();
+
+        if (!ncell->is_initial)
+        {
+            qba.resize(sizeof(quint32));
+            (*(quint32*)qba.data()) = ncell->id;
+            non_initial_ncells_qba.append(qba);
+
+            qba.resize(sizeof(float));
+            (*(float*)qba.data()) = ncell->mass;
+            non_initial_ncells_qba.append(qba);
+
+            qba.resize(sizeof(float));
+            (*(float*)qba.data()) = ncell->position.x;
+            non_initial_ncells_qba.append(qba);
+
+            qba.resize(sizeof(float));
+            (*(float*)qba.data()) = ncell->position.y;
+            non_initial_ncells_qba.append(qba);
+        }
+    }
+
+    quint32 nb_non_initial_ncells = non_initial_ncells_qba.size() / (sizeof(quint32) + sizeof(float) + sizeof(float)*2);
+
+    qba.resize(sizeof(quint32));
+    (*(quint32*)qba.data()) = nb_non_initial_ncells;
+    message.append(qba);
+    message.append(non_initial_ncells_qba);
+
+    // Append viruses
+    qba.resize(sizeof(quint32));
+    (*(quint32*)qba.data()) = _viruses.size();
+    message.append(qba);
+
+    QMapIterator<int, Virus*> it_viruses(_viruses);
+    while (it_viruses.hasNext())
+    {
+        it_viruses.next();
+        Virus * virus = it_viruses.value();
+
+        qba.resize(sizeof(quint32));
+        (*(quint32*)qba.data()) = virus->id;
+        message.append(qba);
+
+        qba.resize(sizeof(float));
+        (*(float*)qba.data()) = virus->position.x;
+        message.append(qba);
+
+        qba.resize(sizeof(float));
+        (*(float*)qba.data()) = virus->position.y;
+        message.append(qba);
+    }
+
+    // Append player cells
+    qba.resize(sizeof(quint32));
+    (*(quint32*)qba.data()) = _player_cells.size();
+    message.append(qba);
+
+    QMapIterator<int, PlayerCell*> it_pcells(_player_cells);
+    while (it_pcells.hasNext())
+    {
+        it_pcells.next();
+        PlayerCell * pcell = it_pcells.value();
+
+        qba.resize(sizeof(quint32));
+        (*(quint32*)qba.data()) = pcell->id;
+        message.append(qba);
+
+        qba.resize(sizeof(float));
+        (*(float*)qba.data()) = pcell->position.x;
+        message.append(qba);
+
+        qba.resize(sizeof(float));
+        (*(float*)qba.data()) = pcell->position.y;
+        message.append(qba);
+
+        qba.resize(sizeof(quint32));
+        (*(quint32*)qba.data()) = pcell->player_id;
+        message.append(qba);
+
+        qba.resize(sizeof(float));
+        (*(float*)qba.data()) = pcell->mass;
+        message.append(qba);
+    }
+
+    // Append players
+    qba.resize(sizeof(quint32));
+    (*(quint32*)qba.data()) = (quint32)_players.size();
+    message.append(qba);
+
+    QMapIterator<int, Player *> it_players(_players);
+    while (it_players.hasNext())
+    {
+        it_players.next();
+        Player * player = it_players.value();
+
+        qba.resize(sizeof(quint32));
+        (*(quint32*)qba.data()) = player->id;
+        message.append(qba);
+
+        qba.resize(sizeof(quint32));
+        (*(quint32*)qba.data()) = player->nb_cells;
+        message.append(qba);
+
+        qba.resize(sizeof(quint64));
+        (*(quint64*)qba.data()) = player->score;
+        message.append(qba);
+    }
+
+    // The message content is ready, let it be sent to every player & visu
+    for (const GameClient & client : _playerClients)
+    {
+        if (client.connected)
+            emit wantToSendTurn(client.client, _current_turn, message);
+    }
+
+    for (const GameClient & client : _visuClients)
+    {
+        if (client.connected)
+            emit wantToSendTurn(client.client, _current_turn, message);
+    }
+
+/*  Content: (Initial_neutral_cells, Non_initial_neutral_cells, Viruses, Player_cells, Players)
+
+    Initial_neutral_cells: (nb_initial_cells:ui32, (remaining_turns_before_apparition:ui32)*nb_initial_cells)
+    Non_initial_neutral_cells: (nb_non_initial_ncells:ui32, (ncell_id:ui32, mass:float32, position:pos)*nb_non_initial_ncells)
+    Viruses: (nb_viruses:ui32, (virus_id:ui32, position:pos)*nb_viruses)
+    Player_cells: (nb_player_cells:ui32, (pcell_id:ui32, position:pos, player_id:ui32, mass:float32, remaining_isolated_turns:ui32)*nb_player_cells)
+    Players: (nb_players:ui32, (player_id:ui32, nb_pcells:ui32, score:ui64)*nb_players)
+*/
 }

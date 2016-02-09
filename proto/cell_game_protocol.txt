@@ -44,9 +44,10 @@ Cell game: network protocol description
 2.4 TURN
     This message is sent from the server to the client when a new turn starts.
 
-    Content: (Initial_neutral_cells, Viruses, Player_cells, Players)
+    Content: (Initial_neutral_cells, Non_initial_neutral_cells, Viruses, Player_cells, Players)
 
     Initial_neutral_cells: (nb_initial_cells:ui32, (remaining_turns_before_apparition:ui32)*nb_initial_cells)
+    Non_initial_neutral_cells: (nb_non_initial_ncells:ui32, (ncell_id:ui32, mass:float32, position:pos)*nb_non_initial_ncells)
     Viruses: (nb_viruses:ui32, (virus_id:ui32, position:pos)*nb_viruses)
     Player_cells: (nb_player_cells:ui32, (pcell_id:ui32, position:pos, player_id:ui32, mass:float32, remaining_isolated_turns:ui32)*nb_player_cells)
     Players: (nb_players:ui32, (player_id:ui32, nb_pcells:ui32, score:ui64)*nb_players)

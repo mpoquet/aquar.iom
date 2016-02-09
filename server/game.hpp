@@ -29,7 +29,7 @@ signals:
     void wantToSendWelcome(Client * client, const QByteArray & data);
     void wantToSendGameStarts(Client * client, const QByteArray & data);
     void wantToSendGameEnds(Client * client, const QByteArray & data);
-    void wantToSendTurn(Client * client, const QByteArray & data);
+    void wantToSendTurn(Client * client, int turn, const QByteArray & data);
 
 public slots:
     virtual void onPlayerConnected(Client * client); // if overridden, this method must be called by the child method
