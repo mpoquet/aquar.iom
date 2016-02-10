@@ -50,7 +50,7 @@ Cell game: network protocol description
     Non_initial_neutral_cells: (nb_non_initial_ncells:ui32, (ncell_id:ui32, mass:float32, position:pos)*nb_non_initial_ncells)
     Viruses: (nb_viruses:ui32, (virus_id:ui32, position:pos)*nb_viruses)
     Player_cells: (nb_player_cells:ui32, (pcell_id:ui32, position:pos, player_id:ui32, mass:float32, remaining_isolated_turns:ui32)*nb_player_cells)
-    Players: (nb_players:ui32, (player_id:ui32, nb_pcells:ui32, score:ui64)*nb_players)
+    Players: (nb_players:ui32, (player_id:ui32, nb_pcells:ui32, mass:float32, score:ui64)*nb_players)
 
 2.5 TURN_ACK
     This message contains the player actions of one turn.

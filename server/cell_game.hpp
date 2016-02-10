@@ -2,6 +2,7 @@
 #define CELLGAME_HPP
 
 #include <QtGlobal>
+#include <QTimer>
 
 #include "game.hpp"
 
@@ -124,6 +125,7 @@ class CellGame : public Game
         quint32 id;
         quint64 score;
         quint32 nb_cells;
+        float mass;
         bool moved_this_turn;
     };
 
@@ -202,6 +204,12 @@ public slots:
     void onPlayerMove(Client * client, int turn, QByteArray & data) override;
     void onVisuAck(Client * client, int turn, QByteArray & data) override;
 
+    void onStart() override;
+    void onPause() override;
+    void onResume() override;
+    void onStop() override;
+    void onTurnTimerChanged(quint32 ms) override;
+
 private slots:
     void onTurnEnd(); // Called on turn end
 
@@ -273,6 +281,10 @@ private:
 
     quint32 _next_cell_id = 0;
     int _current_turn = 0;
+
+    bool _parameters_loaded = false;
+
+    QTimer _timer;
 
     QVector<MoveAction*> _move_actions;
     QVector<DivideAction*> _divide_actions;

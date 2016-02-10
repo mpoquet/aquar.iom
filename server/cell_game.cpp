@@ -195,7 +195,52 @@ void CellGame::onPlayerMove(Client *client, int turn, QByteArray &data)
 
 void CellGame::onVisuAck(Client *client, int turn, QByteArray &data)
 {
-    // todo
+    (void) client;
+    (void) turn;
+    (void) data;
+}
+
+void CellGame::onStart()
+{
+    if (_isRunning)
+    {
+        emit message("Cannot start game: it is already running...");
+        return;
+    }
+
+    if (_playerClients.size() < 2)
+    {
+        emit message("Cannot start game: there must be at least 2 connected players");
+        return;
+    }
+
+    if (!_parameters_loaded)
+    {
+        emit message("Cannot start game: parameters have not been loaded");
+        return;
+    }
+
+    _isRunning = true;
+}
+
+void CellGame::onPause()
+{
+    emit message("Pausing this game is not implemented yet :)");
+}
+
+void CellGame::onResume()
+{
+    emit message("Resuming this game is not implemented yet :)");
+}
+
+void CellGame::onStop()
+{
+    emit message("Stopping this game is not implemented yet :)");
+}
+
+void CellGame::onTurnTimerChanged(quint32 ms)
+{
+    _timer.setInterval(ms);
 }
 
 void CellGame::onTurnEnd()
@@ -1360,6 +1405,10 @@ void CellGame::send_turn_to_everyone()
 
         qba.resize(sizeof(quint32));
         (*(quint32*)qba.data()) = player->nb_cells;
+        message.append(qba);
+
+        qba.resize(sizeof(float));
+        (*(float*)qba.data()) = player->mass;
         message.append(qba);
 
         qba.resize(sizeof(quint64));
