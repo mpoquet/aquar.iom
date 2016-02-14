@@ -2,6 +2,13 @@
 
 #include <QVector2D>
 #include <QQueue>
+#include <QFile>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonValue>
+#include <QJsonArray>
+#include <QString>
+#include <QStringList>
 
 #include <cmath>
 
@@ -214,7 +221,7 @@ void CellGame::onStart()
         return;
     }
 
-    if (!_parameters_loaded)
+    if (!_parameters.is_loaded)
     {
         emit message("Cannot start game: parameters have not been loaded");
         return;
@@ -293,14 +300,14 @@ void CellGame::compute_cell_divisions()
         Player * player = _players[cell->player_id];
 
         // If the new cell mass is too low, the action is ignored
-        if (action->new_cell_mass < _parameters.minimum_pcell_mass)
+        if (action->new_cell_mass < _parameters.minimum_player_cell_mass)
         {
             delete action;
             continue;
         }
 
         // If the cell is not big enough to be split, the action is ignored
-        if (cell->mass < _parameters.minimum_pcell_mass * 2)
+        if (cell->mass < _parameters.minimum_player_cell_mass * 2)
         {
             delete action;
             continue;
@@ -832,7 +839,7 @@ void CellGame::compute_ncells_collisions_inside_node(CellGame::PlayerCell * cell
 
             if (ncell->is_initial)
             {
-                ncell->remaining_turns_before_apparition = _parameters.neutral_cells_repop_time;
+                ncell->remaining_turns_before_apparition = _parameters.initial_neutral_cells_repop_time;
                 Q_ASSERT(ncell->remaining_turns_before_apparition > 0);
                 _dead_initial_neutral_cells.append(ncell);
                 _alive_neutral_cells.remove(ncell->id);
@@ -874,7 +881,7 @@ void CellGame::compute_viruses_collisions_inside_node(CellGame::PlayerCell * cel
             did_something = true;
 
             // The central cell mass is divided by 2
-            Q_ASSERT(total_mass / 2 >= _parameters.minimum_pcell_mass);
+            Q_ASSERT(total_mass / 2 >= _parameters.minimum_player_cell_mass);
             cell->updateMass(total_mass / 2, _parameters);
             pcells_to_recompute.insert(cell);
 
@@ -888,7 +895,7 @@ void CellGame::compute_viruses_collisions_inside_node(CellGame::PlayerCell * cel
             {
                 // Let the satellite mass be computed
                 const float mass_by_satellite = total_mass / 2;
-                Q_ASSERT(mass_by_satellite >= _parameters.minimum_pcell_mass);
+                Q_ASSERT(mass_by_satellite >= _parameters.minimum_player_cell_mass);
 
                 // Let the distance from cell.center to satellite.center be computed
                 const float dist_to_satellite = cell->radius + _parameters.compute_radius_from_mass(mass_by_satellite);
@@ -995,9 +1002,365 @@ bool CellGame::is_there_opponent_pcell_in_neighbourhood(const CellGame::Position
     return false;
 }
 
+void CellGame::load_parameters(const QString &filename)
+{
+    if (_isRunning)
+    {
+        emit message("Cannot change game parameters while the game is running");
+        return;
+    }
+
+    _parameters.clear();
+
+    QFile file(filename);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        emit message("Cannot open file " + filename);
+        return;
+    }
+
+    QString file_content = file.readAll();
+    file.close();
+
+    QJsonDocument doc = QJsonDocument::fromJson(file_content.toUtf8());
+
+    if (!doc.isObject())
+    {
+        emit message(QString("Invalid file '%1': not a JSON object"));
+        return;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    if (!doc.object().contains("map_width")) {
+        emit message(QString("Invalid file '%1': the root object does not contain the 'map_width' key").arg(filename));
+        return;
+    }
+    else if (!doc.object()["map_width"].isDouble()) {
+        emit message(QString("Invalid file '%1': the value associated to key 'map_width' is not a number").arg(filename));
+        return;
+    }
+    _parameters.map_width = doc.object()["map_width"].toDouble();
+
+    if (!doc.object().contains("map_height")) {
+        emit message(QString("Invalid file '%1': the root object does not contain the 'map_height' key").arg(filename));
+        return;
+    }
+    else if (!doc.object()["map_height"].isDouble()) {
+        emit message(QString("Invalid file '%1': the value associated to key 'map_height' is not a number").arg(filename));
+        return;
+    }
+    _parameters.map_height = doc.object()["map_height"].toDouble();
+
+    if (!doc.object().contains("min_nb_players")) {
+        emit message(QString("Invalid file '%1': the root object does not contain the 'min_nb_players' key").arg(filename));
+        return;
+    }
+    else if (!doc.object()["min_nb_players"].isDouble()) {
+        emit message(QString("Invalid file '%1': the value associated to key 'min_nb_players' is not a number").arg(filename));
+        return;
+    }
+    _parameters.min_nb_players = doc.object()["min_nb_players"].toInt();
+
+    if (!doc.object().contains("max_nb_players")) {
+        emit message(QString("Invalid file '%1': the root object does not contain the 'max_nb_players' key").arg(filename));
+        return;
+    }
+    else if (!doc.object()["max_nb_players"].isDouble()) {
+        emit message(QString("Invalid file '%1': the value associated to key 'max_nb_players' is not a number").arg(filename));
+        return;
+    }
+    _parameters.max_nb_players = doc.object()["max_nb_players"].toInt();
+
+    if (!doc.object().contains("nb_starting_cells_per_player")) {
+        emit message(QString("Invalid file '%1': the root object does not contain the 'nb_starting_cells_per_player' key").arg(filename));
+        return;
+    }
+    else if (!doc.object()["nb_starting_cells_per_player"].isDouble()) {
+        emit message(QString("Invalid file '%1': the value associated to key 'nb_starting_cells_per_player' is not a number").arg(filename));
+        return;
+    }
+    _parameters.nb_starting_cells_per_player = doc.object()["nb_starting_cells_per_player"].toInt();
+
+    if (!doc.object().contains("players_starting_positions")) {
+        emit message(QString("Invalid file '%1': the root object does not contain the 'players_starting_positions' key").arg(filename));
+        return;
+    }
+    else if (!doc.object()["players_starting_positions"].isArray()) {
+        emit message(QString("Invalid file '%1': the value associated to key 'players_starting_positions' is not an array").arg(filename));
+        return;
+    }
+    QJsonArray array_ps_positions = doc.object()["players_starting_positions"].toArray();
+    _parameters.players_starting_positions.resize(array_ps_positions.size());
+    for (int i = 0; i < array_ps_positions.size(); ++i)
+    {
+        if (!array_ps_positions[i].isArray()) {
+            emit message(QString("Invalid file '%1': the 'players_starting_positions' array subelements must be arrays of size 2 but value %2 isn't").arg(filename, i));
+            return;
+        }
+        QJsonArray subarray = array_ps_positions[i].toArray();
+        if (subarray.size() != 2) {
+            emit message(QString("Invalid file '%1': the 'players_starting_positions' array subelements must be arrays of size 2 but value %2 isn't").arg(filename, i));
+            return;
+        }
+        QJsonValue posx = subarray[0];
+        QJsonValue posy = subarray[1];
+
+        if (!posx.isDouble() || !posy.isDouble()) {
+            emit message(QString("Invalid file '%1': the 'players_starting_positions' array subelements must be arrays of size 2 of double values but the values of subarray %2 are not doubles").arg(filename, i));
+            return;
+        }
+
+        _parameters.players_starting_positions[i].x = posx.toDouble();
+        _parameters.players_starting_positions[i].y = posy.toDouble();
+    }
+
+    if (!doc.object().contains("mass_absorption")) {
+        emit message(QString("Invalid file '%1': the root object does not contain the 'mass_absorption' key").arg(filename));
+        return;
+    }
+    else if (!doc.object()["mass_absorption"].isDouble()) {
+        emit message(QString("Invalid file '%1': the value associated to key 'mass_absorption' is not a number").arg(filename));
+        return;
+    }
+    _parameters.mass_absorption = doc.object()["mass_absorption"].toDouble();
+
+    if (!doc.object().contains("minimum_mass_ratio_to_absorb")) {
+        emit message(QString("Invalid file '%1': the root object does not contain the 'minimum_mass_ratio_to_absorb' key").arg(filename));
+        return;
+    }
+    else if (!doc.object()["minimum_mass_ratio_to_absorb"].isDouble()) {
+        emit message(QString("Invalid file '%1': the value associated to key 'minimum_mass_ratio_to_absorb' is not a number").arg(filename));
+        return;
+    }
+    _parameters.minimum_mass_ratio_to_absorb = doc.object()["minimum_mass_ratio_to_absorb"].toDouble();
+
+    if (!doc.object().contains("radius_factor")) {
+        emit message(QString("Invalid file '%1': the root object does not contain the 'radius_factor' key").arg(filename));
+        return;
+    }
+    else if (!doc.object()["radius_factor"].isDouble()) {
+        emit message(QString("Invalid file '%1': the value associated to key 'radius_factor' is not a number").arg(filename));
+        return;
+    }
+    _parameters.radius_factor = doc.object()["radius_factor"].toDouble();
+
+    if (!doc.object().contains("player_cells_starting_mass")) {
+        emit message(QString("Invalid file '%1': the root object does not contain the 'player_cells_starting_mass' key").arg(filename));
+        return;
+    }
+    else if (!doc.object()["player_cells_starting_mass"].isDouble()) {
+        emit message(QString("Invalid file '%1': the value associated to key 'player_cells_starting_mass' is not a number").arg(filename));
+        return;
+    }
+    _parameters.player_cells_starting_mass = doc.object()["player_cells_starting_mass"].toDouble();
+
+    if (!doc.object().contains("max_cells_per_player")) {
+        emit message(QString("Invalid file '%1': the root object does not contain the 'max_cells_per_player' key").arg(filename));
+        return;
+    }
+    else if (!doc.object()["max_cells_per_player"].isDouble()) {
+        emit message(QString("Invalid file '%1': the value associated to key 'max_cells_per_player' is not a number").arg(filename));
+        return;
+    }
+    _parameters.max_cells_per_player = doc.object()["max_cells_per_player"].toInt();
+
+    if (!doc.object().contains("mass_loss_per_frame")) {
+        emit message(QString("Invalid file '%1': the root object does not contain the 'mass_loss_per_frame' key").arg(filename));
+        return;
+    }
+    else if (!doc.object()["mass_loss_per_frame"].isDouble()) {
+        emit message(QString("Invalid file '%1': the value associated to key 'mass_loss_per_frame' is not a number").arg(filename));
+        return;
+    }
+    _parameters.mass_loss_per_frame = doc.object()["mass_loss_per_frame"].toDouble();
+
+    if (!doc.object().contains("base_cell_speed")) {
+        emit message(QString("Invalid file '%1': the root object does not contain the 'base_cell_speed' key").arg(filename));
+        return;
+    }
+    else if (!doc.object()["base_cell_speed"].isDouble()) {
+        emit message(QString("Invalid file '%1': the value associated to key 'base_cell_speed' is not a number").arg(filename));
+        return;
+    }
+    _parameters.base_cell_speed = doc.object()["base_cell_speed"].toDouble();
+
+    if (!doc.object().contains("speed_loss_factor")) {
+        emit message(QString("Invalid file '%1': the root object does not contain the 'speed_loss_factor' key").arg(filename));
+        return;
+    }
+    else if (!doc.object()["speed_loss_factor"].isDouble()) {
+        emit message(QString("Invalid file '%1': the value associated to key 'speed_loss_factor' is not a number").arg(filename));
+        return;
+    }
+    _parameters.speed_loss_factor = doc.object()["speed_loss_factor"].toDouble();
+
+    if (!doc.object().contains("minimum_player_cell_mass")) {
+        emit message(QString("Invalid file '%1': the root object does not contain the 'minimum_player_cell_mass' key").arg(filename));
+        return;
+    }
+    else if (!doc.object()["minimum_player_cell_mass"].isDouble()) {
+        emit message(QString("Invalid file '%1': the value associated to key 'minimum_player_cell_mass' is not a number").arg(filename));
+        return;
+    }
+    _parameters.minimum_player_cell_mass = doc.object()["minimum_player_cell_mass"].toDouble();
+
+    if (!doc.object().contains("initial_neutral_cells_matrix_width")) {
+        emit message(QString("Invalid file '%1': the root object does not contain the 'initial_neutral_cells_matrix_width' key").arg(filename));
+        return;
+    }
+    else if (!doc.object()["initial_neutral_cells_matrix_width"].isDouble()) {
+        emit message(QString("Invalid file '%1': the value associated to key 'initial_neutral_cells_matrix_width' is not a number").arg(filename));
+        return;
+    }
+    _parameters.initial_neutral_cells_matrix_width = doc.object()["initial_neutral_cells_matrix_width"].toInt();
+
+    if (!doc.object().contains("initial_neutral_cells_matrix_height")) {
+        emit message(QString("Invalid file '%1': the root object does not contain the 'initial_neutral_cells_matrix_height' key").arg(filename));
+        return;
+    }
+    else if (!doc.object()["initial_neutral_cells_matrix_height"].isDouble()) {
+        emit message(QString("Invalid file '%1': the value associated to key 'initial_neutral_cells_matrix_height' is not a number").arg(filename));
+        return;
+    }
+    _parameters.initial_neutral_cells_matrix_height = doc.object()["initial_neutral_cells_matrix_height"].toInt();
+
+    if (!doc.object().contains("initial_neutral_cells_mass")) {
+        emit message(QString("Invalid file '%1': the root object does not contain the 'initial_neutral_cells_mass' key").arg(filename));
+        return;
+    }
+    else if (!doc.object()["initial_neutral_cells_mass"].isDouble()) {
+        emit message(QString("Invalid file '%1': the value associated to key 'initial_neutral_cells_mass' is not a number").arg(filename));
+        return;
+    }
+    _parameters.initial_neutral_cells_mass = doc.object()["initial_neutral_cells_mass"].toDouble();
+
+    if (!doc.object().contains("initial_neutral_cells_repop_time")) {
+        emit message(QString("Invalid file '%1': the root object does not contain the 'initial_neutral_cells_repop_time' key").arg(filename));
+        return;
+    }
+    else if (!doc.object()["initial_neutral_cells_repop_time"].isDouble()) {
+        emit message(QString("Invalid file '%1': the value associated to key 'initial_neutral_cells_repop_time' is not a number").arg(filename));
+        return;
+    }
+    _parameters.initial_neutral_cells_repop_time = doc.object()["initial_neutral_cells_repop_time"].toInt();
+
+    if (!doc.object().contains("max_viruses")) {
+        emit message(QString("Invalid file '%1': the root object does not contain the 'max_viruses' key").arg(filename));
+        return;
+    }
+    else if (!doc.object()["max_viruses"].isDouble()) {
+        emit message(QString("Invalid file '%1': the value associated to key 'max_viruses' is not a number").arg(filename));
+        return;
+    }
+    _parameters.max_viruses = doc.object()["max_viruses"].toInt();
+
+    if (!doc.object().contains("virus_mass")) {
+        emit message(QString("Invalid file '%1': the root object does not contain the 'virus_mass' key").arg(filename));
+        return;
+    }
+    else if (!doc.object()["virus_mass"].isDouble()) {
+        emit message(QString("Invalid file '%1': the value associated to key 'virus_mass' is not a number").arg(filename));
+        return;
+    }
+    _parameters.virus_mass = doc.object()["virus_mass"].toDouble();
+
+    if (!doc.object().contains("virus_creation_mass_loss")) {
+        emit message(QString("Invalid file '%1': the root object does not contain the 'virus_creation_mass_loss' key").arg(filename));
+        return;
+    }
+    else if (!doc.object()["virus_creation_mass_loss"].isDouble()) {
+        emit message(QString("Invalid file '%1': the value associated to key 'virus_creation_mass_loss' is not a number").arg(filename));
+        return;
+    }
+    _parameters.virus_creation_mass_loss = doc.object()["virus_creation_mass_loss"].toDouble();
+
+    if (!doc.object().contains("virus_max_split")) {
+        emit message(QString("Invalid file '%1': the root object does not contain the 'virus_max_split' key").arg(filename));
+        return;
+    }
+    else if (!doc.object()["virus_max_split"].isDouble()) {
+        emit message(QString("Invalid file '%1': the value associated to key 'virus_max_split' is not a number").arg(filename));
+        return;
+    }
+    _parameters.virus_max_split = doc.object()["virus_max_split"].toInt();
+
+    if (!doc.object().contains("viruses_starting_positions")) {
+        emit message(QString("Invalid file '%1': the root object does not contain the 'viruses_starting_positions' key").arg(filename));
+        return;
+    }
+    else if (!doc.object()["viruses_starting_positions"].isArray()) {
+        emit message(QString("Invalid file '%1': the value associated to key 'viruses_starting_positions' is not an array").arg(filename));
+        return;
+    }
+    // tofix _parameters.viruses_starting_positions = doc.object()["viruses_starting_positions"].toDouble();
+    QJsonArray array_vs_positions = doc.object()["viruses_starting_positions"].toArray();
+    _parameters.viruses_starting_positions.resize(array_vs_positions.size());
+    for (int i = 0; i < array_vs_positions.size(); ++i)
+    {
+        if (!array_vs_positions[i].isArray()) {
+            emit message(QString("Invalid file '%1': the 'viruses_starting_positions' array subelements must be arrays of size 2 but value %2 isn't").arg(filename, i));
+            return;
+        }
+        QJsonArray subarray = array_vs_positions[i].toArray();
+        if (subarray.size() != 2) {
+            emit message(QString("Invalid file '%1': the 'viruses_starting_positions' array subelements must be arrays of size 2 but value %2 isn't").arg(filename, i));
+            return;
+        }
+        QJsonValue posx = subarray[0];
+        QJsonValue posy = subarray[1];
+
+        if (!posx.isDouble() || !posy.isDouble()) {
+            emit message(QString("Invalid file '%1': the 'viruses_starting_positions' array subelements must be arrays of size 2 of double values but the values of subarray %2 are not doubles").arg(filename, i));
+            return;
+        }
+
+        _parameters.viruses_starting_positions[i].x = posx.toDouble();
+        _parameters.viruses_starting_positions[i].y = posy.toDouble();
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    QString reason;
+    if (!_parameters.is_valid(reason))
+    {
+        emit message(QString("The set of parameters given in file '%1' is invalid:\n%2").arg(filename, reason));
+        return;
+    }
+
+    _parameters.nb_initial_neutral_cells = _parameters.initial_neutral_cells_matrix_width *
+                                           _parameters.initial_neutral_cells_matrix_height;
+    _parameters.is_loaded = true;
+
+
+}
+
 void CellGame::make_player_repop(CellGame::Player *player)
 {
-
+    // todo
 }
 
 void CellGame::make_player_pop(CellGame::Player *player)
@@ -1049,7 +1412,7 @@ int CellGame::compress_cell_ids()
 
 void CellGame::PlayerCell::updateMass(float new_mass, const CellGame::GameParameters &parameters)
 {
-    mass = std::max(new_mass, parameters.minimum_pcell_mass);
+    mass = std::max(new_mass, parameters.minimum_player_cell_mass);
 
     radius = parameters.compute_radius_from_mass(mass);
     radius_squared = radius * radius;
@@ -1106,6 +1469,225 @@ float CellGame::PlayerCell::squared_distance_to(const CellGame::Position &pos) c
     float dx = this->position.x - pos.x;
     float dy = this->position.y - pos.y;
     return dx*dx + dy*dy;
+}
+
+void CellGame::GameParameters::clear()
+{
+    is_loaded = false;
+
+    map_width = -1;
+    map_height = -1;
+
+    mass_absorption = -1;
+    minimum_mass_ratio_to_absorb = -1;
+    minimum_player_cell_mass = -1;
+
+    radius_factor = -1;
+    max_cells_per_player = -1;
+    mass_loss_per_frame = -1;
+
+    base_cell_speed = -1;
+    speed_loss_factor = -1;
+
+    initial_neutral_cells_matrix_width = -1;
+    initial_neutral_cells_matrix_height = -1;
+    nb_initial_neutral_cells = -1;
+    initial_neutral_cells_mass = -1;
+    initial_neutral_cells_repop_time = -1;
+
+    max_viruses = -1;
+    virus_mass = -1;
+    virus_creation_mass_loss = -1;
+    virus_max_split = -1;
+
+    min_nb_players = -1;
+    max_nb_players = -1;
+    nb_starting_cells_per_player = -1;
+    player_cells_starting_mass = -1;
+    players_starting_positions.clear();
+
+    viruses_starting_positions.clear();
+}
+
+bool CellGame::GameParameters::is_valid(QString &invalidity_reason) const
+{
+    bool ret = true;
+
+    if (map_width <= 0)
+    {
+        ret = false;
+        invalidity_reason += "map_width must be > 0\n";
+    }
+
+    if (map_height <= 0)
+    {
+        ret = false;
+        invalidity_reason += "map_height must be > 0\n";
+    }
+
+    if (mass_absorption <= 0 || mass_absorption > 2)
+    {
+        ret = false;
+        invalidity_reason += "mass_absorption must be in ]0,2]\n";
+    }
+
+    if (minimum_mass_ratio_to_absorb <= 1 || minimum_mass_ratio_to_absorb > 3)
+    {
+        ret = false;
+        invalidity_reason += "minimum_mass_ratio_to_absorb must be in ]1,3]\n";
+    }
+
+    if (radius_factor <= 0 || radius_factor > 2)
+    {
+        ret = false;
+        invalidity_reason += "radius_factor must be in ]0,2]\n";
+    }
+
+    if (max_cells_per_player < 1)
+    {
+        ret = false;
+        invalidity_reason += "max_cells_per_player must be greater than or equal to 1\n";
+    }
+
+    if (mass_loss_per_frame < 0 || mass_loss_per_frame >= 1)
+    {
+        ret = false;
+        invalidity_reason += "mass_loss_per_frame must be in [0,1[\n";
+    }
+
+    if (base_cell_speed <= 0 || base_cell_speed > 1000)
+    {
+        ret = false;
+        invalidity_reason += "base_cell_speed must be in ]0,1000]\n";
+    }
+
+    if (speed_loss_factor < 0 || speed_loss_factor > 100)
+    {
+        ret = false;
+        invalidity_reason += "speed_loss_factor must be in [0,100]\n";
+    }
+
+    if (initial_neutral_cells_matrix_width < 1)
+    {
+        ret = false;
+        invalidity_reason += "initial_neutral_cells_matrix_width must be greater than or equal to 1\n";
+    }
+
+    if (initial_neutral_cells_matrix_height < 1)
+    {
+        ret = false;
+        invalidity_reason += "initial_neutral_cells_matrix_height must be greater than or equal to 1\n";
+    }
+
+    if (initial_neutral_cells_mass < 0)
+    {
+        ret = false;
+        invalidity_reason += "initial_neutral_cells_mass must be greater than or equal to 0\n";
+    }
+
+    if (initial_neutral_cells_repop_time < 1)
+    {
+        ret = false;
+        invalidity_reason += "initial_neutral_cells_repop_time must be greater than or equal to 1\n";
+    }
+
+    if (max_viruses > 128)
+    {
+        ret = false;
+        invalidity_reason += "max_viruses must be in [0,128]\n";
+    }
+
+    if (virus_mass < 0)
+    {
+        ret = false;
+        invalidity_reason += "virus_mass must be greater than or equal to 0\n";
+    }
+
+    if (virus_creation_mass_loss < 0 || virus_creation_mass_loss >= 1)
+    {
+        ret = false;
+        invalidity_reason += "virus_creation_mass_loss must be in [0,1[\n";
+    }
+
+    if (virus_max_split > 64)
+    {
+        ret = false;
+        invalidity_reason += "virus_max_split must be in [0,64]\n";
+    }
+
+    if (min_nb_players < 1)
+    {
+        ret = false;
+        invalidity_reason += "min_nb_players must be greater than or equal to 1\n";
+    }
+
+    if (max_nb_players < 1)
+    {
+        ret = false;
+        invalidity_reason += "max_nb_players must be greater than or equal to 1\n";
+    }
+
+    if (min_nb_players > max_nb_players)
+    {
+        ret = false;
+        invalidity_reason += "min_nb_players must be lesser than or equal to max_nb_players\n";
+    }
+
+    if (nb_starting_cells_per_player < 1)
+    {
+        ret = false;
+        invalidity_reason += "nb_starting_cells_per_player must be greater than or equal to 1\n";
+    }
+
+    if (nb_starting_cells_per_player > max_cells_per_player)
+    {
+        ret = false;
+        invalidity_reason += "nb_starting_cells_per_player cannot exceed max_cells_per_player\n";
+    }
+
+    if (player_cells_starting_mass <= initial_neutral_cells_mass * minimum_mass_ratio_to_absorb)
+    {
+        ret = false;
+        invalidity_reason += "player_cells_starting_mass must be greater than initial_neutral_cells_mass * minimum_mass_ratio_to_absorb to absorb initial neutral cells\n";
+    }
+
+    if ((quint32)players_starting_positions.size() != nb_starting_cells_per_player * max_nb_players)
+    {
+        ret = false;
+        invalidity_reason += "players_starting_positions must contain nb_starting_cells_per_player * max_nb_players positions\n";
+    }
+
+    for (const Position & p : players_starting_positions)
+    {
+        if (p.x < 0 || p.y >= map_width)
+        {
+            ret = false;
+            invalidity_reason += QString("players_starting_positions is invalid: coordinate %1 is not in [0,map_width=%2[\n").arg(p.x, map_width);
+        }
+
+        if (p.y < 0 || p.y >= map_height)
+        {
+            ret = false;
+            invalidity_reason += QString("players_starting_positions is invalid: coordinate %1 is not in [0,map_height=%2[\n").arg(p.y, map_height);
+        }
+    }
+
+    for (const Position & p : viruses_starting_positions)
+    {
+        if (p.x < 0 || p.y >= map_width)
+        {
+            ret = false;
+            invalidity_reason += QString("viruses_starting_positions is invalid: coordinate %1 is not in [0,map_width=%2[\n").arg(p.x, map_width);
+        }
+
+        if (p.y < 0 || p.y >= map_height)
+        {
+            ret = false;
+            invalidity_reason += QString("viruses_starting_positions is invalid: coordinate %1 is not in [0,map_height=%2[\n").arg(p.y, map_height);
+        }
+    }
+
+    return ret;
 }
 
 float CellGame::GameParameters::compute_radius_from_mass(float mass) const

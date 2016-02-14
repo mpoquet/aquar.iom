@@ -24,13 +24,15 @@ class CellGame : public Game
     class GameParameters
     {
     public:
+        bool is_loaded = false;
+
         // The map goes from (0,0) to (map_width, map_height)
         float map_width;
         float map_height;
 
         float mass_absorption; // If cell A of mass mA eats cell B of mass mB and they belong to different players, mA is incremented by mass_absorption * mB
         float minimum_mass_ratio_to_absorb; // Cell A can eat cell B if and only if mA > minimum_mass_ratio_to_absorb * mB
-        float minimum_pcell_mass; // The minimum allowed mass for a player cell
+        float minimum_player_cell_mass; // The minimum allowed mass for a player cell
 
         float radius_factor; // cell_radius = radius_factor * cell_mass
         quint32 max_cells_per_player; // Each player cannot have more cells than this value
@@ -39,23 +41,26 @@ class CellGame : public Game
         float base_cell_speed; // max_cell_speed = base_cell_speed - speed_loss_factor * cell_mass
         float speed_loss_factor;
 
-        quint32 nb_initial_neutral_cells_x;
-        quint32 nb_initial_neutral_cells_y;
+        quint32 initial_neutral_cells_matrix_width;
+        quint32 initial_neutral_cells_matrix_height;
         quint32 nb_initial_neutral_cells; // TODO; compute it from the two above parameters product
-        float neutral_cells_mass;
-        quint32 neutral_cells_repop_time; // An eaten cell takes neutral_cells_repop_time frames to reappear
+        float initial_neutral_cells_mass;
+        quint32 initial_neutral_cells_repop_time; // An eaten cell takes neutral_cells_repop_time frames to reappear
 
         quint32 max_viruses; // The number of viruses cannot exceed this value
         float virus_mass;
         float virus_creation_mass_loss; // To create a virus, the cell loses virus_creation_mass_loss * cell_mass + virus_mass units of mass
         quint32 virus_max_split;
 
+        quint32 min_nb_players;
+        quint32 max_nb_players;
         quint32 nb_starting_cells_per_player;
         float player_cells_starting_mass;
         QVector<Position> players_starting_positions;
-
-        quint32 nb_starting_viruses;
         QVector<Position> viruses_starting_positions;
+
+        void clear();
+        bool is_valid(QString & invalidity_reason) const;
 
     public:
         float compute_radius_from_mass(float mass) const;
@@ -210,6 +215,8 @@ public slots:
     void onStop() override;
     void onTurnTimerChanged(quint32 ms) override;
 
+    void load_parameters(const QString & filename);
+
 private slots:
     void onTurnEnd(); // Called on turn end
 
@@ -281,8 +288,6 @@ private:
 
     quint32 _next_cell_id = 0;
     int _current_turn = 0;
-
-    bool _parameters_loaded = false;
 
     QTimer _timer;
 
