@@ -19,12 +19,13 @@ Cell game: network protocol description
     This message is sent from the server to the client just before the game is started.
     (Just before GAME_STARTS). This message contains all the game parameters.
 
-    Content : (map_width:float32, map_height:float32, mass_absorption:float32,
+    Content : (map_width:float32, map_height:float32, min_nb_players:ui32,
+               max_nb_players:ui32, mass_absorption:float32,
                minimum_mass_ratio_to_absorb:float32, minimum_pcell_mass:float32,
                radius_factor:float32, max_cells_per_player:ui32; mass_loss_per_frame:float32,
                base_cell_speed:float32, speed_loss_factor:float32,
                virus_mass:float32, virus_creation_mass_loss:float32,
-               virus_max_split:ui32, nb_players:ui32,
+               virus_max_split:ui32,
                nb_starting_cells_per_player:ui32, player_cells_starting_mass:float,
                neutral_cells_mass:float32, neutral_cells_repop_time:ui32,
                Initial_neutral_cells)
