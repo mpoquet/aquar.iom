@@ -92,14 +92,14 @@ public:
 signals:
 
 private slots:
-    virtual void onPlayerMove(Client * client, int turn, QByteArray & data);
-    virtual void onVisuAck(Client * client, int turn, QByteArray & data);
+    virtual void onPlayerMove(Client * client, int turn, QByteArray data) override;
+    virtual void onVisuAck(Client * client, int turn, QByteArray data) override;
 
-    virtual void onStart();
-    virtual void onPause();
-    virtual void onResume();
-    virtual void onStop();
-    virtual void onTurnTimerChanged(quint32 ms);
+    virtual void onStart() override;
+    virtual void onPause() override;
+    virtual void onResume() override;
+    virtual void onStop() override;
+    virtual void onTurnTimerChanged(quint32 ms) override;
 
     //! Called at turn end
     void onTurnEnd();

@@ -24,7 +24,7 @@ CellGame::~CellGame()
 
 }
 
-void CellGame::onPlayerMove(Client *client, int turn, QByteArray &data)
+void CellGame::onPlayerMove(Client *client, int turn, QByteArray data)
 {
     (void) turn;
     int player_id = _playerClients.indexOf({client,true});
@@ -200,7 +200,7 @@ void CellGame::onPlayerMove(Client *client, int turn, QByteArray &data)
     }
 }
 
-void CellGame::onVisuAck(Client *client, int turn, QByteArray &data)
+void CellGame::onVisuAck(Client *client, int turn, QByteArray data)
 {
     (void) client;
     (void) turn;
@@ -1011,6 +1011,7 @@ void CellGame::load_parameters(const QString &filename)
     }
 
     _parameters.clear();
+    emit message("Loading parameters...");
 
     QFile file(filename);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
@@ -1026,7 +1027,7 @@ void CellGame::load_parameters(const QString &filename)
 
     if (!doc.isObject())
     {
-        emit message(QString("Invalid file '%1': not a JSON object"));
+        emit message(QString("Invalid file '%1': not a JSON object").arg(filename));
         return;
     }
 
@@ -1342,7 +1343,7 @@ void CellGame::load_parameters(const QString &filename)
 
 
 
-
+    emit message("Checking parameters...");
 
     QString reason;
     if (!_parameters.is_valid(reason))
@@ -1355,7 +1356,7 @@ void CellGame::load_parameters(const QString &filename)
                                            _parameters.initial_neutral_cells_matrix_height;
     _parameters.is_loaded = true;
 
-
+    emit message("Parameters have been loaded");
 }
 
 void CellGame::make_player_repop(CellGame::Player *player)

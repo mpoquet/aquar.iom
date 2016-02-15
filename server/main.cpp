@@ -3,6 +3,7 @@
 #include "server.hpp"
 #include "cli.hpp"
 #include "tank_map.hpp"
+#include "cell_game.hpp"
 
 int main(int argc, char **argv)
 {
@@ -10,11 +11,9 @@ int main(int argc, char **argv)
 
     auto s = new Server();
     auto cli = new CLI();
-    auto map = new TankMap();
-    auto game = new TankGame(map);
+    auto game = new CellGame();
 
     a.connect(s, SIGNAL(message(QString)), cli, SLOT(displayMessage(QString)));
-    a.connect(map, SIGNAL(message(QString)), cli, SLOT(displayMessage(QString)));
     a.connect(game, SIGNAL(message(QString)), cli, SLOT(displayMessage(QString)));
 
     a.connect(s, SIGNAL(playerConnected(Client*)), game, SLOT(onPlayerConnected(Client*)));
@@ -24,7 +23,7 @@ int main(int argc, char **argv)
     a.connect(s, SIGNAL(playerTurnAckReceived(Client*,int,QByteArray)), game, SLOT(onPlayerMove(Client*,int,QByteArray)));
     a.connect(s, SIGNAL(visuTurnAckReceived(Client*,int,QByteArray)), game, SLOT(onVisuAck(Client*,int,QByteArray)));
 
-    a.connect(cli, SIGNAL(wantToLoadMap(QString)), map, SLOT(loadFile(QString)));
+    a.connect(cli, SIGNAL(wantToLoadMap(QString)), game,SLOT(load_parameters(QString)));
 
     a.connect(cli, SIGNAL(wantToSetServerMaxClients(quint32)), s, SLOT(setServerMaxClients(quint32)));
     a.connect(cli, SIGNAL(wantToSetServerMaxPlayers(quint32)), s, SLOT(setServerMaxPlayers(quint32)));
@@ -41,8 +40,7 @@ int main(int argc, char **argv)
     a.connect(cli, SIGNAL(wantToStopGame()), game, SLOT(onStop()));
     a.connect(cli, SIGNAL(wantToSetGameTurnTimer(quint32)), game, SLOT(onTurnTimerChanged(quint32)));
 
-
-    map->loadFile("/home/carni/proj/tankia/maps/map2.map");
+    game->load_parameters("../maps/map2p.json");
 
     return a.exec();
 }

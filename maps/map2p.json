@@ -28,18 +28,3 @@
     "virus_max_split": 8,
     "viruses_starting_positions": [[2000, 1500]]
 }
-
-
-Entiers :
-    min_nb_players
-    max_nb_players
-    nb_starting_cells_per_player
-    max_cells_per_player
-    neutral_cells_matrix_width
-    neutral_cells_matrix_height
-    max_viruses
-    virus_max_split
-
-Tableaux :
-    players_starting_positions
-    viruses_starting_positions

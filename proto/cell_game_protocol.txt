@@ -24,7 +24,7 @@ Cell game: network protocol description
                radius_factor:float32, max_cells_per_player:ui32; mass_loss_per_frame:float32,
                base_cell_speed:float32, speed_loss_factor:float32,
                virus_mass:float32, virus_creation_mass_loss:float32,
-               virus_max_split:ui32,
+               virus_max_split:ui32, nb_players:ui32,
                nb_starting_cells_per_player:ui32, player_cells_starting_mass:float,
                neutral_cells_mass:float32, neutral_cells_repop_time:ui32,
                Initial_neutral_cells)

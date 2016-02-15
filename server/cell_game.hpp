@@ -8,6 +8,8 @@
 
 class CellGame : public Game
 {
+    Q_OBJECT
+
     struct QuadTreeNode;
     struct PlayerCell;
     struct NeutralCell;
@@ -206,8 +208,8 @@ public:
     ~CellGame();
 
 public slots:
-    void onPlayerMove(Client * client, int turn, QByteArray & data) override;
-    void onVisuAck(Client * client, int turn, QByteArray & data) override;
+    void onPlayerMove(Client * client, int turn, QByteArray data) override;
+    void onVisuAck(Client * client, int turn, QByteArray data) override;
 
     void onStart() override;
     void onPause() override;
