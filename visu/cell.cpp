@@ -14,7 +14,7 @@ Cellule::Cellule(PlayerCell cellule, int nbPlayers)
     remaining_isolated_turns = cellule.remaining_isolated_turns;
 
     // déterminer la couleur en fonction du numéro du joueur
-    color = colorFromPlayerId(player_id, nbPlayers);
+    color = colorFromPlayerId(player_id);
 }
 
 Cellule::Cellule(NonInitialNeutralCell cellule) {

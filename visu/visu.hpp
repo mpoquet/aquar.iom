@@ -6,6 +6,7 @@
 #include <map>
 #include <iostream>
 #include <tgmath.h>
+#include <string>
 
 #include "structures.hpp"
 #include "cell.hpp"
@@ -17,6 +18,7 @@ public:
     }
 };
 
+
 class Visu
 {
 // Méthodes
@@ -27,22 +29,28 @@ public:
     void onWelcomeReceived(const Welcome &welcome);
     void onTurnReceived(const Turn &turn);
 
-    void afficheCellule(const Cellule *cellule); // dessine une cellule dans la fenêtre graphique
+    // Affiche une cellule dans la fenêtre
+    void afficheCellule(const Cellule *cellule);
+    // Affiche toutes les cellules
     void afficheToutesCellules();
+    // Affiche les scores des joueurs à droite de la fenêtre et la répartition des scores en bas de la fenêtre
     void afficheScore();
+    // Affiche le cadre qui délimite le plateau de jeu
+    void afficheCadre();
 
-    void addNewCell(Cellule* cellule); // ajoute une cellule dans le conteneur allCells
+    // Ajoute une cellule dans le conteneur allCells
+    void addNewCell(Cellule* cellule);
 
-
+    // Fait changer la couleur de l'arrière-plan entre blanc et noir
+    void inverseCouleurs();
 
 // Attributs
 private:
     GameParameters parameters;
     int window_height;
     int window_width;
-
-    // sprite cellule joueur
-    // sprite cellule neutre
+    sf::Color background_color;
+    sf::Color borders_color;
 
 public:
     std::vector<Player> players;
@@ -54,5 +62,5 @@ public:
 
 };
 
-sf::Color colorFromPlayerId(quint32 playerId, int nbPlayers); // détermine la couleur d'un joueur
+sf::Color colorFromPlayerId(quint32 playerId); // détermine la couleur d'un joueur
 

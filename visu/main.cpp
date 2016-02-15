@@ -99,6 +99,8 @@ int main()
 
                 if (event.key.code == sf::Keyboard::I) {
                     // todo : inverser la couleur de fond de la fenêtre et celle des contours (cellules + cadre)
+                    jeu.inverseCouleurs();
+
                 }
                 break;
 
@@ -109,7 +111,8 @@ int main()
         }
 
         jeu.window.clear(sf::Color::White);
-        jeu.window.draw(jeu.cadre);
+
+        jeu.afficheCadre();
 
         jeu.afficheCellule(cellule0);
         jeu.afficheCellule(cellule1);

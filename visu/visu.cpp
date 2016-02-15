@@ -5,6 +5,8 @@ Visu::Visu()
     // initialisation des attributs : pour la plupart il faut attendre un Welcome pour avoir les données
     window_height = 768;
     window_width = 1024;
+    background_color = sf::Color::White;
+    borders_color = sf::Color(100, 100, 100);
 
     // création de la fenêtre
     sf::ContextSettings settings;
@@ -58,8 +60,8 @@ void Visu::onWelcomeReceived(const Welcome &welcome)
     // pas besoin de le faire maintenant : on va les recevoir dans onTurnReceived
 
     cadre.setSize(sf::Vector2f(parameters.map_width, parameters.map_height));
-    cadre.setFillColor(sf::Color::White);
-    cadre.setOutlineColor(sf::Color::Black);
+    cadre.setFillColor(background_color);
+    cadre.setOutlineColor(borders_color);
     cadre.setOutlineThickness(1);
 
 }
@@ -89,7 +91,7 @@ void Visu::afficheCellule(const Cellule* cellule)
 
     // mettre un contour pour les cellules isolées et les cellules neutres
     if (cellule->remaining_isolated_turns != 0 | cellule->typeDeCellule == initialNeutral | cellule->typeDeCellule == nonInitialNeutral) {
-        cercle.setOutlineColor(sf::Color(100, 100, 100));
+        cercle.setOutlineColor(borders_color);
         cercle.setOutlineThickness(rayon/8);
     }
     window.draw(cercle);
@@ -110,30 +112,69 @@ void Visu::afficheScore()
 
     // rectangles pour la représentation du score des joueurs
     sf::RectangleShape rect; // rectangle de dimensions (0,0)
-    float hauteur(1.0/3.0 * (window.getSize().y - parameters.map_height)), largeur(0);
-    float abscisse(0), ordonnee(parameters.map_height + hauteur);
+    float hauteur_rect(1.0/3.0 * (window_height - parameters.map_height)), largeur_rect(0); // un tiers de la distance qui reste entre le bas du plateau et le bas de la fenêtre
+    float abscisse_rect(0), ordonnee_rect(parameters.map_height + hauteur_rect);
 
     std::vector<Player>::iterator joueur;
     float somme_scores(0);
     for (joueur=players.begin(); joueur!=players.end(); ++joueur) {
         somme_scores += (*joueur).score;
     }
-    float facteur = window.getSize().x / somme_scores;
+    float facteur_score = window_width / somme_scores;
+
+    // pastilles pour la légende des couleurs des joueurs
+    Position pos_pastille;
+    pos_pastille.y = 20;
+    sf::CircleShape pastille(10, 128);
+
+    sf::Font police;
+    police.loadFromFile("fonts/F-Zero GBA Text 1.ttf");
+
+    // étiquettes pour chaque joueur
+    sf::Text etiquette("Random text", police, 10);
+    etiquette.setColor(sf::Color::Black);
+
 
     for (joueur=players.begin(); joueur!=players.end(); ++joueur) {
-        largeur = (*joueur).score * facteur;
-        //std::cout << largeur << " " << hauteur << std::endl;
-        rect.setSize(sf::Vector2f(largeur, hauteur));
-        rect.setFillColor(colorFromPlayerId((*joueur).id, players.size()));
+        // création de l'étiquette de chaque joueur
+        pos_pastille.x = parameters.map_width + 10;
+        pastille.setFillColor(colorFromPlayerId((*joueur).id));
+        pastille.setPosition(pos_pastille.x-5, pos_pastille.y-5);
+        window.draw(pastille);
 
-        rect.setPosition(sf::Vector2f(abscisse,ordonnee));
-        abscisse += largeur; // on décale le rectangle pour afficher tous les rectangles côte à côte
+        etiquette.setPosition(pos_pastille.x + 2*pastille.getRadius(), pos_pastille.y);
+        QString points = QString("%1").arg((*joueur).score);
+        QString numero = QString("%1").arg((*joueur).id);
+        std::string score = "Joueur " + numero.toStdString() + " : " + points.toStdString() + " points";
+        etiquette.setString(score);
+        window.draw(etiquette);
 
+        pos_pastille.y += parameters.map_height/10;
+
+        // création du rectangle qui représente le score du joueur
+        largeur_rect = (*joueur).score * facteur_score;
+        rect.setSize(sf::Vector2f(largeur_rect, hauteur_rect));
+        rect.setFillColor(colorFromPlayerId((*joueur).id));
+        rect.setPosition(sf::Vector2f(abscisse_rect,ordonnee_rect));
+        abscisse_rect += largeur_rect; // on décale le rectangle pour afficher tous les rectangles côte à côte
         window.draw(rect);
-        std::cout << (*joueur).id  << " " << (*joueur).score << std::endl;
     }
 
+        ///////////////////////////////////////////
+        /// Bizarrement, la barre des scores ne fait pas un tiers mais la moitié de l'espace qui reste en bas de la fenêtre
+        ////////////////////////////////////////////
 
+        // étiquette au-dessus de la barre
+        sf::Text texteScores("Repartition des scores :", police, 25);
+        texteScores.move(sf::Vector2f(0, window_height-2.8*hauteur_rect));
+        texteScores.setColor(sf::Color::Black);
+        window.draw(texteScores);
+}
+
+void Visu::afficheCadre()
+{
+    cadre.setFillColor(background_color);
+    window.draw(cadre);
 }
 
 void Visu::addNewCell(Cellule *cellule)
@@ -141,9 +182,18 @@ void Visu::addNewCell(Cellule *cellule)
     allCells[cellule->id()] = cellule;
 }
 
+void Visu::inverseCouleurs()
+{
 
+    if (background_color == sf::Color::White) {
+        background_color = sf::Color::Black;
+    }
+    else {
+        background_color = sf::Color::White;
+    }
+}
 
-sf::Color colorFromPlayerId(quint32 playerId, int nbPlayers)
+sf::Color colorFromPlayerId(quint32 playerId)
 {
     //Il ne faut pas que green et blue soient nuls en même temps car ça fait du rouge et la couleur est déjà prise par les virus.
     sf::Uint8 red = cos(2*playerId)*255.0;
