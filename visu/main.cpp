@@ -4,58 +4,34 @@
 #include <iostream>
 
 
-// faire un évènement pour passer en mode plein écran
+const int WINDOW_HEIGHT(768);
+const int WINDOW_WIDTH(1024);
+
 int main()
 {
-
-    // tests pour la création de cellules
-    InitialNeutralCell initialeNeutre;
-        initialeNeutre.remaining_turns_before_apparition = 8;
-
-    NonInitialNeutralCell nonInitialeNeutre;
-        nonInitialeNeutre.id = 4;
-        nonInitialeNeutre.mass = 12;
-        nonInitialeNeutre.position.x = 1.3;
-        nonInitialeNeutre.position.y = 3.1;
-
-    Virus vir;
-        vir.id = 16;
-        vir.position.x = 78;
-        vir.position.y = 87;
-
-    PlayerCell joueuse;
-        joueuse.id = 2.1;
-        joueuse.player_id = 1;
-        joueuse.position.x = 0;
-        joueuse.position.y = 0;
-        joueuse.mass = 14;
-        joueuse.remaining_isolated_turns = 7;
-
-    PlayerCell joueuse2;
-        joueuse2.id = 3;
-        joueuse2.player_id = 4;
-        joueuse2.position.x = 0;
-        joueuse2.position.y = 0;
-        joueuse2.mass = 4;
-        joueuse2.remaining_isolated_turns = 7;
-
-    PlayerCell joueuse3;
-        joueuse3.id = 3;
-        joueuse3.player_id = 4;
-        joueuse3.position.x = 12;
-        joueuse3.position.y = 120;
-        joueuse3.mass = 7;
-        joueuse3.remaining_isolated_turns = 0;
-
-    Cellule cellule(joueuse, 8);
-    cellule.print();
-
-    Cellule cellule2(joueuse2, 8);
-    Cellule cellule3(joueuse3, 8);
-
     Visu jeu;
 
-    GameParameters parameters = {0, 0, 0, 0, 0, 4, 1, 0, 0, 0, 12, 0, 0, 1, 12, 0, 0};
+
+    GameParameters parameters = {800, //map_width
+                                 600, //map_height
+                                 1, //min_nb_players
+                                 0, //max_nb_players
+                                 0, //mass_absorption
+                                 0, //minimum_mass_ratio_to_absorb
+                                 0, //minimum_pcell_mass
+                                 4, //radius_factor
+                                 0, //max_cells_per_player
+                                 0, //mass_loss_per_frame
+                                 0, //base_cell_speed
+                                 0, //speed_loss_factor
+                                 12, //virus_mass
+                                 0, //virus_creation_mass_loss
+                                 0, //virus_mass_split
+                                 0, //nb_starting_cells_per_player
+                                 0, // player_cells_starting_mass
+                                 10, //initial_neutral_cells_mass
+                                 0}; //neutral_cells_repop_time
+
     QVector<InitialNeutralCellWelcome> initial_ncells;
         InitialNeutralCellWelcome p1;
         p1.position.x = 0;
@@ -63,42 +39,43 @@ int main()
         initial_ncells.append(p1);
 
     Welcome welcome = {parameters, initial_ncells};
+
     jeu.onWelcomeReceived(welcome);
 
-    Cellule virus(vir, parameters.virus_mass);
+    Player joueur0 = {0, 0, 0, 1};
+    Player joueur1 = {1, 0, 0, 10};
+    Player joueur2 = {2, 0, 0, 20};
+    Player joueur3 = {3, 0, 0, 5};
+    jeu.players.push_back(joueur1);
+    jeu.players.push_back(joueur2);
+    jeu.players.push_back(joueur0);
+    jeu.players.push_back(joueur3);
+    std::cout << "Il y a " << jeu.players.size() << " joueurs " << std::endl;
 
-    // Il est possible de dessiner des sprites, des textes et des formes, plus des "vertex arrays" si le reste n'est pas suffisant.
+    Position pos = {300, 300};
+    InitialNeutralCell initN = {0};
+    // il manque l'information sur la position
+    Cellule* initialeNeutre = new Cellule(initN, parameters.initial_neutral_cells_mass);
 
-    // on crée un cercle vert de 100 pixels de rayon en 128 points
-    sf::CircleShape cercle(100.f, 128);
-    cercle.setFillColor(sf::Color::Green);
+    pos = {13, 31};
+    NonInitialNeutralCell nonInitialeNeutre = {4, 12, pos};
 
-    sf::Texture texture;
-    //if (!texture.loadFromFile("/home/sophie/Images/Firefox_wallpaper.png")) {
-    if(!texture.loadFromFile("/home/sophie/Images/pikachu.png")) {
-        std::cout << "Erreur lors du chargement de la texture\n";
-    }
-    texture.setSmooth(true);
-    texture.setRepeated(true);
+    pos = {78, 87};
+    Virus vir{16, pos};
+    Cellule* virus = new Cellule(vir, parameters.virus_mass);
 
-    sf::Sprite sprite;
-    sprite.setTexture(texture);
-    //sprite.setTextureRect(sf::IntRect(500, 500, 320, 32));
-    sprite.setColor(sf::Color::Red);
-    sprite.rotate(42);
-    sprite.scale(sf::Vector2f(1.5f, 1.f));
+    pos = {130, 310};
+    PlayerCell joueuse0 = {2.1, 0, pos, 14, 7};
+    Cellule* cellule0 = new Cellule(joueuse0, jeu.players.size());
 
-    sf::Font font;
-    if (!font.loadFromFile("fonts/FLOWER.ttf")) {
-        std::cout << "Erreur lors du chargement de la police\n";
-    }
-    sf::Text text;
-    text.setFont(font);
-    text.setString("Hello World!");
-    text.setCharacterSize(56);
-    text.setStyle(sf::Text::Bold | sf::Text::Underlined);
-    text.setColor(sf::Color::Cyan);
-    text.move(sf::Vector2f(500, 45));
+    pos = {800, 400};
+    PlayerCell joueuse1 = {3, 1, pos, 4, 7};
+    Cellule* cellule1 = new Cellule(joueuse1, jeu.players.size());
+
+    pos = {1000, 120};
+    PlayerCell joueuse2 = {3, 2, pos, 7, 0};
+    Cellule* cellule2 = new Cellule(joueuse2, jeu.players.size());
+
 
     while (jeu.window.isOpen()) {
 
@@ -119,6 +96,10 @@ int main()
                 if (event.key.code == sf::Keyboard::F) {
                     // todo : alterner entre plein écran ou fenêtré
                 }
+
+                if (event.key.code == sf::Keyboard::I) {
+                    // todo : inverser la couleur de fond de la fenêtre et celle des contours (cellules + cadre)
+                }
                 break;
 
             default:
@@ -128,24 +109,44 @@ int main()
         }
 
         jeu.window.clear(sf::Color::White);
+        jeu.window.draw(jeu.cadre);
 
-        Cellule* cell_ptr(&cellule);
-        jeu.afficheCellule(cell_ptr);
+        jeu.afficheCellule(cellule0);
+        jeu.afficheCellule(cellule1);
+        jeu.afficheCellule(cellule2);
+        jeu.afficheCellule(virus);
+        jeu.afficheCellule(initialeNeutre);
 
-        Cellule* cell_ptr2(&cellule2);
-        jeu.afficheCellule(cell_ptr2);
+        jeu.afficheScore();
 
-        Cellule* cell_ptr3(&cellule3);
-        jeu.afficheCellule(cell_ptr3);
+        jeu.window.display(); // dessine tous les objets avec lesquels on a appelé draw
 
-        Cellule* vir_ptr(&virus);
-        jeu.afficheCellule(vir_ptr);
-
-        //jeu.window.draw(cercle); // dessiné dans un buffer
-        //jeu.window.draw(sprite);
-        //jeu.window.draw(text);
-        jeu.window.display(); // dessine en vrai ce qui est dans le buffer
     }
-
-
 }
+
+/*sf::Texture texture;
+//if (!texture.loadFromFile("/home/sophie/Images/Firefox_wallpaper.png")) {
+if(!texture.loadFromFile("/home/sophie/Images/pikachu.png")) {
+    std::cout << "Erreur lors du chargement de la texture\n";
+}
+texture.setSmooth(true);
+texture.setRepeated(true);
+
+sf::Sprite sprite;
+sprite.setTexture(texture);
+//sprite.setTextureRect(sf::IntRect(500, 500, 320, 32));
+sprite.setColor(sf::Color::Red);
+sprite.rotate(42);
+sprite.scale(sf::Vector2f(1.5f, 1.f));
+
+sf::Font font;
+if (!font.loadFromFile("fonts/FLOWER.ttf")) {
+    std::cout << "Erreur lors du chargement de la police\n";
+}
+sf::Text text;
+text.setFont(font);
+text.setString("Hello World!");
+text.setCharacterSize(56);
+text.setStyle(sf::Text::Bold | sf::Text::Underlined);
+text.setColor(sf::Color::Cyan);
+text.move(sf::Vector2f(500, 45));*/

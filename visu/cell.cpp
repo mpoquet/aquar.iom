@@ -1,4 +1,5 @@
 #include "cell.hpp"
+#include "visu.hpp"
 #include <iostream>
 
 Cellule::Cellule(PlayerCell cellule, int nbPlayers)
@@ -13,10 +14,7 @@ Cellule::Cellule(PlayerCell cellule, int nbPlayers)
     remaining_isolated_turns = cellule.remaining_isolated_turns;
 
     // déterminer la couleur en fonction du numéro du joueur
-    sf::Uint8 red = player_id* 255/nbPlayers ; // répartition linéaire des couleurs entre 0 et 255 en fonction du nombre de joueurs
-    sf::Uint8 green = player_id* 255 ;
-    sf::Uint8 blue = 255 - (player_id * 255/nbPlayers);
-    color = sf::Color(red, green, blue);
+    color = colorFromPlayerId(player_id, nbPlayers);
 }
 
 Cellule::Cellule(NonInitialNeutralCell cellule) {
