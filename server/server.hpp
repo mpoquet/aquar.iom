@@ -21,8 +21,8 @@ signals:
     void playerDisconnected(Client * client);
     void visuConnected(Client * client);
     void visuDisconnected(Client * client);
-    void playerTurnAckReceived(Client * client, int turn, const QByteArray & data);
-    void visuTurnAckReceived(Client * client, int turn, const QByteArray & data);
+    void playerTurnAckReceived(Client * client, int turn, QByteArray);
+    void visuTurnAckReceived(Client * client, int turn, QByteArray);
 
 private slots:
     void onClientConnected();

@@ -13,7 +13,7 @@ TankGame::~TankGame()
 
 }
 
-void TankGame::onPlayerMove(Client *client, int turn, QByteArray &data)
+void TankGame::onPlayerMove(Client *client, int turn, QByteArray data)
 {
     int playerID = _playerClients.indexOf({client,true});
     Q_ASSERT(playerID != -1);
@@ -33,7 +33,7 @@ void TankGame::onPlayerMove(Client *client, int turn, QByteArray &data)
     _currentTurnMoves.append(move);
 }
 
-void TankGame::onVisuAck(Client *client, int turn, QByteArray &data)
+void TankGame::onVisuAck(Client *client, int turn, QByteArray data)
 {
     if (data.size() != 0)
         emit wantToKick(client, "invalid visualization TURN_ACK: too much data (none is allowed)");

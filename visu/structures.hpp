@@ -76,6 +76,8 @@ struct GameParameters
 {
     float map_width;
     float map_height;
+    quint32 min_nb_players;
+    quint32 max_nb_players;
     float mass_absorption; // not useful for visu
     float minimum_mass_ratio_to_absorb; // not useful for visu
     float minimum_pcell_mass; // not useful for visu?
