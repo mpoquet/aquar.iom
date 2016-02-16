@@ -7,6 +7,7 @@
 #include <iostream>
 #include <tgmath.h>
 #include <string>
+#include <QDebug>
 
 #include "structures.hpp"
 #include "cell.hpp"
