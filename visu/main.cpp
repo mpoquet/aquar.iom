@@ -31,43 +31,37 @@ int main()
                                  2, //initial_neutral_cells_mass
                                  0}; //neutral_cells_repop_time
 
-    QVector<InitialNeutralCellWelcome> initial_ncells;
+    QVector<InitialNeutralCellWelcome> initial_ncells_w;
         InitialNeutralCellWelcome p1;
         p1.position.x = 0;
         p1.position.y = 0;
-        initial_ncells.append(p1);
+        initial_ncells_w.append(p1);
 
         InitialNeutralCellWelcome p2;
         p2.position.x = 300;
         p2.position.y = 300;
-        initial_ncells.append(p2);
+        initial_ncells_w.append(p2);
 
         InitialNeutralCellWelcome p3;
         p3.position.x = 150;
         p3.position.y = 600;
-        initial_ncells.append(p3);
+        initial_ncells_w.append(p3);
 
-    Welcome welcome = {parameters, initial_ncells};
-
+    Welcome welcome = {parameters, initial_ncells_w};
     jeu.onWelcomeReceived(welcome);
 
     Player joueur0 = {0, 0, 0, 1};
     Player joueur1 = {1, 0, 0, 10};
     Player joueur2 = {2, 0, 0, 20};
     Player joueur3 = {3, 0, 0, 5};
-    jeu.addNewPlayer(joueur1);
-    jeu.addNewPlayer(joueur2);
-    jeu.addNewPlayer(joueur0);
-    jeu.addNewPlayer(joueur3);
-    std::cout << "Il y a " << jeu.nbeJoueurs() << " joueurs " << std::endl;
 
-    Position pos = {300, 300};
-    /*
-    InitialNeutralCell initN = {0};
-    Cellule* initialeNeutre = new Cellule(initN, parameters.initial_neutral_cells_mass, 0);
-    jeu.addNewCell(initialeNeutre);*/
+    QVector<Player> players;
+        players.push_back(joueur0);
+        players.push_back(joueur1);
+        players.push_back(joueur2);
+        players.push_back(joueur3);
 
-    pos = {13, 31};
+    Position pos = {13, 31};
     NonInitialNeutralCell nonInitialeNeutre = {10, 12, pos}; //id, mass, position
 
     pos = {78, 87};
@@ -90,10 +84,21 @@ int main()
     Cellule* cellule2 = new Cellule(joueuse2);
     jeu.addNewCell(cellule2);
 
-    std::vector<Cellule*>::iterator i;
-    for (i=jeu.allCellsByMass.begin(); i!=jeu.allCellsByMass.end(); ++i) {
-        std::cout << "Cellule " << (*i)->id() << " masse " << (*i)->mass << std::endl;
-    }
+    QVector<Virus> viruses;
+        viruses.push_back(vir);
+
+    QVector<NonInitialNeutralCell> non_initial_ncells;
+        non_initial_ncells.push_back(nonInitialeNeutre);
+
+    QVector<PlayerCell> pcells;
+        pcells.push_back(joueuse0);
+        pcells.push_back(joueuse1);
+        pcells.push_back(joueuse2);
+
+    QVector<InitialNeutralCell> initial_ncells;
+        InitialNeutralCell cell1 = {1};
+        initial_ncells.push_back(cell1);
+    Turn tour = {initial_ncells, non_initial_ncells, viruses, pcells, players};
 
     while (jeu.window.isOpen()) {
         sf::Event event;
@@ -108,18 +113,31 @@ int main()
                 jeu.window.close();
                 break;
 
-            // appui sur un bouton du clavier
+                // appui sur un bouton du clavier
             case sf::Event::KeyPressed:
-                if (event.key.code == sf::Keyboard::F) {
+                switch(event.key.code) {
+                case sf::Keyboard::F:
                     // todo : alterner entre plein écran ou fenêtré
-                }
+                    break;
 
-                else if (event.key.code == sf::Keyboard::I) {
+                case sf::Keyboard::I:
                     // todo : inverser la couleur de fond de la fenêtre et celle des contours (cellules + cadre)
                     jeu.inverseCouleurs();
+                    break;
 
+                case sf::Keyboard::T:
+                    // test de la fonction onTurnReceived
+                    tour.viruses[0].position.y += 100;
+                    tour.pcells[0].position.x += 100;
+                    tour.pcells[2].position.y -= 20;
+                    tour.initial_ncells[0].remaining_turns_before_apparition = 0;
+                    tour.non_initial_ncells[0].mass = 50;
+                    jeu.onTurnReceived(tour);
+                    break;
+
+                default:
+                    break;
                 }
-                break;
 
             default:
                 break;

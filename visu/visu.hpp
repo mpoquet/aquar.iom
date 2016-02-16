@@ -71,6 +71,7 @@ private:
     sf::Color background_color;
     sf::Color borders_color;
     std::vector<Player> players;
+    int nbCellulesInitiales;
 
 public:
     std::map<quint32, Cellule*> allCells; // toutes les cellules, tous types confondus, par m_id croissant. Les premières sont les initiales neutres

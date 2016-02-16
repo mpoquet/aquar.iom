@@ -23,13 +23,11 @@ Visu::~Visu()
 
 void Visu::onWelcomeReceived(const Welcome &welcome)
 {
-    // enregistrer les paramètres de la partie dans la classe
+    /// enregistrer les paramètres de la partie dans la classe
     parameters.map_width = welcome.parameters.map_width;
     parameters.map_height = welcome.parameters.map_height;
-
     parameters.min_nb_players = welcome.parameters.min_nb_players;
     parameters.max_nb_players = welcome.parameters.max_nb_players;
-
     parameters.mass_absorption = welcome.parameters.mass_absorption;
     parameters.minimum_mass_ratio_to_absorb = welcome.parameters.minimum_mass_ratio_to_absorb;
     parameters.minimum_pcell_mass = welcome.parameters.minimum_pcell_mass;
@@ -46,7 +44,7 @@ void Visu::onWelcomeReceived(const Welcome &welcome)
     parameters.initial_neutral_cells_mass = welcome.parameters.initial_neutral_cells_mass;
     parameters.neutral_cells_repop_time = welcome.parameters.neutral_cells_repop_time;
 
-    // initialiser l'ensemble des cellules avec leurs positions initiales
+    /// initialiser l'ensemble des cellules avec leurs positions initiales
     QVector<InitialNeutralCellWelcome>::const_iterator it;
     quint32 numero = 0;
 
@@ -59,9 +57,9 @@ void Visu::onWelcomeReceived(const Welcome &welcome)
 
         ++numero;
     }
+    nbCellulesInitiales = numero;
 
-    // initialiser la liste des joueurs
-    // pas besoin de le faire maintenant : on va les recevoir dans onTurnReceived
+    // pas besoin d'initialiser les joueurs : on va les recevoir dans un Turn
 
     cadre.setSize(sf::Vector2f(parameters.map_width, parameters.map_height));
     cadre.setFillColor(background_color);
@@ -72,14 +70,95 @@ void Visu::onWelcomeReceived(const Welcome &welcome)
 
 void Visu::onTurnReceived(const Turn &turn)
 {
-    // todo
-    // mettre à jour les positions de chaque cellule
+    if (players.size()==0) {
+        /// C'est la première fois qu'on reçoit un Turn : initialisation de la liste des joueurs
+        std::cout << "Création des joueurs\n";
+        for (uint i=0; i<turn.players.size(); ++i) {
+            addNewPlayer(turn.players[i]);
+        }
+    }
 
-    // mettre à jour le score des joueurs
+    else {
+        /// mettre à jour le score des joueurs
+        std::vector<Player> temp_Players;
+        for (uint i=0; i<players.size(); ++i) {
+            temp_Players.push_back(turn.players[i]);
+        }
+        std::sort(temp_Players.begin(), temp_Players.end(), CompareIdJoueurs()); // génère erreurs de compilation quand on utilise directement turn.players
+        std::sort(players.begin(), players.end(), CompareIdJoueurs());
 
-    // mettre à jour les sprites et l'affichage
+        for (uint i=0; i<players.size(); ++i) {
+            players[i].mass = turn.players[i].mass;
+            players[i].nb_cells = turn.players[i].nb_cells;
+            players[i].score = turn.players[i].score;
+        }
+    }
+    /// mettre à jour les cellules
+    std::cout << "màj des virus\n";
+    for (uint i=0; i<turn.viruses.size(); ++i) {
+        int indice = turn.viruses[i].id;
+        // vérifier si allCells[indice] existe déjà
+        if (allCells.count(indice) == 0) {
+            // créer la cellule et l'ajouter dans l'ensemble
+            std::cout << "Création du virus " << indice << std::endl;
+            Cellule* cell = new Cellule(turn.viruses[i], parameters.virus_mass);
+            addNewCell(cell);
+        }
+        else {
+            allCells[indice]->position.x = turn.viruses[i].position.x;
+            allCells[indice]->position.y = turn.viruses[i].position.y;
+        }
+    }
+    std::cout << "màj des cellules des joueurs\n";
+    for (uint i=0; i<turn.pcells.size(); ++i) {
+        int indice = turn.pcells[i].id;
+        // vérifier si allCells[indice] existe déjà
+        if (allCells.count(indice) == 0) {
+            // créer la cellule et l'ajouter dans l'ensemble
+            std::cout << "Création de la cellule joueuse " << indice << std::endl;
+            Cellule* cell = new Cellule(turn.pcells[i]);
+            addNewCell(cell);
+        }
+        else {
+            allCells[indice]->position.x = turn.pcells[i].position.x;
+            allCells[indice]->position.y = turn.pcells[i].position.y;
+            allCells[indice]->mass = turn.pcells[i].mass;
+            allCells[indice]->remaining_isolated_turns = turn.pcells[i].remaining_isolated_turns;
+        }
+    }
+    std::cout << "màj des cellules neutres initiales";
+    // On sait que les cellules initiales neutres ont les numéros de 0 à nbCellulesInitiales - 1
+    int indice(0);
+    for (uint i=0; i<turn.initial_ncells.size(); ++i) {
+        // Les cellules initiales neutres ne se déplacent pas
+        allCells[indice]->remaining_turns_before_apparition = turn.initial_ncells[i].remaining_turns_before_apparition;
+        ++indice;
+    }
+    std::cout << "màj des cellules neutres non initiales\n";
+    for (uint i=0; i<turn.non_initial_ncells.size(); ++i) {
+        int indice = turn.non_initial_ncells[i].id;
+        // vérifier si allCells[indice] existe déjà
+        if (allCells.count(indice) == 0) {
+            // créer la cellule et l'ajouter dans l'ensemble
+            std::cout << "Création de la cellule neutre" << indice << std::endl;
+            Cellule* cell = new Cellule(turn.non_initial_ncells[i]);
+            addNewCell(cell);
+        }
+        else {
+            std::cout << "Mise à jour de la cellule neutre" << indice << std::endl;
+            allCells[indice]->position.x = turn.non_initial_ncells[i].position.x;
+            allCells[indice]->position.y = turn.non_initial_ncells[i].position.y;
+            allCells[indice]->mass = turn.non_initial_ncells[i].mass;
+        }
+    }
 
-    // faire l'affichage et la mise à jour lors d'un seul parcours de l'ensemble des cellules
+    /// mettre à jour l'affichage
+    window.clear(sf::Color::White);
+    afficheCadre();
+    afficheScore();
+    afficheToutesCellules();
+    window.display();
+
 }
 
 void Visu::afficheCellule(const Cellule* cellule)
@@ -94,7 +173,7 @@ void Visu::afficheCellule(const Cellule* cellule)
     cercle.setPosition(cellule->position.x - rayon, cellule->position.y - rayon); // setPosition prend la position du coin supérieur gauche =(
 
     // mettre un contour pour les cellules isolées et les cellules neutres
-    if (cellule->remaining_isolated_turns != 0 | cellule->typeDeCellule == initialNeutral | cellule->typeDeCellule == nonInitialNeutral) {
+    if ((cellule->remaining_isolated_turns != 0) | (cellule->typeDeCellule == initialNeutral) | (cellule->typeDeCellule == nonInitialNeutral)) {
         cercle.setOutlineColor(borders_color);
         cercle.setOutlineThickness(rayon/8);
     }
@@ -113,7 +192,7 @@ void Visu::afficheScore()
     // trier les joueurs par score décroissant
     sort(players.begin(), players.end(), CompareScoresJoueurs());
 
-    // rectangles pour la représentation du score des joueurs
+    // rectangles pour la représentation du score relatif des joueurs
     sf::RectangleShape rect; // rectangle de dimensions (0,0)
     float hauteur_rect(1.0/3.0 * (window_height - parameters.map_height)), largeur_rect(0); // un tiers de la distance qui reste entre le bas du plateau et le bas de la fenêtre
     float abscisse_rect(0), ordonnee_rect(parameters.map_height + hauteur_rect);
@@ -168,7 +247,7 @@ void Visu::afficheScore()
         /// Mais des fois elle fait la bonne taille
         ////////////////////////////////////////////
 
-        // étiquette au-dessus de la barre
+        // titre au-dessus de la barre
         sf::Text texteScores("Repartition des scores :", police, 25);
         texteScores.move(sf::Vector2f(0, window_height-2.8*hauteur_rect));
         texteScores.setColor(sf::Color::Black);
@@ -191,6 +270,10 @@ void Visu::addNewCell(Cellule *cellule)
 void Visu::addNewPlayer(Player p)
 {
     players.push_back(p);
+    /*std::sort(players.begin(), players.end(), CompareIdJoueurs());
+    for (int i=0; i<players.size(); ++i) {
+        std::cout << players[i].id << std::endl;
+    }*/
 }
 
 void Visu::inverseCouleurs()
