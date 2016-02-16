@@ -42,6 +42,7 @@ public:
     qint32 player_id; // vaut -1 si ce n'est pas une cellule de joueur
     quint32 remaining_turns_before_apparition;
     quint32 remaining_isolated_turns; // vaut 0 pour toutes les cellules non joueuses
+    bool estVivante;
 
     sf::Color color; // la couleur dépendra du type de la cellule et du joueur si c'est la cellule d'un joueur
 };

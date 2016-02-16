@@ -102,11 +102,13 @@ void Visu::onTurnReceived(const Turn &turn)
             // créer la cellule et l'ajouter dans l'ensemble
             std::cout << "Création du virus " << indice << std::endl;
             Cellule* cell = new Cellule(turn.viruses[i], parameters.virus_mass);
+            cell->estVivante = true;
             addNewCell(cell);
         }
         else {
             allCells[indice]->position.x = turn.viruses[i].position.x;
             allCells[indice]->position.y = turn.viruses[i].position.y;
+            allCells[indice]->estVivante = true;
         }
     }
     std::cout << "màj des cellules des joueurs\n";
@@ -117,6 +119,7 @@ void Visu::onTurnReceived(const Turn &turn)
             // créer la cellule et l'ajouter dans l'ensemble
             std::cout << "Création de la cellule joueuse " << indice << std::endl;
             Cellule* cell = new Cellule(turn.pcells[i]);
+            cell->estVivante = true;
             addNewCell(cell);
         }
         else {
@@ -124,6 +127,7 @@ void Visu::onTurnReceived(const Turn &turn)
             allCells[indice]->position.y = turn.pcells[i].position.y;
             allCells[indice]->mass = turn.pcells[i].mass;
             allCells[indice]->remaining_isolated_turns = turn.pcells[i].remaining_isolated_turns;
+            allCells[indice]->estVivante = true;
         }
     }
     std::cout << "màj des cellules neutres initiales";
@@ -132,6 +136,7 @@ void Visu::onTurnReceived(const Turn &turn)
     for (uint i=0; i<turn.initial_ncells.size(); ++i) {
         // Les cellules initiales neutres ne se déplacent pas
         allCells[indice]->remaining_turns_before_apparition = turn.initial_ncells[i].remaining_turns_before_apparition;
+        allCells[indice]->estVivante = true;
         ++indice;
     }
     std::cout << "màj des cellules neutres non initiales\n";
@@ -142,6 +147,7 @@ void Visu::onTurnReceived(const Turn &turn)
             // créer la cellule et l'ajouter dans l'ensemble
             std::cout << "Création de la cellule neutre" << indice << std::endl;
             Cellule* cell = new Cellule(turn.non_initial_ncells[i]);
+            cell->estVivante = true;
             addNewCell(cell);
         }
         else {
@@ -149,6 +155,7 @@ void Visu::onTurnReceived(const Turn &turn)
             allCells[indice]->position.x = turn.non_initial_ncells[i].position.x;
             allCells[indice]->position.y = turn.non_initial_ncells[i].position.y;
             allCells[indice]->mass = turn.non_initial_ncells[i].mass;
+            allCells[indice]->estVivante = true;
         }
     }
 
@@ -161,11 +168,20 @@ void Visu::onTurnReceived(const Turn &turn)
 
 }
 
-void Visu::afficheCellule(const Cellule* cellule)
+void Visu::afficheCellule(Cellule* cellule)
 {
-    if (cellule->remaining_turns_before_apparition != 0) {
+    if ((cellule->remaining_turns_before_apparition != 0)) {
+        cellule->estVivante = false; // pour dire que son cas a été traité
         return; // La cellule n'est pas encore apparue donc on ne l'affiche pas
     }
+
+    if (cellule->estVivante == false) {
+        // La cellule est morte, il faut la supprimer sans l'afficher
+        removeCell(cellule->id());
+        return;
+    }
+
+    cellule->estVivante = false; // pour dire que son cas a été traité
 
     float rayon = cellule->mass * parameters.radius_factor;
     sf::CircleShape cercle(rayon, 128);
@@ -175,7 +191,7 @@ void Visu::afficheCellule(const Cellule* cellule)
     // mettre un contour pour les cellules isolées et les cellules neutres
     if ((cellule->remaining_isolated_turns != 0) | (cellule->typeDeCellule == initialNeutral) | (cellule->typeDeCellule == nonInitialNeutral)) {
         cercle.setOutlineColor(borders_color);
-        cercle.setOutlineThickness(rayon/8);
+        cercle.setOutlineThickness(rayon/6);
     }
     window.draw(cercle);
 }
@@ -265,6 +281,20 @@ void Visu::addNewCell(Cellule *cellule)
     allCells[cellule->id()] = cellule;
     allCellsByMass.push_back(cellule);
     sort(allCellsByMass.begin(), allCellsByMass.end(), CompareMasseCellules());
+}
+
+void Visu::removeCell(quint32 id)
+{
+    // retirer la cellule de allCellsByMass
+    bool ok = false;
+    int i(0);
+    while (i<allCellsByMass.size() | ok==false) {
+        if (allCellsByMass[i]->id() == id) {
+            ok = true;
+            allCellsByMass.erase(allCellsByMass.begin()+i);
+        }
+    }
+    allCells.erase(id);
 }
 
 void Visu::addNewPlayer(Player p)

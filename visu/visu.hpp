@@ -44,7 +44,7 @@ public:
     void onTurnReceived(const Turn &turn);
 
     // Affiche une cellule dans la fenêtre
-    void afficheCellule(const Cellule *cellule);
+    void afficheCellule(Cellule *cellule);
     // Affiche toutes les cellules
     void afficheToutesCellules();
     // Affiche les scores des joueurs à droite de la fenêtre et la répartition des scores en bas de la fenêtre
@@ -54,6 +54,8 @@ public:
 
     // Ajoute une cellule dans le conteneur allCells
     void addNewCell(Cellule* cellule);
+    // Supprime une cellule morte
+    void removeCell(quint32 id);
     // Ajoute un joueur dans le conteneur players
     void addNewPlayer(Player p);
 

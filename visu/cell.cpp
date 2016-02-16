@@ -15,6 +15,8 @@ Cellule::Cellule(PlayerCell cellule)
 
     // déterminer la couleur en fonction du numéro du joueur
     color = colorFromPlayerId(player_id);
+
+    estVivante = true;
 }
 
 Cellule::Cellule(NonInitialNeutralCell cellule) {
@@ -29,6 +31,8 @@ Cellule::Cellule(NonInitialNeutralCell cellule) {
 
     // même couleur que les cellules neutres initiales : blanc
     color = sf::Color::White;
+
+    estVivante = true;
 }
 
 Cellule::Cellule(InitialNeutralCell cellule, float initialNeutralCellsMass, quint32 id) {
@@ -45,6 +49,8 @@ Cellule::Cellule(InitialNeutralCell cellule, float initialNeutralCellsMass, quin
 
     // couleur blanche
     color = sf::Color::White;
+
+    estVivante = true;
 }
 
 Cellule::Cellule(Virus cellule, float virus_mass) {
@@ -60,6 +66,8 @@ Cellule::Cellule(Virus cellule, float virus_mass) {
 
     // couleur rouge
     color = sf::Color::Red;
+
+    estVivante = true;
 }
 
 Cellule::Cellule(InitialNeutralCellWelcome cellule, float initial_mass, quint32 id)
@@ -76,6 +84,8 @@ Cellule::Cellule(InitialNeutralCellWelcome cellule, float initial_mass, quint32 
 
     // couleur blanche
     color = sf::Color::White;
+
+    estVivante = true;
 }
 
 quint32 Cellule::id() const
