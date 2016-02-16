@@ -21,8 +21,9 @@ public:
     // constructeurs:
     Cellule(PlayerCell cellule);
     Cellule(NonInitialNeutralCell cellule);
-    Cellule(InitialNeutralCell cellule, float initialNeutralCellsMass);
+    Cellule(InitialNeutralCell cellule, float initialNeutralCellsMass, quint32 id);
     Cellule(Virus cellule, float virus_mass);
+    Cellule(InitialNeutralCellWelcome cellule, float initial_mass, quint32 id);
 
     // accesseurs:
     quint32 id() const;

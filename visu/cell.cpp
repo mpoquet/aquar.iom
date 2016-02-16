@@ -31,9 +31,9 @@ Cellule::Cellule(NonInitialNeutralCell cellule) {
     color = sf::Color::White;
 }
 
-Cellule::Cellule(InitialNeutralCell cellule, float initialNeutralCellsMass) {
+Cellule::Cellule(InitialNeutralCell cellule, float initialNeutralCellsMass, quint32 id) {
     // todo : m_id
-    m_id = 0;
+    m_id = id;
     mass = initialNeutralCellsMass;
     // todo : la position des cellules initiales est dans InitialNeutralCellWelcome
     position.x = 0;
@@ -60,6 +60,22 @@ Cellule::Cellule(Virus cellule, float virus_mass) {
 
     // couleur rouge
     color = sf::Color::Red;
+}
+
+Cellule::Cellule(InitialNeutralCellWelcome cellule, float initial_mass, quint32 id)
+{
+    m_id = id;
+    mass = initial_mass;
+    position.x = cellule.position.x;
+    position.y = cellule.position.y;
+    typeDeCellule = initialNeutral;
+    // todo : player id
+    player_id = -1;
+    remaining_turns_before_apparition = 0;
+    remaining_isolated_turns = 0;
+
+    // couleur blanche
+    color = sf::Color::White;
 }
 
 quint32 Cellule::id() const

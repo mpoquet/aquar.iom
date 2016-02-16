@@ -48,12 +48,16 @@ void Visu::onWelcomeReceived(const Welcome &welcome)
 
     // initialiser l'ensemble des cellules avec leurs positions initiales
     QVector<InitialNeutralCellWelcome>::const_iterator it;
+    quint32 numero = 0;
+
     for (it=welcome.initial_ncells.begin() ; it!=welcome.initial_ncells.end() ; ++it) {
         // créer la cellule
-        //Cellule* cell = new Cellule(*it, parameters.initial_neutral_cells_mass);
+        Cellule* cell = new Cellule(*it, parameters.initial_neutral_cells_mass, numero);
 
         // l'ajouter dans le conteneur de toutes les cellules
-        //addNewCell(cell);
+        addNewCell(cell);
+
+        ++numero;
     }
 
     // initialiser la liste des joueurs
@@ -161,6 +165,7 @@ void Visu::afficheScore()
 
         ///////////////////////////////////////////
         /// Bizarrement, la barre des scores ne fait pas un tiers mais la moitié de l'espace qui reste en bas de la fenêtre
+        /// Mais des fois elle fait la bonne taille
         ////////////////////////////////////////////
 
         // étiquette au-dessus de la barre
