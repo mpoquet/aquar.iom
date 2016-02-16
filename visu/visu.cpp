@@ -171,15 +171,15 @@ void Visu::onTurnReceived(const Turn &turn)
 void Visu::afficheCellule(Cellule* cellule)
 {
     if ((cellule->remaining_turns_before_apparition != 0)) {
-        cellule->estVivante = false; // pour dire que son cas a été traité
+        //cellule->estVivante = false; // pour dire que son cas a été traité
         return; // La cellule n'est pas encore apparue donc on ne l'affiche pas
     }
 
-    if (cellule->estVivante == false) {
+    /*if (cellule->estVivante == false) {
         // La cellule est morte, il faut la supprimer sans l'afficher
         removeCell(cellule->id());
         return;
-    }
+    }*/
 
     cellule->estVivante = false; // pour dire que son cas a été traité
 
