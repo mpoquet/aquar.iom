@@ -19,7 +19,7 @@ class Cellule
 // Méthodes
 public:
     // constructeurs:
-    Cellule(PlayerCell cellule, int nbPlayers); // nécessite le nombre total de joueurs dans la partie pour générer la couleur de la cellule
+    Cellule(PlayerCell cellule);
     Cellule(NonInitialNeutralCell cellule);
     Cellule(InitialNeutralCell cellule, float initialNeutralCellsMass);
     Cellule(Virus cellule, float virus_mass);
@@ -45,8 +45,6 @@ public:
     sf::Color color; // la couleur dépendra du type de la cellule et du joueur si c'est la cellule d'un joueur
 };
 
-// opérateurs de comparaison:
-bool estPlusPetiteQue(const Cellule* a, const Cellule* b);
-bool operator==(Cellule  &a, Cellule  &b);
+
 
 #endif // CELL_H

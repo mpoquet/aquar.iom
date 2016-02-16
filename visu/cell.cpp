@@ -2,7 +2,7 @@
 #include "visu.hpp"
 #include <iostream>
 
-Cellule::Cellule(PlayerCell cellule, int nbPlayers)
+Cellule::Cellule(PlayerCell cellule)
 {
     m_id = cellule.id;
     mass = cellule.mass;
@@ -83,12 +83,3 @@ void Cellule::print() const
 
 }
 
-bool operator==(Cellule  &a, Cellule  &b)
-{
-    return (a.id() == b.id());
-}
-
-bool estPlusPetiteQue(const Cellule *a, const Cellule *b)
-{
-    return (*a).mass < (*b).mass;
-}

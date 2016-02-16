@@ -97,8 +97,7 @@ void Visu::afficheCellule(const Cellule* cellule)
     window.draw(cercle);
 }
 
-void Visu::afficheToutesCellules()
-{
+void Visu::afficheToutesCellules() {
     std::vector<Cellule*>::iterator it;
     for (it=allCellsByMass.begin() ; it!=allCellsByMass.end() ; ++it) {
         afficheCellule(*it);
@@ -108,7 +107,7 @@ void Visu::afficheToutesCellules()
 void Visu::afficheScore()
 {
     // trier les joueurs par score décroissant
-    sort(players.begin(), players.end(), CompareJoueurs());
+    sort(players.begin(), players.end(), CompareScoresJoueurs());
 
     // rectangles pour la représentation du score des joueurs
     sf::RectangleShape rect; // rectangle de dimensions (0,0)
@@ -180,6 +179,13 @@ void Visu::afficheCadre()
 void Visu::addNewCell(Cellule *cellule)
 {
     allCells[cellule->id()] = cellule;
+    allCellsByMass.push_back(cellule);
+    sort(allCellsByMass.begin(), allCellsByMass.end(), CompareMasseCellules());
+}
+
+void Visu::addNewPlayer(Player p)
+{
+    players.push_back(p);
 }
 
 void Visu::inverseCouleurs()
@@ -193,11 +199,16 @@ void Visu::inverseCouleurs()
     }
 }
 
+int Visu::nbeJoueurs()
+{
+    return players.size();
+}
+
 sf::Color colorFromPlayerId(quint32 playerId)
 {
     //Il ne faut pas que green et blue soient nuls en même temps car ça fait du rouge et la couleur est déjà prise par les virus.
     sf::Uint8 red = cos(2*playerId)*255.0;
     sf::Uint8 green = sin(7.2*playerId+1.89)*255.0;
-    sf::Uint8 blue = tan(8*playerId);
+    sf::Uint8 blue = tan(8.1*playerId);
     return sf::Color(red, green, blue);
 }

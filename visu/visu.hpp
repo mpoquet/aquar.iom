@@ -11,10 +11,24 @@
 #include "structures.hpp"
 #include "cell.hpp"
 
-class CompareJoueurs {
+class CompareScoresJoueurs {
 public:
     bool operator()(const Player a, const Player b) {
         return a.score > b.score;
+    }
+};
+
+class CompareIdJoueurs {
+public:
+    bool operator()(const Player a, const Player b) {
+        return a.id < b.id;
+    }
+};
+
+class CompareMasseCellules {
+public:
+    bool operator()(const Cellule* a, const Cellule* b) {
+        return a->mass < b->mass;
     }
 };
 
@@ -40,9 +54,14 @@ public:
 
     // Ajoute une cellule dans le conteneur allCells
     void addNewCell(Cellule* cellule);
+    // Ajoute un joueur dans le conteneur players
+    void addNewPlayer(Player p);
 
     // Fait changer la couleur de l'arrière-plan entre blanc et noir
     void inverseCouleurs();
+
+// Accesseurs
+    int nbeJoueurs();
 
 // Attributs
 private:
@@ -51,9 +70,9 @@ private:
     int window_width;
     sf::Color background_color;
     sf::Color borders_color;
+    std::vector<Player> players;
 
 public:
-    std::vector<Player> players;
     std::map<quint32, Cellule*> allCells; // toutes les cellules, tous types confondus, par m_id croissant. Les premières sont les initiales neutres
     std::vector<Cellule*> allCellsByMass; // toutes les cellules, triées par masse décroissante. Plus tard on utilisera l'algo timsort pour améliorer les performances https://github.com/gfx/cpp-TimSort
 

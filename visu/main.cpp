@@ -46,16 +46,17 @@ int main()
     Player joueur1 = {1, 0, 0, 10};
     Player joueur2 = {2, 0, 0, 20};
     Player joueur3 = {3, 0, 0, 5};
-    jeu.players.push_back(joueur1);
-    jeu.players.push_back(joueur2);
-    jeu.players.push_back(joueur0);
-    jeu.players.push_back(joueur3);
-    std::cout << "Il y a " << jeu.players.size() << " joueurs " << std::endl;
+    jeu.addNewPlayer(joueur1);
+    jeu.addNewPlayer(joueur2);
+    jeu.addNewPlayer(joueur0);
+    jeu.addNewPlayer(joueur3);
+    std::cout << "Il y a " << jeu.nbeJoueurs() << " joueurs " << std::endl;
 
     Position pos = {300, 300};
     InitialNeutralCell initN = {0};
     // il manque l'information sur la position
     Cellule* initialeNeutre = new Cellule(initN, parameters.initial_neutral_cells_mass);
+    jeu.addNewCell(initialeNeutre);
 
     pos = {13, 31};
     NonInitialNeutralCell nonInitialeNeutre = {4, 12, pos};
@@ -63,18 +64,27 @@ int main()
     pos = {78, 87};
     Virus vir{16, pos};
     Cellule* virus = new Cellule(vir, parameters.virus_mass);
+    jeu.addNewCell(virus);
 
     pos = {130, 310};
-    PlayerCell joueuse0 = {2.1, 0, pos, 14, 7};
-    Cellule* cellule0 = new Cellule(joueuse0, jeu.players.size());
+    PlayerCell joueuse0 = {5, 0, pos, 14, 7};
+    Cellule* cellule0 = new Cellule(joueuse0);
+    jeu.addNewCell(cellule0);
 
     pos = {800, 400};
     PlayerCell joueuse1 = {3, 1, pos, 4, 7};
-    Cellule* cellule1 = new Cellule(joueuse1, jeu.players.size());
+    Cellule* cellule1 = new Cellule(joueuse1);
+    jeu.addNewCell(cellule1);
 
     pos = {1000, 120};
-    PlayerCell joueuse2 = {3, 2, pos, 7, 0};
-    Cellule* cellule2 = new Cellule(joueuse2, jeu.players.size());
+    PlayerCell joueuse2 = {2, 2, pos, 7, 0};
+    Cellule* cellule2 = new Cellule(joueuse2);
+    jeu.addNewCell(cellule2);
+
+    std::vector<Cellule*>::iterator i;
+    for (i=jeu.allCellsByMass.begin(); i!=jeu.allCellsByMass.end(); ++i) {
+        std::cout << "Cellule " << (*i)->id() << " masse " << (*i)->mass << std::endl;
+    }
 
 
     while (jeu.window.isOpen()) {
@@ -114,11 +124,7 @@ int main()
 
         jeu.afficheCadre();
 
-        jeu.afficheCellule(cellule0);
-        jeu.afficheCellule(cellule1);
-        jeu.afficheCellule(cellule2);
-        jeu.afficheCellule(virus);
-        jeu.afficheCellule(initialeNeutre);
+        jeu.afficheToutesCellules();
 
         jeu.afficheScore();
 
