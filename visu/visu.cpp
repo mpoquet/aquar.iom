@@ -208,6 +208,22 @@ void Visu::afficheToutesCellules() {
 
 void Visu::afficheScore()
 {
+    // pour cacher les cellules qui dépassent de l'aire de jeu on met un rectangle blanc par-dessus
+    window.setView(bas);
+    sf::RectangleShape cache_bas;
+    cache_bas.setSize(sf::Vector2f(bas.getSize().x, bas.getSize().y));
+    cache_bas.setPosition(bas.getCenter().x-bas.getSize().x/2, bas.getCenter().y-bas.getSize().y/2);
+    std::cout << cache_bas.getSize().x << " " << bas.getSize().y << std::endl;
+    cache_bas.setFillColor(sf::Color::White);
+    window.draw(cache_bas);
+
+    window.setView(droite);
+    sf::RectangleShape cache_droite;
+    cache_droite.setSize(sf::Vector2f(droite.getSize().x, droite.getSize().y));
+    cache_droite.setPosition(droite.getCenter().x-droite.getSize().x/2, droite.getCenter().y-droite.getSize().y/2);
+    cache_droite.setFillColor(sf::Color::White);
+    window.draw(cache_droite);
+
     // trier les joueurs par score décroissant
     sort(players.begin(), players.end(), CompareScoresJoueurs());
 
@@ -262,11 +278,6 @@ void Visu::afficheScore()
         abscisse_rect += largeur_rect; // on décale le rectangle pour afficher tous les rectangles côte à côte
         window.draw(rect);
     }
-
-    ///////////////////////////////////////////
-    /// Bizarrement, la barre des scores ne fait pas un tiers mais la moitié de l'espace qui reste en bas de la fenêtre
-    /// Mais des fois elle fait la bonne taille
-    ////////////////////////////////////////////
 
     // titre au-dessus de la barre
     window.setView(bas);
