@@ -62,6 +62,8 @@ public:
 
     // Fait changer la couleur de l'arrière-plan entre blanc et noir
     void inverseCouleurs();
+    // Change la vue
+    void changeView(float gauche, float haut, float largeur, float hauteur);
 
 // Accesseurs
     int nbeJoueurs();
@@ -69,8 +71,6 @@ public:
 // Attributs
 private:
     GameParameters parameters;
-    int window_height;
-    int window_width;
     sf::Color background_color;
     sf::Color borders_color;
     std::vector<Player> players;
@@ -81,7 +81,12 @@ public:
     std::vector<Cellule*> allCellsByMass; // toutes les cellules, triées par masse décroissante. Plus tard on utilisera l'algo timsort pour améliorer les performances https://github.com/gfx/cpp-TimSort
 
     sf::RenderWindow window; // RenderWindow hérite de Window et contient des fonctions pour le dessin
-    sf::RectangleShape cadre; // délimite le plateau de jeu
+    sf::RectangleShape cadre; // zone de la fenêtre où est affichée le plateau de jeu
+    sf::View map_view; // vue qui contient la carte
+    sf::View droite; // vue qui contient la liste des joueurs
+    sf::View bas; // vue qui contient le diagramme des scores
+    int window_height;
+    int window_width;
 
 };
 

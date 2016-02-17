@@ -116,9 +116,6 @@ int main()
                 // appui sur un bouton du clavier
             case sf::Event::KeyPressed:
                 switch(event.key.code) {
-                case sf::Keyboard::F:
-                    // todo : alterner entre plein écran ou fenêtré
-                    break;
 
                 case sf::Keyboard::I:
                     // todo : inverser la couleur de fond de la fenêtre et celle des contours (cellules + cadre)
@@ -135,6 +132,30 @@ int main()
                     jeu.onTurnReceived(tour);
                     break;
 
+                case sf::Keyboard::Add:
+                    jeu.map_view.zoom(0.75);
+                    break;
+
+                case sf::Keyboard::Subtract:
+                    jeu.map_view.zoom(1/0.75);
+                    break;
+
+                case sf::Keyboard::Right:
+                    jeu.map_view.move(5, 0);
+                    break;
+
+                case sf::Keyboard::Left:
+                    jeu.map_view.move(-5, 0);
+                    break;
+
+                case sf::Keyboard::Up:
+                    jeu.map_view.move(0, -5);
+                    break;
+
+                case sf::Keyboard::Down:
+                    jeu.map_view.move(0, 5);
+                    break;
+
                 default:
                     break;
                 }
@@ -147,9 +168,11 @@ int main()
 
         jeu.window.clear(sf::Color::White);
 
+        // il faut afficher le cadre et les scores (ie les parties fixes) avant la carte car les vues se superposent
         jeu.afficheCadre();
         jeu.afficheToutesCellules();
         jeu.afficheScore();
+
 
         jeu.window.display(); // dessine tous les objets avec lesquels on a appelé draw
 

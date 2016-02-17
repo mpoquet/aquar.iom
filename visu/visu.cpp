@@ -8,12 +8,24 @@ Visu::Visu()
     background_color = sf::Color::White;
     borders_color = sf::Color(100, 100, 100);
 
+    /*cadre.setSize(sf::Vector2f(parameters.map_width, parameters.map_height));
+    cadre.setFillColor(background_color);
+    cadre.setOutlineColor(borders_color);
+    cadre.setOutlineThickness(1);*/
+
+
     // création de la fenêtre
     sf::ContextSettings settings;
     settings.antialiasingLevel = 8;
     window.create(sf::VideoMode(window_width, window_height), "Le jeu des cellules qui se mangent", sf::Style::Default, settings);
     window.setVerticalSyncEnabled(true);
-    window.setKeyRepeatEnabled(false); // désactiver la répétition des touches si on les maintient appuyées
+    window.setKeyRepeatEnabled(true); // activer/désactiver la répétition des touches si on les maintient appuyées
+
+    droite.reset(sf::FloatRect(0.75*window_width, 0, 0.25*window_width, window_height));
+    droite.setViewport(sf::FloatRect(0.75, 0, 0.25, 1));
+
+    bas.reset(sf::FloatRect(0, 0.75*window_height+1, window_width, 0.25*window_height));
+    bas.setViewport(sf::FloatRect(0, 0.75, 1, 0.25));
 
 }
 
@@ -44,6 +56,11 @@ void Visu::onWelcomeReceived(const Welcome &welcome)
     parameters.initial_neutral_cells_mass = welcome.parameters.initial_neutral_cells_mass;
     parameters.neutral_cells_repop_time = welcome.parameters.neutral_cells_repop_time;
 
+    /// initialiser la vue. Par défaut on affiche l'ensemble de la carte dans 3/4 de l'écran
+    changeView(0, 0, parameters.map_width/0.75, parameters.map_height/0.75);
+    //view.setViewport(sf::FloatRect(0, 0, 1, 1)); // la place que prend la vue dans la fenêtre
+    window.setView(map_view);
+
     /// initialiser l'ensemble des cellules avec leurs positions initiales
     QVector<InitialNeutralCellWelcome>::const_iterator it;
     quint32 numero = 0;
@@ -61,10 +78,6 @@ void Visu::onWelcomeReceived(const Welcome &welcome)
 
     // pas besoin d'initialiser les joueurs : on va les recevoir dans un Turn
 
-    cadre.setSize(sf::Vector2f(parameters.map_width, parameters.map_height));
-    cadre.setFillColor(background_color);
-    cadre.setOutlineColor(borders_color);
-    cadre.setOutlineThickness(1);
 
 }
 
@@ -73,7 +86,7 @@ void Visu::onTurnReceived(const Turn &turn)
     if (players.size()==0) {
         /// C'est la première fois qu'on reçoit un Turn : initialisation de la liste des joueurs
         std::cout << "Création des joueurs\n";
-        for (uint i=0; i<turn.players.size(); ++i) {
+        for (int i=0; i<turn.players.size(); ++i) {
             addNewPlayer(turn.players[i]);
         }
     }
@@ -99,7 +112,7 @@ void Visu::onTurnReceived(const Turn &turn)
     }
 
     std::cout << "màj des virus\n";
-    for (uint i=0; i<turn.viruses.size(); ++i) {
+    for (int i=0; i<turn.viruses.size(); ++i) {
         int indice = turn.viruses[i].id;
         // vérifier si allCells[indice] existe déjà
         if (allCells.count(indice) == 0) {
@@ -114,7 +127,7 @@ void Visu::onTurnReceived(const Turn &turn)
         }
     }
     std::cout << "màj des cellules des joueurs\n";
-    for (uint i=0; i<turn.pcells.size(); ++i) {
+    for (int i=0; i<turn.pcells.size(); ++i) {
         int indice = turn.pcells[i].id;
         // vérifier si allCells[indice] existe déjà
         if (allCells.count(indice) == 0) {
@@ -133,13 +146,13 @@ void Visu::onTurnReceived(const Turn &turn)
     std::cout << "màj des cellules neutres initiales\n";
     // On sait que les cellules initiales neutres ont les numéros de 0 à nbCellulesInitiales - 1
     int indice(0);
-    for (uint i=0; i<turn.initial_ncells.size(); ++i) {
+    for (int i=0; i<turn.initial_ncells.size(); ++i) {
         // Les cellules initiales neutres ne se déplacent pas
         allCells[indice]->remaining_turns_before_apparition = turn.initial_ncells[i].remaining_turns_before_apparition;
         ++indice;
     }
     std::cout << "màj des cellules neutres non initiales\n";
-    for (uint i=0; i<turn.non_initial_ncells.size(); ++i) {
+    for (int i=0; i<turn.non_initial_ncells.size(); ++i) {
         int indice = turn.non_initial_ncells[i].id;
         // vérifier si allCells[indice] existe déjà
         if (allCells.count(indice) == 0) {
@@ -185,6 +198,8 @@ void Visu::afficheCellule(Cellule* cellule)
 }
 
 void Visu::afficheToutesCellules() {
+    window.setView(map_view);
+
     std::vector<Cellule*>::iterator it;
     for (it=allCellsByMass.begin() ; it!=allCellsByMass.end() ; ++it) {
         afficheCellule(*it);
@@ -198,15 +213,15 @@ void Visu::afficheScore()
 
     // rectangles pour la représentation du score relatif des joueurs
     sf::RectangleShape rect; // rectangle de dimensions (0,0)
-    float hauteur_rect(1.0/3.0 * (window_height - parameters.map_height)), largeur_rect(0); // un tiers de la distance qui reste entre le bas du plateau et le bas de la fenêtre
-    float abscisse_rect(0), ordonnee_rect(parameters.map_height + hauteur_rect);
+    float hauteur_rect(1.0/3.0 * (window_height*0.25)), largeur_rect(0); // un tiers de la distance qui reste entre le bas du plateau et le bas de la fenêtre
+    float abscisse_rect(0), ordonnee_rect(0.75*window_height + hauteur_rect);
 
     std::vector<Player>::iterator joueur;
     float somme_scores(0);
     for (joueur=players.begin(); joueur!=players.end(); ++joueur) {
         somme_scores += (*joueur).score;
     }
-    float facteur_score = window_width / somme_scores;
+    float facteur_score = bas.getSize().x / somme_scores;
 
     // pastilles pour la légende des couleurs des joueurs
     Position pos_pastille;
@@ -217,13 +232,14 @@ void Visu::afficheScore()
     police.loadFromFile("fonts/F-Zero GBA Text 1.ttf");
 
     // étiquettes pour chaque joueur
-    sf::Text etiquette("Random text", police, 10);
+    sf::Text etiquette("Random text", police, 9);
     etiquette.setColor(sf::Color::Black);
 
 
     for (joueur=players.begin(); joueur!=players.end(); ++joueur) {
+        window.setView(droite);
         // création de l'étiquette de chaque joueur
-        pos_pastille.x = parameters.map_width + 10;
+        pos_pastille.x = window_width*0.75+ 10;
         pastille.setFillColor(colorFromPlayerId((*joueur).id));
         pastille.setPosition(pos_pastille.x-5, pos_pastille.y-5);
         window.draw(pastille);
@@ -235,8 +251,9 @@ void Visu::afficheScore()
         etiquette.setString(score);
         window.draw(etiquette);
 
-        pos_pastille.y += parameters.map_height/10;
+        pos_pastille.y += window_height/10;
 
+        window.setView(bas);
         // création du rectangle qui représente le score du joueur
         largeur_rect = (*joueur).score * facteur_score;
         rect.setSize(sf::Vector2f(largeur_rect, hauteur_rect));
@@ -246,20 +263,22 @@ void Visu::afficheScore()
         window.draw(rect);
     }
 
-        ///////////////////////////////////////////
-        /// Bizarrement, la barre des scores ne fait pas un tiers mais la moitié de l'espace qui reste en bas de la fenêtre
-        /// Mais des fois elle fait la bonne taille
-        ////////////////////////////////////////////
+    ///////////////////////////////////////////
+    /// Bizarrement, la barre des scores ne fait pas un tiers mais la moitié de l'espace qui reste en bas de la fenêtre
+    /// Mais des fois elle fait la bonne taille
+    ////////////////////////////////////////////
 
-        // titre au-dessus de la barre
-        sf::Text texteScores("Repartition des scores :", police, 25);
-        texteScores.move(sf::Vector2f(0, window_height-2.8*hauteur_rect));
-        texteScores.setColor(sf::Color::Black);
-        window.draw(texteScores);
+    // titre au-dessus de la barre
+    window.setView(bas);
+    sf::Text texteScores("Repartition des scores :", police, 25);
+    texteScores.move(sf::Vector2f(0, 0.75*window_height+0.3*hauteur_rect));
+    texteScores.setColor(sf::Color::Black);
+    window.draw(texteScores);
 }
 
 void Visu::afficheCadre()
 {
+    window.setView(map_view);
     cadre.setFillColor(background_color);
     window.draw(cadre);
 }
@@ -275,8 +294,8 @@ void Visu::removeCell(quint32 id)
 {
     // retirer la cellule de allCellsByMass
     bool ok = false;
-    int i(0);
-    while (i<allCellsByMass.size() | ok==false) {
+    uint i(0);
+    while ((i<allCellsByMass.size()) | (ok==false)) {
         if (allCellsByMass[i]->id() == id) {
             ok = true;
             allCellsByMass.erase(allCellsByMass.begin()+i);
@@ -303,6 +322,11 @@ void Visu::inverseCouleurs()
     else {
         background_color = sf::Color::White;
     }
+}
+
+void Visu::changeView(float gauche, float haut, float largeur, float hauteur)
+{
+    map_view.reset(sf::FloatRect(gauche, haut, largeur, hauteur));
 }
 
 int Visu::nbeJoueurs()
