@@ -5,13 +5,12 @@ Visu::Visu()
     // initialisation des attributs : pour la plupart il faut attendre un Welcome pour avoir les données
     window_height = 768;
     window_width = 1024;
-    background_color = sf::Color::White;
+    background_color = sf::Color::Black;
     borders_color = sf::Color(100, 100, 100);
 
-    /*cadre.setSize(sf::Vector2f(parameters.map_width, parameters.map_height));
     cadre.setFillColor(background_color);
     cadre.setOutlineColor(borders_color);
-    cadre.setOutlineThickness(1);*/
+    cadre.setOutlineThickness(1);
 
 
     // création de la fenêtre
@@ -57,9 +56,10 @@ void Visu::onWelcomeReceived(const Welcome &welcome)
     parameters.neutral_cells_repop_time = welcome.parameters.neutral_cells_repop_time;
 
     /// initialiser la vue. Par défaut on affiche l'ensemble de la carte dans 3/4 de l'écran
-    changeView(0, 0, parameters.map_width/0.75, parameters.map_height/0.75);
-    //view.setViewport(sf::FloatRect(0, 0, 1, 1)); // la place que prend la vue dans la fenêtre
-    window.setView(map_view);
+    vue_carte.reset(sf::FloatRect(0, 0, parameters.map_width/0.75, parameters.map_height/0.75));
+
+    cadre.setSize(sf::Vector2f(parameters.map_width, parameters.map_height));
+    vue_cadre.reset(sf::FloatRect(0, 0, parameters.map_width/0.75, parameters.map_height/0.75));
 
     /// initialiser l'ensemble des cellules avec leurs positions initiales
     QVector<InitialNeutralCellWelcome>::const_iterator it;
@@ -198,7 +198,7 @@ void Visu::afficheCellule(Cellule* cellule)
 }
 
 void Visu::afficheToutesCellules() {
-    window.setView(map_view);
+    window.setView(vue_carte);
 
     std::vector<Cellule*>::iterator it;
     for (it=allCellsByMass.begin() ; it!=allCellsByMass.end() ; ++it) {
@@ -278,7 +278,7 @@ void Visu::afficheScore()
 
 void Visu::afficheCadre()
 {
-    window.setView(map_view);
+    window.setView(vue_cadre);
     cadre.setFillColor(background_color);
     window.draw(cadre);
 }
@@ -322,11 +322,6 @@ void Visu::inverseCouleurs()
     else {
         background_color = sf::Color::White;
     }
-}
-
-void Visu::changeView(float gauche, float haut, float largeur, float hauteur)
-{
-    map_view.reset(sf::FloatRect(gauche, haut, largeur, hauteur));
 }
 
 int Visu::nbeJoueurs()

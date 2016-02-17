@@ -133,27 +133,27 @@ int main()
                     break;
 
                 case sf::Keyboard::Add:
-                    jeu.map_view.zoom(0.75);
+                    jeu.vue_carte.zoom(0.75);
                     break;
 
                 case sf::Keyboard::Subtract:
-                    jeu.map_view.zoom(1/0.75);
+                    jeu.vue_carte.zoom(1/0.75);
                     break;
 
                 case sf::Keyboard::Right:
-                    jeu.map_view.move(5, 0);
+                    jeu.vue_carte.move(5, 0);
                     break;
 
                 case sf::Keyboard::Left:
-                    jeu.map_view.move(-5, 0);
+                    jeu.vue_carte.move(-5, 0);
                     break;
 
                 case sf::Keyboard::Up:
-                    jeu.map_view.move(0, -5);
+                    jeu.vue_carte.move(0, -5);
                     break;
 
                 case sf::Keyboard::Down:
-                    jeu.map_view.move(0, 5);
+                    jeu.vue_carte.move(0, 5);
                     break;
 
                 default:
@@ -172,7 +172,6 @@ int main()
         jeu.afficheCadre();
         jeu.afficheToutesCellules();
         jeu.afficheScore();
-
 
         jeu.window.display(); // dessine tous les objets avec lesquels on a appelé draw
 

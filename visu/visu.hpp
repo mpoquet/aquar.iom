@@ -62,8 +62,6 @@ public:
 
     // Fait changer la couleur de l'arrière-plan entre blanc et noir
     void inverseCouleurs();
-    // Change la vue
-    void changeView(float gauche, float haut, float largeur, float hauteur);
 
 // Accesseurs
     int nbeJoueurs();
@@ -75,6 +73,8 @@ private:
     sf::Color borders_color;
     std::vector<Player> players;
     int nbCellulesInitiales;
+    int window_height;
+    int window_width;
 
 public:
     std::map<quint32, Cellule*> allCells; // toutes les cellules, tous types confondus, par m_id croissant. Les premières sont les initiales neutres
@@ -82,11 +82,12 @@ public:
 
     sf::RenderWindow window; // RenderWindow hérite de Window et contient des fonctions pour le dessin
     sf::RectangleShape cadre; // zone de la fenêtre où est affichée le plateau de jeu
-    sf::View map_view; // vue qui contient la carte
+    sf::View vue_carte; // vue qui contient la carte
     sf::View droite; // vue qui contient la liste des joueurs
     sf::View bas; // vue qui contient le diagramme des scores
-    int window_height;
-    int window_width;
+    sf::View vue_cadre;
+
+
 
 };
 
