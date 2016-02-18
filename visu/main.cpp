@@ -51,7 +51,7 @@ int main()
     jeu.onWelcomeReceived(welcome);
 
     Player joueur0 = {0, 0, 0, 1};
-    Player joueur1 = {1, 0, 0, 10};
+    Player joueur1 = {1, 0, 0, 20};
     Player joueur2 = {2, 0, 0, 20};
     Player joueur3 = {3, 0, 0, 5};
 
@@ -130,30 +130,31 @@ int main()
                     tour.initial_ncells[0].remaining_turns_before_apparition = 0;
                     tour.non_initial_ncells[0].mass = 50;
                     jeu.onTurnReceived(tour);
+                    tour.players[2].score = 21;
                     break;
 
                 case sf::Keyboard::Add:
-                    jeu.vue_carte.zoom(0.75);
+                    jeu.zoom();
                     break;
 
                 case sf::Keyboard::Subtract:
-                    jeu.vue_carte.zoom(1/0.75);
+                    jeu.dezoom();
                     break;
 
                 case sf::Keyboard::Right:
-                    jeu.vue_carte.move(5, 0);
+                    jeu.deplaceVueDroite();
                     break;
 
                 case sf::Keyboard::Left:
-                    jeu.vue_carte.move(-5, 0);
+                    jeu.deplaceVueGauche();
                     break;
 
                 case sf::Keyboard::Up:
-                    jeu.vue_carte.move(0, -5);
+                    jeu.deplaceVueHaut();
                     break;
 
                 case sf::Keyboard::Down:
-                    jeu.vue_carte.move(0, 5);
+                    jeu.deplaceVueBas();
                     break;
 
                 default:
@@ -166,14 +167,9 @@ int main()
             }
         }
 
-        jeu.window.clear(sf::Color::White);
+        jeu.afficheTout();
 
-        // il faut afficher le cadre et les scores (ie les parties fixes) avant la carte car les vues se superposent
-        jeu.afficheCadre();
-        jeu.afficheToutesCellules();
-        jeu.afficheScore();
 
-        jeu.window.display(); // dessine tous les objets avec lesquels on a appelé draw
 
     }
 

@@ -294,6 +294,47 @@ void Visu::afficheCadre()
     window.draw(cadre);
 }
 
+void Visu::afficheTout()
+{
+    window.clear(sf::Color::White);
+
+    afficheCadre();
+    afficheToutesCellules();
+    afficheScore();
+
+    window.display(); // dessine tous les objets avec lesquels on a appelé draw
+}
+
+void Visu::zoom()
+{
+    vue_carte.zoom(0.75);
+}
+
+void Visu::dezoom()
+{
+    vue_carte.zoom(1/0.75);
+}
+
+void Visu::deplaceVueDroite()
+{
+    vue_carte.move(5, 0);
+}
+
+void Visu::deplaceVueGauche()
+{
+    vue_carte.move(-5, 0);
+}
+
+void Visu::deplaceVueHaut()
+{
+    vue_carte.move(0, -5);
+}
+
+void Visu::deplaceVueBas()
+{
+    vue_carte.move(0, 5);
+}
+
 void Visu::addNewCell(Cellule *cellule)
 {
     allCells[cellule->id()] = cellule;

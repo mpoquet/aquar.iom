@@ -53,6 +53,16 @@ public:
     // Affiche le cadre qui délimite le plateau de jeu
     void afficheCadre();
 
+    // Met à jour tout l'affichage
+    void afficheTout();
+
+    void zoom();
+    void dezoom();
+    void deplaceVueDroite(); // pour regarder vers la droite ; déplace les objets vers la gauche
+    void deplaceVueGauche();
+    void deplaceVueHaut(); // pour regarder vers le haut ; déplace les objets vers le bas
+    void deplaceVueBas();
+
     // Ajoute une cellule dans le conteneur allCells
     void addNewCell(Cellule* cellule);
     // Supprime une cellule morte
@@ -76,19 +86,17 @@ private:
     int window_height;
     int window_width;
 
+    sf::View vue_carte; // vue qui contient la carte
+    sf::View droite; // vue qui contient la liste des joueurs
+    sf::View bas; // vue qui contient le diagramme des scores
+    sf::View vue_cadre;
+    sf::RectangleShape cadre; // zone de la fenêtre où est affichée le plateau de jeu
+
 public:
     std::map<quint32, Cellule*> allCells; // toutes les cellules, tous types confondus, par m_id croissant. Les premières sont les initiales neutres
     std::vector<Cellule*> allCellsByMass; // toutes les cellules, triées par masse décroissante. Plus tard on utilisera l'algo timsort pour améliorer les performances https://github.com/gfx/cpp-TimSort
 
     sf::RenderWindow window; // RenderWindow hérite de Window et contient des fonctions pour le dessin
-    sf::RectangleShape cadre; // zone de la fenêtre où est affichée le plateau de jeu
-    sf::View vue_carte; // vue qui contient la carte
-    sf::View droite; // vue qui contient la liste des joueurs
-    sf::View bas; // vue qui contient le diagramme des scores
-    sf::View vue_cadre;
-
-
-
 };
 
 sf::Color colorFromPlayerId(quint32 playerId); // détermine la couleur d'un joueur
