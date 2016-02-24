@@ -92,15 +92,8 @@ void ainet16::Session::connect(string address, int port) throw(Exception)
 void ainet16::Session::login_player(string name) throw(Exception)
 {
     // Sending LOGIN_PLAYER message
-    sf::Packet packet;
-
-    packet << sf::Uint8(LOGIN_PLAYER);
-    packet << sf::Uint32(name.size());
-
-    for (unsigned int i = 0; i < name.size(); ++i)
-        packet << sf::Uint8(name[i]);
-
-    send_packet(packet);
+    send_uint8(LOGIN_PLAYER);
+    send_string(name);
 
     // Waiting for LOGIN_ACK
     sf::Uint8 stamp_ui8 = read_uint8();
@@ -189,7 +182,7 @@ void ainet16::Session::wait_for_welcome() throw(Exception)
     _welcome.parameters.virus_creation_mass_loss = read_float();
     _welcome.parameters.virus_max_split = read_uint32();
     _welcome.parameters.nb_starting_cells_per_player = read_uint32();
-    _welcome.parameters.player_cells_starting_mass = read_uint32();
+    _welcome.parameters.player_cells_starting_mass = read_float();
     _welcome.parameters.initial_neutral_cells_mass = read_float();
     _welcome.parameters.initial_neutral_cells_repop_time = read_uint32();
 
@@ -201,6 +194,34 @@ void ainet16::Session::wait_for_welcome() throw(Exception)
     {
         position.x = read_float();
         position.y = read_float();
+    }
+
+    if (_debug)
+    {
+        printf("  map_width=%f\n", _welcome.parameters.map_width);
+        printf("  map_height=%f\n", _welcome.parameters.map_height);
+        printf("  min_nb_players=%d\n", _welcome.parameters.min_nb_players);
+        printf("  max_nb_players=%d\n", _welcome.parameters.max_nb_players);
+        printf("  mass_absorption=%f\n", _welcome.parameters.mass_absorption);
+        printf("  minimum_mass_ratio_to_absorb=%f\n", _welcome.parameters.minimum_mass_ratio_to_absorb);
+        printf("  minimum_pcell_mass=%f\n", _welcome.parameters.minimum_pcell_mass);
+        printf("  radius_factor=%f\n", _welcome.parameters.radius_factor);
+        printf("  max_cells_per_player=%d\n", _welcome.parameters.max_cells_per_player);
+        printf("  mass_loss_per_frame=%f\n", _welcome.parameters.mass_loss_per_frame);
+        printf("  base_cell_speed=%f\n", _welcome.parameters.base_cell_speed);
+        printf("  speed_loss_factor=%f\n", _welcome.parameters.speed_loss_factor);
+        printf("  virus_mass=%f\n", _welcome.parameters.virus_mass);
+        printf("  virus_creation_mass_loss=%f\n", _welcome.parameters.virus_creation_mass_loss);
+        printf("  virus_max_split=%d\n", _welcome.parameters.virus_max_split);
+        printf("  nb_starting_cells_per_player=%d\n", _welcome.parameters.nb_starting_cells_per_player);
+        printf("  player_cells_starting_mass=%f\n", _welcome.parameters.player_cells_starting_mass);
+        printf("  initial_neutral_cells_mass=%f\n", _welcome.parameters.initial_neutral_cells_mass);
+        printf("  initial_neutral_cells_repop_time=%d\n", _welcome.parameters.initial_neutral_cells_repop_time);
+
+        printf("  nb_initial_ncells=%d\n", (int)nb_initial_neutral_cells);
+
+        for (Position & position : _welcome.initial_ncells_positions)
+            printf("    (%f, %f)\n", position.x, position.y);
     }
 }
 
@@ -218,7 +239,7 @@ void ainet16::Session::wait_for_game_starts() throw(Exception)
             throw KickException(kick_reason);
         }
         else
-            throw Exception("Invalid stamp received while waiting for WELCOME, received_stamp=" + std::to_string(stamp_ui8));
+            throw Exception("Invalid stamp received while waiting for GAME_STARTS, received_stamp=" + std::to_string(stamp_ui8));
     }
 
     sf::Uint32 gdc_size = read_uint32();
@@ -226,36 +247,56 @@ void ainet16::Session::wait_for_game_starts() throw(Exception)
 
     // Game-dependent protocol
     _player_id = read_uint32();
+    printf("  player_id=%d\n", _player_id);
+    // Read initial neutral cells' positions
+    sf::Uint32 nb_initial_ncells = read_uint32();
+    if (nb_initial_ncells != _welcome.initial_ncells_positions.size())
+        throw Exception("Incoherent number of initial neutral cells received (welcome/turn)");
 
-    // Reading the game parameters
-    _welcome.parameters.map_width = read_float();
-    _welcome.parameters.map_height = read_float();
-    _welcome.parameters.min_nb_players = read_uint32();
-    _welcome.parameters.max_nb_players = read_uint32();
-    _welcome.parameters.mass_absorption = read_float();
-    _welcome.parameters.minimum_mass_ratio_to_absorb = read_float();
-    _welcome.parameters.minimum_pcell_mass = read_float();
-    _welcome.parameters.radius_factor = read_float();
-    _welcome.parameters.max_cells_per_player = read_uint32();
-    _welcome.parameters.mass_loss_per_frame = read_float();
-    _welcome.parameters.base_cell_speed = read_float();
-    _welcome.parameters.speed_loss_factor = read_float();
-    _welcome.parameters.virus_mass = read_float();
-    _welcome.parameters.virus_creation_mass_loss = read_float();
-    _welcome.parameters.virus_max_split = read_uint32();
-    _welcome.parameters.nb_starting_cells_per_player = read_uint32();
-    _welcome.parameters.player_cells_starting_mass = read_uint32();
-    _welcome.parameters.initial_neutral_cells_mass = read_float();
-    _welcome.parameters.initial_neutral_cells_repop_time = read_uint32();
+    _turn.initial_ncells.resize(nb_initial_ncells);
+    for (TurnInitialNeutralCell & ncell : _turn.initial_ncells)
+        ncell.remaining_turns_before_apparition = read_uint32();
 
-    // Reading the position of the initial neutral cells
-    sf::Uint32 nb_initial_neutral_cells = read_uint32();
-    _welcome.initial_ncells_positions.resize(nb_initial_neutral_cells);
-
-    for (Position & position : _welcome.initial_ncells_positions)
+    // Read non-initial neutral cells
+    sf::Uint32 nb_non_initial_ncells = read_uint32();
+    _turn.non_initial_ncells.resize(nb_non_initial_ncells);
+    for (TurnNonInitialNeutralCell & ncell : _turn.non_initial_ncells)
     {
-        position.x = read_float();
-        position.y = read_float();
+        ncell.ncell_id = read_uint32();
+        ncell.mass = read_float();
+        ncell.position = read_position();
+    }
+
+    // Read viruses
+    sf::Uint32 nb_viruses = read_uint32();
+    _turn.viruses.resize(nb_viruses);
+    for (TurnVirus & virus : _turn.viruses)
+    {
+        virus.id = read_uint32();
+        virus.position = read_position();
+    }
+
+    // Read player cells
+    sf::Uint32 nb_pcells = read_uint32();
+    _turn.pcells.resize(nb_pcells);
+    for (TurnPlayerCell & pcell : _turn.pcells)
+    {
+        pcell.pcell_id = read_uint32();
+        pcell.position = read_position();
+        pcell.player_id = read_uint32();
+        pcell.mass = read_float();
+        pcell.remaining_isolated_turns = read_uint32();
+    }
+
+    // Read players
+    sf::Uint32 nb_players = read_uint32();
+    _turn.players.resize(nb_players);
+    for (TurnPlayer & player : _turn.players)
+    {
+        player.player_id = read_uint32();
+        player.nb_cells = read_uint32();
+        player.mass = read_float();
+        player.score = read_uint64();
     }
 }
 
@@ -318,7 +359,7 @@ void ainet16::Session::wait_for_next_turn() throw(Exception)
             throw KickException(kick_reason);
         }
         else
-            throw Exception("Invalid stamp received while waiting for TURNR, received_stamp=" + std::to_string(stamp_ui8));
+            throw Exception("Invalid stamp received while waiting for TURN, received_stamp=" + std::to_string(stamp_ui8));
     }
 
     sf::Uint32 gdc_size = read_uint32();
@@ -531,6 +572,73 @@ bool ainet16::Session::read_bool() throw(Exception)
         return false;
     else
         throw Exception("Bad boolean received: not 0 nor 1");
+}
+
+void ainet16::Session::send_uint8(sf::Uint8 ui8) throw(Exception)
+{
+    std::size_t sent;
+    sf::Socket::Status status = _socket.send(&ui8, 1, sent);
+
+    if(sent != 1)
+        throw Exception("Partial sending");
+
+    // todo: check result
+    // todo: make sure all data is sent on partiel first sends
+}
+
+void ainet16::Session::send_uint32(sf::Uint32 ui32) throw(Exception)
+{
+    std::size_t sent;
+    sf::Socket::Status status = _socket.send(&ui32, 4, sent);
+
+    if(sent != 4)
+        throw Exception("Partial sending");
+    // todo: check result
+    // todo: make sure all data is sent on partiel first sends
+}
+
+void ainet16::Session::send_uint64(sf::Uint64 ui64) throw(Exception)
+{
+    std::size_t sent;
+    sf::Socket::Status status = _socket.send(&ui64, 8, sent);
+
+    if(sent != 8)
+        throw Exception("Partial sending");
+    // todo: check result
+    // todo: make sure all data is sent on partiel first sends
+}
+
+void ainet16::Session::send_float(float f) throw(Exception)
+{
+    std::size_t sent;
+    sf::Socket::Status status = _socket.send(&f, 4, sent);
+
+    if(sent != 4)
+        throw Exception("Partial sending");
+
+    // todo: check resulthvr
+    // todo: make sure all data is sent on partiel first sends
+}
+
+void ainet16::Session::send_string(const string &s) throw(Exception)
+{
+    sf::Uint32 str_size = s.size();
+    send_uint32(str_size);
+
+    for (unsigned int i = 0; i < str_size; ++i)
+        send_uint8(s[i]);
+}
+
+void ainet16::Session::send_position(const ainet16::Position &pos) throw(Exception)
+{
+    send_float(pos.x);
+    send_float(pos.y);
+}
+
+void ainet16::Session::send_bool(bool b) throw(Exception)
+{
+    sf::Uint8 ui8 = (int)b;
+    send_uint8(ui8);
 }
 
 void ainet16::Session::send_packet(sf::Packet &packet) throw(Exception)

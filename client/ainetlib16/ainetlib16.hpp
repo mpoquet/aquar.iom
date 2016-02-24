@@ -8,16 +8,16 @@ namespace ainet16
 {
     enum MetaProtocolStamp
     {
-        LOGIN_PLAYER,
-        LOGIN_VISU,
-        LOGIN_ACK,
-        LOGOUT,
-        KICK,
-        WELCOME,
-        GAME_STARTS,
-        GAME_ENDS,
-        TURN,
-        TURN_ACK
+        LOGIN_PLAYER = 0,
+        LOGIN_VISU = 1,
+        LOGIN_ACK = 2,
+        LOGOUT = 3,
+        KICK = 4,
+        WELCOME = 5,
+        GAME_STARTS = 6,
+        GAME_ENDS = 7,
+        TURN = 8,
+        TURN_ACK = 9
     };
 
     class Exception
@@ -44,8 +44,8 @@ namespace ainet16
 
     struct Position
     {
-        int x;
-        int y;
+        float x;
+        float y;
     };
 
     struct MoveAction
@@ -104,7 +104,7 @@ namespace ainet16
         float speed_loss_factor;
         float virus_mass;
         float virus_creation_mass_loss;
-        float virus_max_split;
+        int virus_max_split;
         int nb_starting_cells_per_player;
         float player_cells_starting_mass;
         float initial_neutral_cells_mass;
@@ -204,6 +204,14 @@ namespace ainet16
         Position read_position() throw(Exception);
         bool read_bool() throw(Exception);
 
+        void send_uint8(sf::Uint8 ui8) throw(Exception);
+        void send_uint32(sf::Uint32 ui32) throw(Exception);
+        void send_uint64(sf::Uint64 ui64) throw(Exception);
+        void send_float(float f) throw(Exception);
+        void send_string(const std::string & s) throw(Exception);
+        void send_position(const Position & pos) throw(Exception);
+        void send_bool(bool b) throw(Exception);
+
         void send_packet(sf::Packet & packet) throw(Exception);
 
     private:
@@ -214,7 +222,8 @@ namespace ainet16
         Welcome _welcome;
         Turn _turn;
         unsigned int _last_received_turn;
-        unsigned int _player_id;
+        int _player_id;
+        bool _debug = true;
     };
 
 };
