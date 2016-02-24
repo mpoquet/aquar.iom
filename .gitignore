@@ -1,4 +1,10 @@
 *.o
 *.pro.user
+CMakeLists.txt.user
 moc_*.cpp
 bots/*/Makefile
+visu/Makefile
+visu/visu
+server/Makefile
+server/server
+client/ainetlib16/build
