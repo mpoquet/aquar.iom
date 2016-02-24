@@ -148,6 +148,7 @@ void ainet16::Session::login_visu(string name) throw(Exception)
 
 void ainet16::Session::wait_for_welcome() throw(Exception)
 {
+    // Metaprotocol
     sf::Uint8 stamp_ui8 = read_uint8();
     MetaProtocolStamp stamp = (MetaProtocolStamp) stamp_ui8;
 
@@ -162,6 +163,10 @@ void ainet16::Session::wait_for_welcome() throw(Exception)
             throw Exception("Invalid stamp received while waiting for WELCOME, received_stamp=" + std::to_string(stamp_ui8));
     }
 
+    sf::Uint32 gdc_size = read_uint32();
+    (void) gdc_size;
+
+    // Game-dependent protocol
     // Reading the game parameters
     _welcome.parameters.map_width = read_float();
     _welcome.parameters.map_height = read_float();
@@ -237,7 +242,69 @@ void ainet16::Session::send_actions(const ainet16::Actions &actions) throw(Excep
 
 void ainet16::Session::wait_for_next_turn() throw(Exception)
 {
-    // todo
+    // Metaprotocol
+    sf::Uint8 stamp_ui8 = read_uint8();
+    MetaProtocolStamp stamp = (MetaProtocolStamp) stamp_ui8;
+
+    if (stamp != MetaProtocolStamp::TURN)
+    {
+        if (stamp == MetaProtocolStamp::KICK)
+        {
+            string kick_reason = read_string();
+            throw KickException(kick_reason);
+        }
+        else
+            throw Exception("Invalid stamp received while waiting for TURNR, received_stamp=" + std::to_string(stamp_ui8));
+    }
+
+    sf::Uint32 gdc_size = read_uint32();
+    (void) gdc_size;
+
+    _last_received_turn = read_uint32();
+
+    // Game-dependent protocol
+    sf::Uint32 nb_initial_ncells = read_uint32();
+    _turn.initial_ncells.resize(nb_initial_ncells);
+    for (TurnInitialNeutralCell & ncell : _turn.initial_ncells)
+        ncell.remaining_turns_before_apparition = read_uint32();
+
+    sf::Uint32 nb_non_initial_ncells = read_uint32();
+    _turn.non_initial_ncells.resize(nb_non_initial_ncells);
+    for (TurnNonInitialNeutralCell & ncell : _turn.non_initial_ncells)
+    {
+        ncell.ncell_id = read_uint32();
+        ncell.mass = read_float();
+        ncell.position = read_position();
+    }
+
+    sf::Uint32 nb_viruses = read_uint32();
+    _turn.viruses.resize(nb_viruses);
+    for (TurnVirus & virus : _turn.viruses)
+    {
+        virus.id = read_uint32();
+        virus.position = read_position();
+    }
+
+    sf::Uint32 nb_pcells = read_uint32();
+    _turn.pcells.resize(nb_pcells);
+    for (TurnPlayerCell & pcell : _turn.pcells)
+    {
+        pcell.pcell_id = read_uint32();
+        pcell.position = read_position();
+        pcell.player_id = read_uint32();
+        pcell.mass = read_float();
+        pcell.remaining_isolated_turns = read_uint32();
+    }
+
+    sf::Uint32 nb_players = read_uint32();
+    _turn.players.resize(nb_players);
+    for (TurnPlayer & player : _turn.players)
+    {
+        player.player_id = read_uint32();
+        player.nb_cells = read_uint32();
+        player.mass = read_float();
+        player.score = read_uint64();
+    }
 }
 
 ainet16::Welcome ainet16::Session::welcome() const

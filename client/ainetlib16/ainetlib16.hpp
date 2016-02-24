@@ -211,7 +211,7 @@ namespace ainet16
         bool _is_player;
         Welcome _welcome;
         Turn _turn;
-        int _last_received_turn;
+        unsigned int _last_received_turn;
     };
 
 };
