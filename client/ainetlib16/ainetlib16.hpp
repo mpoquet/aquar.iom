@@ -24,7 +24,7 @@ namespace ainet16
     {
     public:
         Exception(const std::string & what);
-        std::string what() const;
+        virtual std::string what() const;
 
     private:
         std::string _what;

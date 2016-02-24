@@ -1,10 +1,15 @@
-#include "ainetlib16.hpp"
+#include <ainetlib16.hpp>
 
 using namespace std;
 
 ainet16::Exception::Exception(const string & what)
 {
     _what = what;
+}
+
+string ainet16::Exception::what() const
+{
+    return _what;
 }
 
 ainet16::Actions::Actions()
