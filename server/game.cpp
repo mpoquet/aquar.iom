@@ -58,6 +58,11 @@ void Game::onVisuDisconnected(Client *client)
     }
 }
 
+void Game::setServer(Server *server)
+{
+    _server = server;
+}
+
 bool operator<(const Game::GameClient &gc1, const Game::GameClient &gc2)
 {
     return gc1.client < gc2.client;

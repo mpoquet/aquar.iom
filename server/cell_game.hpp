@@ -208,6 +208,7 @@ public:
     ~CellGame();
 
 public slots:
+    void onPlayerConnected(Client * client) override;
     void onPlayerMove(Client * client, int turn, QByteArray data) override;
     void onVisuAck(Client * client, int turn, QByteArray data) override;
 
@@ -275,6 +276,10 @@ private:
     int compress_cell_ids();
 
     Position compute_barycenter(const Position & a, float cA, const Position & b, float cB);
+
+    QByteArray generate_welcome();
+    QByteArray generate_game_starts(int player_id);
+    QByteArray generate_turn();
 
     void send_turn_to_everyone();
 

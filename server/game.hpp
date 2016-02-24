@@ -4,6 +4,7 @@
 #include <QTcpSocket>
 
 class Client;
+class Server;
 
 class Game : public QObject
 {
@@ -46,12 +47,15 @@ public slots:
     virtual void onStop() = 0;
     virtual void onTurnTimerChanged(quint32 ms) = 0;
 
+    void setServer(Server * server);
+
 protected:
     // These two attributes store players and visus. If the game is running, the size of those attributes won't change.
     QVector<GameClient> _playerClients;
     QVector<GameClient> _visuClients;
 
     bool _isRunning = false;
+    Server * _server = nullptr;
 };
 
 bool operator<(const Game::GameClient & gc1, const Game::GameClient & gc2);

@@ -12,16 +12,48 @@
 
 #include <cmath>
 
+#include "server.hpp"
+#include "client.hpp"
+
 using namespace std;
 
 CellGame::CellGame()
 {
-
+    connect(&_timer, &QTimer::timeout, this, &CellGame::onTurnEnd);
 }
 
 CellGame::~CellGame()
 {
 
+}
+
+void CellGame::onPlayerConnected(Client *client)
+{
+    Game::onPlayerConnected(client);
+
+    int player_id = _playerClients.indexOf({client,true});
+
+    // If the player has been accepted
+    if (player_id != -1)
+    {
+        if (_playerClients.size() > (int)_parameters.max_nb_players)
+        {
+            _playerClients.remove(player_id);
+            emit message("A player has been accepted whereas the maximum number of players has been reached");
+            emit wantToKick(client, "Maximum number of players reached");
+        }
+        else
+        {
+            Q_ASSERT(_server != nullptr);
+            connect(this, &Game::wantToSendGameStarts, _server, &Server::sendGameStarts);
+            connect(this, &Game::wantToSendWelcome, _server, &Server::sendWelcome);
+            connect(this, &Game::wantToSendTurn, _server, &Server::sendTurn);
+            connect(this, &Game::wantToSendGameEnds, _server, &Server::sendGameEnds);
+
+            QByteArray welcome_message = generate_welcome();
+            emit wantToSendWelcome(client, welcome_message);
+        }
+    }
 }
 
 void CellGame::onPlayerMove(Client *client, int turn, QByteArray data)
@@ -227,6 +259,27 @@ void CellGame::onStart()
         return;
     }
 
+    // Send GAME_STARTS to all players with the first TURN
+    int player_id = 0;
+    for (const GameClient & client : _playerClients)
+    {
+        if (client.connected)
+        {
+            QByteArray message = generate_game_starts(player_id);
+            emit wantToSendGameStarts(client.client, message);
+        }
+
+        ++player_id;
+    }
+
+    QByteArray message = generate_game_starts(42);
+    for (const GameClient & client : _visuClients)
+    {
+        if (client.connected)
+            emit wantToSendGameStarts(client.client, message);
+    }
+
+    _timer.start();
     _isRunning = true;
 }
 
@@ -1860,7 +1913,7 @@ CellGame::Position CellGame::compute_barycenter(const Position & a, float cA, co
                     a.y + c*dy);
 }
 
-void CellGame::send_turn_to_everyone()
+QByteArray CellGame::generate_turn()
 {
     QByteArray qba, message;
 
@@ -1998,6 +2051,132 @@ void CellGame::send_turn_to_everyone()
         (*(quint64*)qba.data()) = player->score;
         message.append(qba);
     }
+
+    return message;
+}
+
+QByteArray CellGame::generate_welcome()
+{
+    QByteArray message;
+    QByteArray qba;
+
+    // Game parameters
+    qba.resize(sizeof(float));
+    (*(float*)qba.data()) = _parameters.map_width;
+    message.append(qba);
+
+    qba.resize(sizeof(float));
+    (*(float*)qba.data()) = _parameters.map_height;
+    message.append(qba);
+
+    qba.resize(sizeof(quint32));
+    (*(quint32*)qba.data()) = _parameters.min_nb_players;
+    message.append(qba);
+
+    qba.resize(sizeof(quint32));
+    (*(quint32*)qba.data()) = _parameters.max_nb_players;
+    message.append(qba);
+
+    qba.resize(sizeof(float));
+    (*(float*)qba.data()) = _parameters.mass_absorption;
+    message.append(qba);
+
+    qba.resize(sizeof(float));
+    (*(float*)qba.data()) = _parameters.minimum_mass_ratio_to_absorb;
+    message.append(qba);
+
+    qba.resize(sizeof(float));
+    (*(float*)qba.data()) = _parameters.minimum_player_cell_mass;
+    message.append(qba);
+
+    qba.resize(sizeof(float));
+    (*(float*)qba.data()) = _parameters.radius_factor;
+    message.append(qba);
+
+    qba.resize(sizeof(quint32));
+    (*(quint32*)qba.data()) = _parameters.max_cells_per_player;
+    message.append(qba);
+
+    qba.resize(sizeof(float));
+    (*(float*)qba.data()) = _parameters.mass_loss_per_frame;
+    message.append(qba);
+
+    qba.resize(sizeof(float));
+    (*(float*)qba.data()) = _parameters.base_cell_speed;
+    message.append(qba);
+
+    qba.resize(sizeof(float));
+    (*(float*)qba.data()) = _parameters.speed_loss_factor;
+    message.append(qba);
+
+    qba.resize(sizeof(float));
+    (*(float*)qba.data()) = _parameters.virus_mass;
+    message.append(qba);
+
+    qba.resize(sizeof(float));
+    (*(float*)qba.data()) = _parameters.virus_creation_mass_loss;
+    message.append(qba);
+
+    qba.resize(sizeof(quint32));
+    (*(quint32*)qba.data()) = _parameters.virus_max_split;
+    message.append(qba);
+
+    qba.resize(sizeof(quint32));
+    (*(quint32*)qba.data()) = _parameters.nb_starting_cells_per_player;
+    message.append(qba);
+
+    qba.resize(sizeof(float));
+    (*(float*)qba.data()) = _parameters.player_cells_starting_mass;
+    message.append(qba);
+
+    qba.resize(sizeof(float));
+    (*(float*)qba.data()) = _parameters.initial_neutral_cells_mass;
+    message.append(qba);
+
+    qba.resize(sizeof(quint32));
+    (*(quint32*)qba.data()) = _parameters.initial_neutral_cells_repop_time;
+    message.append(qba);
+
+    // Initial neutral cells' positions
+    qba.resize(sizeof(quint32));
+    (*(quint32*)qba.data()) = (quint32) _initial_neutral_cells.size();
+    message.append(qba);
+
+    QMapIterator<int, NeutralCell *> initial_ncell_iterator(_initial_neutral_cells);
+    while (initial_ncell_iterator.hasNext())
+    {
+        initial_ncell_iterator.next();
+        const NeutralCell * ncell = initial_ncell_iterator.value();
+
+        qba.resize(sizeof(float));
+        (*(float*)qba.data()) = ncell->position.x;
+        message.append(qba);
+
+        qba.resize(sizeof(float));
+        (*(float*)qba.data()) = ncell->position.y;
+        message.append(qba);
+    }
+
+    return message;
+}
+
+QByteArray CellGame::generate_game_starts(int player_id)
+{
+    QByteArray message, qba;
+
+    qba.resize(sizeof(quint32));
+    (*(quint32*)qba.data()) = player_id;
+    message.append(qba);
+
+    qba = generate_turn();
+    message.append(qba);
+
+    return message;
+}
+
+void CellGame::send_turn_to_everyone()
+{
+    QByteArray message = generate_turn();
 
     // The message content is ready, let it be sent to every player & visu
     for (const GameClient & client : _playerClients)

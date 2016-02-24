@@ -149,10 +149,10 @@ void Server::sendGameEnds(Client *client, const QByteArray &data)
         client->sendGameEnds(data);
 }
 
-void Server::sendTurn(Client *client, const QByteArray &data)
+void Server::sendTurn(Client *client, int turn, const QByteArray &data)
 {
     if (_clients.contains(client))
-        client->sendGameEnds(data);
+        client->sendTurn(turn, data);
 }
 
 void Server::setServerMaxClients(quint32 maxClients)

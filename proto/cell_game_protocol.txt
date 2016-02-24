@@ -27,15 +27,15 @@ Cell game: network protocol description
                virus_mass:float32, virus_creation_mass_loss:float32,
                virus_max_split:ui32,
                nb_starting_cells_per_player:ui32, player_cells_starting_mass:float,
-               neutral_cells_mass:float32, neutral_cells_repop_time:ui32,
+               initial_neutral_cells_mass:float32, initial_neutral_cells_repop_time:ui32,
                Initial_neutral_cells)
 
-    Initial_neutral_cells: (nb_initial_ncells, (position:pos)*nb_initial_ncells)
+    Initial_neutral_cells: (nb_initial_ncells:ui32, (position:pos)*nb_initial_ncells)
 
 2.2 GAME_STARTS
     This message is sent from the server to the client when the game is started.
 
-    Content: exactly the same as a TURN message.
+    Content: (player_id:ui32, (TURN))
 
 2.3 GAME_ENDS
     This message is sent from the server to the client when the game is finished.

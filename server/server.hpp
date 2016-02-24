@@ -24,7 +24,7 @@ signals:
     void playerTurnAckReceived(Client * client, int turn, QByteArray);
     void visuTurnAckReceived(Client * client, int turn, QByteArray);
 
-private slots:
+public slots:
     void onClientConnected();
     void onClientDisconnected(QTcpSocket * socket);
     void onClientWantToBeAPlayer(const QString & nick);
@@ -47,7 +47,7 @@ private slots:
     void sendWelcome(Client * client, const QByteArray & data);
     void sendGameStarts(Client * client, const QByteArray & data);
     void sendGameEnds(Client * client, const QByteArray & data);
-    void sendTurn(Client * client, const QByteArray & data);
+    void sendTurn(Client * client, int turn, const QByteArray & data);
 
     void setServerMaxClients(quint32 maxClients);
     void setServerMaxPlayers(quint32 maxPlayers);
