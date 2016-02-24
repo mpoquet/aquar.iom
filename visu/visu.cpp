@@ -252,7 +252,7 @@ void Visu::afficheScore()
     for (joueur=players.begin(); joueur!=players.end(); ++joueur) {
         window.setView(droite);
         // création de l'étiquette de chaque joueur
-        pos_pastille.x = window_width*0.75+ 10;
+        pos_pastille.x = window_width*vue_carte.getViewport().width+ 10;
         pastille.setFillColor(colorFromPlayerId((*joueur).id));
         pastille.setPosition(pos_pastille.x-5, pos_pastille.y-5);
         window.draw(pastille);
@@ -260,11 +260,11 @@ void Visu::afficheScore()
         etiquette.setPosition(pos_pastille.x + 2*pastille.getRadius(), pos_pastille.y);
         QString points = QString("%1").arg((*joueur).score);
         QString numero = QString("%1").arg((*joueur).id);
-        std::string score = "Joueur " + numero.toStdString() + " : " + points.toStdString() + " points";
+        std::string score = "Joueur " + numero.toStdString() + " : \n" + points.toStdString() + " points";
         etiquette.setString(score);
         window.draw(etiquette);
 
-        pos_pastille.y += window_height/10;
+        pos_pastille.y += window_height/15;
 
         window.setView(bas);
         // création du rectangle qui représente le score du joueur
