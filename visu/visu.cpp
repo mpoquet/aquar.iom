@@ -6,12 +6,11 @@ Visu::Visu()
     window_height = 768;
     window_width = 1024;
     background_color = sf::Color::Black;
-    borders_color = sf::Color(100, 100, 100);
+    borders_color = sf::Color::White;
 
     cadre.setFillColor(background_color);
     cadre.setOutlineColor(borders_color);
     cadre.setOutlineThickness(1);
-
 
     // création de la fenêtre
     sf::ContextSettings settings;
@@ -20,11 +19,11 @@ Visu::Visu()
     window.setVerticalSyncEnabled(true);
     window.setKeyRepeatEnabled(true); // activer/désactiver la répétition des touches si on les maintient appuyées
 
-    droite.reset(sf::FloatRect(0.75*window_width, 0, 0.25*window_width, window_height));
-    droite.setViewport(sf::FloatRect(0.75, 0, 0.25, 1));
+    droite.reset(sf::FloatRect(0.85*window_width, 0, 0.15*window_width, window_height));
+    droite.setViewport(sf::FloatRect(0.85, 0, 0.15, 1));
 
-    bas.reset(sf::FloatRect(0, 0.75*window_height+1, window_width, 0.25*window_height));
-    bas.setViewport(sf::FloatRect(0, 0.75, 1, 0.25));
+    bas.reset(sf::FloatRect(0, 0.85*window_height+1, window_width, 0.15*window_height));
+    bas.setViewport(sf::FloatRect(0, 0.85, 1, 0.15));
 
 }
 
@@ -55,11 +54,12 @@ void Visu::onWelcomeReceived(const Welcome &welcome)
     parameters.initial_neutral_cells_mass = welcome.parameters.initial_neutral_cells_mass;
     parameters.neutral_cells_repop_time = welcome.parameters.neutral_cells_repop_time;
 
-    /// initialiser la vue. Par défaut on affiche l'ensemble de la carte dans 3/4 de l'écran
+    /// initialiser la vue
     vue_carte.reset(sf::FloatRect(0, 0, parameters.map_width, parameters.map_height));
+    vue_carte.setViewport(sf::FloatRect(0, 0, 0.85, 0.85));
 
     cadre.setSize(sf::Vector2f(parameters.map_width, parameters.map_height));
-    vue_cadre.reset(sf::FloatRect(0, 0, parameters.map_width/0.75, parameters.map_height/0.75));
+    vue_cadre.reset(sf::FloatRect(0, 0, parameters.map_width/0.85, parameters.map_height/0.85));
 
     /// initialiser l'ensemble des cellules avec leurs positions initiales
     QVector<InitialNeutralCellWelcome>::const_iterator it;
@@ -225,8 +225,9 @@ void Visu::afficheScore()
 
     // rectangles pour la représentation du score relatif des joueurs
     sf::RectangleShape rect; // rectangle de dimensions (0,0)
-    float hauteur_rect(1.0/3.0 * (window_height*0.25)), largeur_rect(0); // un tiers de la distance qui reste entre le bas du plateau et le bas de la fenêtre
-    float abscisse_rect(0), ordonnee_rect(0.75*window_height + hauteur_rect);
+    float hauteur_rect(1.0/2.0 * ((bas.getSize().y))), largeur_rect(0); // la moitié de la distance qui reste entre le bas du plateau et le bas de la fenêtre
+    //std::cout << window_height*0.15 << " " << bas.getSize().y << " " << 0.85*window_height << " " << vue_carte.getViewport().height << std::endl;
+    float abscisse_rect(0), ordonnee_rect(vue_carte.getViewport().height*window_height + hauteur_rect);
 
     std::vector<Player>::iterator joueur;
     float somme_scores(0);
@@ -275,10 +276,11 @@ void Visu::afficheScore()
         window.draw(rect);
     }
 
-    // titre au-dessus de la barre
+    // titre au-dessus de la barre des scores
     window.setView(bas);
     sf::Text texteScores("Repartition des scores :", police, 25);
-    texteScores.move(sf::Vector2f(0, 0.75*window_height+0.3*hauteur_rect));
+    //texteScores.move(sf::Vector2f(0, vue_cadre.getViewport().height*window_height+hauteur_rect));
+    texteScores.move(sf::Vector2f(0, ordonnee_rect - 0.7*hauteur_rect));
     texteScores.setColor(sf::Color::Black);
     window.draw(texteScores);
 }
@@ -366,9 +368,11 @@ void Visu::inverseCouleurs()
 
     if (background_color == sf::Color::White) {
         background_color = sf::Color::Black;
+        borders_color = sf::Color::White;
     }
     else {
         background_color = sf::Color::White;
+        borders_color = sf::Color::Black;
     }
 }
 
