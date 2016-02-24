@@ -108,7 +108,7 @@ namespace ainet16
         int nb_starting_cells_per_player;
         float player_cells_starting_mass;
         float initial_neutral_cells_mass;
-        int neutral_cells_repop_time;
+        int initial_neutral_cells_repop_time;
     };
 
     struct Welcome
