@@ -4,6 +4,7 @@ project(ainetlib16)
 set(CMAKE_BUILD_TYPE Release)
 
 # Dependencies
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 # SFML. Required version: 2+. Modules: network, system
 find_package(SFML 2 COMPONENTS network system)
 
