@@ -58,8 +58,10 @@ void Visu::onWelcomeReceived(const Welcome &welcome)
     vue_carte.reset(sf::FloatRect(0, 0, parameters.map_width, parameters.map_height));
     vue_carte.setViewport(sf::FloatRect(0, 0, 0.85, 0.85));
 
-    cadre.setSize(sf::Vector2f(parameters.map_width, parameters.map_height));
-    vue_cadre.reset(sf::FloatRect(0, 0, parameters.map_width/0.85, parameters.map_height/0.85));
+    /*cadre.setSize(sf::Vector2f(parameters.map_width, parameters.map_height));
+    vue_cadre.reset(sf::FloatRect(0, 0, parameters.map_width/0.85, parameters.map_height/0.85));*/
+    cadre.setSize(sf::Vector2f(vue_carte.getViewport().width, vue_carte.getViewport().height));
+    vue_cadre.reset(sf::FloatRect(0, 0, cadre.getSize().x, cadre.getSize().y));
 
     /// initialiser l'ensemble des cellules avec leurs positions initiales
     QVector<InitialNeutralCellWelcome>::const_iterator it;
@@ -83,6 +85,7 @@ void Visu::onWelcomeReceived(const Welcome &welcome)
 
 void Visu::onTurnReceived(const Turn &turn)
 {
+    std::cout << "on a reçu un nouveau tour\n";
     if (players.size()==0) {
         /// C'est la première fois qu'on reçoit un Turn : initialisation de la liste des joueurs
         std::cout << "Création des joueurs\n";
@@ -107,8 +110,11 @@ void Visu::onTurnReceived(const Turn &turn)
         }
     }
     /// mettre à jour les cellules
+    // toutes les cellules sont mortes. Les mettre à jour va les rendre vivantes. Celles qui seront encore mortes à la fin de la
+    // fonction seront donc des cellules supprimées
     std::map<quint32, Cellule*>::iterator it;
     for (it=allCells.begin(); it!=allCells.end(); ++it) {
+        (*it).second->estVivante = false;
     }
 
     std::cout << "màj des virus\n";
@@ -124,6 +130,7 @@ void Visu::onTurnReceived(const Turn &turn)
         else {
             allCells[indice]->position.x = turn.viruses[i].position.x;
             allCells[indice]->position.y = turn.viruses[i].position.y;
+            allCells[indice]->estVivante = true;
         }
     }
     std::cout << "màj des cellules des joueurs\n";
@@ -141,6 +148,7 @@ void Visu::onTurnReceived(const Turn &turn)
             allCells[indice]->position.y = turn.pcells[i].position.y;
             allCells[indice]->mass = turn.pcells[i].mass;
             allCells[indice]->remaining_isolated_turns = turn.pcells[i].remaining_isolated_turns;
+            allCells[indice]->estVivante = true;
         }
     }
     std::cout << "màj des cellules neutres initiales\n";
@@ -149,6 +157,7 @@ void Visu::onTurnReceived(const Turn &turn)
     for (int i=0; i<turn.initial_ncells.size(); ++i) {
         // Les cellules initiales neutres ne se déplacent pas
         allCells[indice]->remaining_turns_before_apparition = turn.initial_ncells[i].remaining_turns_before_apparition;
+        allCells[indice]->estVivante = true;
         ++indice;
     }
     std::cout << "màj des cellules neutres non initiales\n";
@@ -166,10 +175,9 @@ void Visu::onTurnReceived(const Turn &turn)
             allCells[indice]->position.x = turn.non_initial_ncells[i].position.x;
             allCells[indice]->position.y = turn.non_initial_ncells[i].position.y;
             allCells[indice]->mass = turn.non_initial_ncells[i].mass;
+            allCells[indice]->estVivante = true;
         }
     }
-
-
 }
 
 void Visu::afficheCellule(Cellule* cellule)
@@ -177,6 +185,15 @@ void Visu::afficheCellule(Cellule* cellule)
     if ((cellule->remaining_turns_before_apparition != 0)) {
         return; // La cellule n'est pas encore apparue donc on ne l'affiche pas
     }
+
+    if (cellule->estVivante == false) {
+        qDebug() << "Cellule morte\n";
+        // la cellule est morte : on ne l'affiche pas et on la supprime de l'ensemble des cellules
+        removeCell(cellule->id());
+        return;
+    }
+
+    qDebug() << cellule->id();
 
     float rayon = cellule->mass * parameters.radius_factor;
 
@@ -209,7 +226,7 @@ void Visu::afficheScore()
     // pour cacher les cellules qui dépassent de l'aire de jeu on met un rectangle blanc par-dessus
     window.setView(bas);
     sf::RectangleShape cache_bas;
-    cache_bas.setSize(sf::Vector2f(bas.getSize().x, bas.getSize().y));
+    cache_bas.setSize(sf::Vector2f(bas.getSize().x, bas.getSize().y+cadre.getOutlineThickness()));
     cache_bas.setPosition(bas.getCenter().x-bas.getSize().x/2, bas.getCenter().y-bas.getSize().y/2 + cadre.getOutlineThickness());
     //std::cout << cache_bas.getSize().x << " " << bas.getSize().y << std::endl;
     cache_bas.setFillColor(sf::Color::White);
@@ -217,7 +234,7 @@ void Visu::afficheScore()
 
     window.setView(droite);
     sf::RectangleShape cache_droite;
-    cache_droite.setSize(sf::Vector2f(droite.getSize().x, droite.getSize().y));
+    cache_droite.setSize(sf::Vector2f(droite.getSize().x+cadre.getOutlineThickness(), droite.getSize().y));
     cache_droite.setPosition(droite.getCenter().x-droite.getSize().x/2 + cadre.getOutlineThickness(), droite.getCenter().y-droite.getSize().y/2);
     cache_droite.setFillColor(sf::Color::White);
     window.draw(cache_droite);
@@ -249,7 +266,6 @@ void Visu::afficheScore()
     // étiquettes pour chaque joueur
     sf::Text etiquette("Random text", police, 9);
     etiquette.setColor(sf::Color::Black);
-
 
     for (joueur=players.begin(); joueur!=players.end(); ++joueur) {
         window.setView(droite);
@@ -305,6 +321,76 @@ void Visu::afficheTout()
     window.display(); // dessine tous les objets avec lesquels on a appelé draw
 }
 
+void Visu::handleEvents(Turn* tour)
+{
+    sf::Event event;
+    window.pollEvent(event);
+    switch(event.type) {
+
+    // fermeture de la fenêtre
+    case sf::Event::Closed:
+        window.close();
+        break;
+
+        // appui sur un bouton du clavier
+    case sf::Event::KeyPressed:
+        switch(event.key.code) {
+
+        case sf::Keyboard::I:
+            // todo : inverser la couleur de fond de la fenêtre et celle des contours (cellules + cadre)
+            inverseCouleurs();
+            break;
+
+        case sf::Keyboard::T:
+            // test de la fonction onTurnReceived
+            tour->viruses[0].position.y += 100;
+            tour->pcells[0].position.x += 100;
+            tour->pcells[2].position.y -= 20;
+            tour->initial_ncells[0].remaining_turns_before_apparition = 0;
+            tour->non_initial_ncells[0].mass = 50;
+            onTurnReceived(*tour);
+            tour->players[2].score = 21;
+            break;
+
+        case sf::Keyboard::Add:
+            zoom();
+            break;
+
+        case sf::Keyboard::Subtract:
+            dezoom();
+            break;
+
+        case sf::Keyboard::Equal:
+            resetCarte();
+            break;
+
+        case sf::Keyboard::Right:
+            deplaceVueDroite();
+            break;
+
+        case sf::Keyboard::Left:
+            deplaceVueGauche();
+            break;
+
+        case sf::Keyboard::Up:
+            deplaceVueHaut();
+            break;
+
+        case sf::Keyboard::Down:
+            deplaceVueBas();
+            break;
+
+        default:
+            break;
+        }
+
+    default:
+        break;
+
+    }
+
+}
+
 void Visu::zoom()
 {
     vue_carte.zoom(0.75);
@@ -349,15 +435,21 @@ void Visu::addNewCell(Cellule *cellule)
 
 void Visu::removeCell(quint32 id)
 {
+    qDebug() << "entrée dans removeCell\n";
+
     // retirer la cellule de allCellsByMass
     bool ok = false;
     uint i(0);
     while ((i<allCellsByMass.size()) | (ok==false)) {
+        qDebug() << i << endl;
         if (allCellsByMass[i]->id() == id) {
             ok = true;
             allCellsByMass.erase(allCellsByMass.begin()+i);
         }
+        ++i;
     }
+
+    qDebug() << "supprimer la cellule de allCells\n";
     allCells.erase(id);
 }
 
@@ -372,7 +464,6 @@ void Visu::addNewPlayer(Player p)
 
 void Visu::inverseCouleurs()
 {
-
     if (background_color == sf::Color::White) {
         background_color = sf::Color::Black;
         borders_color = sf::Color::White;
@@ -400,7 +491,7 @@ sf::Color colorFromPlayerId(quint32 playerId, int nbePlayers)
     return sf::Color(sf::Uint8(255*r), sf::Uint8(g*255), sf::Uint8(b*255));
 }
 
-static void hsvToRgb(double h, double s, double v, double & r, double & g, double & b) {
+void hsvToRgb(double h, double s, double v, double & r, double & g, double & b) {
     // r g b, s v entre [0,1], h entre [0,360]
     if (s == 0) // Achromatic (grey)
     {

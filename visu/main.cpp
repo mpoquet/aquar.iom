@@ -7,10 +7,10 @@
 const int WINDOW_HEIGHT(768);
 const int WINDOW_WIDTH(1024);
 
-int main()
-{
-    Visu jeu;
+void testDonneesSynthese(Visu &jeu) {
+    // Teste la classe Visu en utilisant des données de synthèse fabriquées de toutes pièces
 
+    /// Création des structures nécessaires pour fabriquer un tour
     GameParameters parameters = {800, //map_width
                                  600, //map_height
                                  1, //min_nb_players
@@ -32,20 +32,20 @@ int main()
                                  0}; //neutral_cells_repop_time
 
     QVector<InitialNeutralCellWelcome> initial_ncells_w;
-        InitialNeutralCellWelcome p1;
-        p1.position.x = 0;
-        p1.position.y = 0;
-        initial_ncells_w.append(p1);
+    InitialNeutralCellWelcome p1;
+    p1.position.x = 0;
+    p1.position.y = 0;
+    initial_ncells_w.append(p1);
 
-        InitialNeutralCellWelcome p2;
-        p2.position.x = 300;
-        p2.position.y = 300;
-        initial_ncells_w.append(p2);
+    InitialNeutralCellWelcome p2;
+    p2.position.x = 300;
+    p2.position.y = 300;
+    initial_ncells_w.append(p2);
 
-        InitialNeutralCellWelcome p3;
-        p3.position.x = 150;
-        p3.position.y = 600;
-        initial_ncells_w.append(p3);
+    InitialNeutralCellWelcome p3;
+    p3.position.x = 150;
+    p3.position.y = 600;
+    initial_ncells_w.append(p3);
 
     Welcome welcome = {parameters, initial_ncells_w};
     jeu.onWelcomeReceived(welcome);
@@ -56,183 +56,146 @@ int main()
     Player joueur3 = {3, 0, 0, 5};
 
     QVector<Player> players;
-        players.push_back(joueur0);
-        players.push_back(joueur1);
-        players.push_back(joueur2);
-        players.push_back(joueur3);
+    players.push_back(joueur0);
+    players.push_back(joueur1);
+    players.push_back(joueur2);
+    players.push_back(joueur3);
 
     Position pos = {13, 31};
     NonInitialNeutralCell nonInitialeNeutre = {10, 12, pos}; //id, mass, position
 
     pos = {130, 310};
-    Virus vir{11, pos};
+    Virus vir{11, pos}; //id, position
     Cellule* virus = new Cellule(vir, parameters.virus_mass);
     jeu.addNewCell(virus);
 
     pos = {130, 310};
-    PlayerCell joueuse0 = {12, 0, pos, parameters.virus_mass, 7};
+    PlayerCell joueuse0 = {12, 0, pos, parameters.virus_mass, 7};//id, player id, position, mass, isolated turns
     Cellule* cellule0 = new Cellule(joueuse0, 4);
     jeu.addNewCell(cellule0);
 
     pos = {600, 420};
-    PlayerCell joueuse1 = {13, 1, pos, 7, 7};
+    PlayerCell joueuse1 = {13, 1, pos, 7, 7}; //id, player id, position, mass, isolated turns
     Cellule* cellule1 = new Cellule(joueuse1, 4);
     jeu.addNewCell(cellule1);
 
     pos = {600, 410};
-    PlayerCell joueuse2 = {14, 2, pos, 7, 0};
+    PlayerCell joueuse2 = {14, 2, pos, 5, 0}; //id, player id, position, mass, isolated turns
     Cellule* cellule2 = new Cellule(joueuse2, 4);
     jeu.addNewCell(cellule2);
 
     QVector<Virus> viruses;
-        viruses.push_back(vir);
+    viruses.push_back(vir);
 
     QVector<NonInitialNeutralCell> non_initial_ncells;
-        non_initial_ncells.push_back(nonInitialeNeutre);
+    non_initial_ncells.push_back(nonInitialeNeutre);
 
     QVector<PlayerCell> pcells;
-        pcells.push_back(joueuse0);
-        pcells.push_back(joueuse1);
-        pcells.push_back(joueuse2);
+    pcells.push_back(joueuse0);
+    pcells.push_back(joueuse1);
+    pcells.push_back(joueuse2);
 
     QVector<InitialNeutralCell> initial_ncells;
-        InitialNeutralCell cell1 = {1};
-        initial_ncells.push_back(cell1);
+    InitialNeutralCell cell1 = {1};
+    initial_ncells.push_back(cell1);
     Turn tour = {initial_ncells, non_initial_ncells, viruses, pcells, players};
 
+    /// test de la classe visu avec les données créées
     while (jeu.window.isOpen()) {
-        sf::Event event;
+        jeu.handleEvents(&tour);
+        jeu.afficheTout();
+    }
+}
 
-        // seules les fonctions pollEvent et waitEvent produisent des sf::Event
-        // http://www.sfml-dev.org/tutorials/2.1/window-events.php
-        while (jeu.window.pollEvent(event)) {
-            switch(event.type) {
+int main()
+{
+    Visu jeu;
+    bool test = true;
 
-            // fermeture de la fenêtre
-            case sf::Event::Closed:
-                jeu.window.close();
-                break;
+    if (test == true) {
+        testDonneesSynthese(jeu);
+    }
 
-                // appui sur un bouton du clavier
-            case sf::Event::KeyPressed:
-                switch(event.key.code) {
+    else {
+        // utiliser les fonctions du réseau
+    }
 
-                case sf::Keyboard::I:
-                    // todo : inverser la couleur de fond de la fenêtre et celle des contours (cellules + cadre)
-                    jeu.inverseCouleurs();
-                    break;
 
-                case sf::Keyboard::T:
-                    // test de la fonction onTurnReceived
-                    tour.viruses[0].position.y += 100;
-                    tour.pcells[0].position.x += 100;
-                    tour.pcells[2].position.y -= 20;
-                    tour.initial_ncells[0].remaining_turns_before_apparition = 0;
-                    tour.non_initial_ncells[0].mass = 50;
-                    jeu.onTurnReceived(tour);
-                    tour.players[2].score = 21;
-                    break;
+    /* while (jeu.window.isOpen()) {
+                sf::Event event;
 
-                case sf::Keyboard::Add:
-                    jeu.zoom();
-                    break;
+                // seules les fonctions pollEvent et waitEvent produisent des sf::Event
+                // http://www.sfml-dev.org/tutorials/2.1/window-events.php
+                while (jeu.window.pollEvent(event)) {
+                    switch(event.type) {
 
-                case sf::Keyboard::Subtract:
-                    jeu.dezoom();
-                    break;
+                    // fermeture de la fenêtre
+                    case sf::Event::Closed:
+                        jeu.window.close();
+                        break;
 
-                case sf::Keyboard::Equal:
-                    jeu.resetCarte();
-                    break;
+                        // appui sur un bouton du clavier
+                    case sf::Event::KeyPressed:
+                        switch(event.key.code) {
 
-                case sf::Keyboard::Right:
-                    jeu.deplaceVueDroite();
-                    break;
+                        case sf::Keyboard::I:
+                            // todo : inverser la couleur de fond de la fenêtre et celle des contours (cellules + cadre)
+                            jeu.inverseCouleurs();
+                            break;
 
-                case sf::Keyboard::Left:
-                    jeu.deplaceVueGauche();
-                    break;
+                        case sf::Keyboard::T:
+                            // test de la fonction onTurnReceived
+                            tour.viruses[0].position.y += 100;
+                            tour.pcells[0].position.x += 100;
+                            tour.pcells[2].position.y -= 20;
+                            tour.initial_ncells[0].remaining_turns_before_apparition = 0;
+                            tour.non_initial_ncells[0].mass = 50;
+                            jeu.onTurnReceived(tour);
+                            tour.players[2].score = 21;
+                            break;
 
-                case sf::Keyboard::Up:
-                    jeu.deplaceVueHaut();
-                    break;
+                        case sf::Keyboard::Add:
+                            jeu.zoom();
+                            break;
 
-                case sf::Keyboard::Down:
-                    jeu.deplaceVueBas();
-                    break;
+                        case sf::Keyboard::Subtract:
+                            jeu.dezoom();
+                            break;
 
-                default:
-                    break;
+                        case sf::Keyboard::Equal:
+                            jeu.resetCarte();
+                            break;
+
+                        case sf::Keyboard::Right:
+                            jeu.deplaceVueDroite();
+                            break;
+
+                        case sf::Keyboard::Left:
+                            jeu.deplaceVueGauche();
+                            break;
+
+                        case sf::Keyboard::Up:
+                            jeu.deplaceVueHaut();
+                            break;
+
+                        case sf::Keyboard::Down:
+                            jeu.deplaceVueBas();
+                            break;
+
+                        default:
+                            break;
+                        }
+
+                    default:
+                        break;
+
+                    }
                 }
 
-            default:
-                break;
-
-            }
-        }
-
-        jeu.afficheTout();
+                jeu.afficheTout();
 
 
-    }
-
-    /*sf::RenderWindow fenetre;
-    fenetre.create(sf::VideoMode(800, 600), "titre");
-
-    sf::Texture texture_virus;
-    std::string chemin("sprites/bomb_alpha.png");
-    sf::Sprite sprite_virus;
-    if(texture_virus.loadFromFile(chemin)) {
-        texture_virus.setSmooth(true);
-        std::cout << texture_virus.getSize().x << " " << texture_virus.getSize().y << std::endl;
-        sprite_virus.setTexture(texture_virus);
-        sprite_virus.setPosition(0, 0);
-        //sprite_virus.setColor(sf::Color::Red);
-    }
-
-    while (fenetre.isOpen()) {
-        sf::Event event;
-        while (fenetre.pollEvent(event)) {
-            switch (event.type) {
-            case sf::Event::Closed:
-                fenetre.close();
-                break;
-
-            default:
-                break;
-            }
-        }
-        fenetre.clear(sf::Color::Green);
-        fenetre.draw(sprite_virus);
-        fenetre.display();
-    }*/
+            }*/
 
     return 0;
 }
-
-/*sf::Texture texture;
-//if (!texture.loadFromFile("/home/sophie/Images/Firefox_wallpaper.png")) {
-if(!texture.loadFromFile("/home/sophie/Images/pikachu.png")) {
-    std::cout << "Erreur lors du chargement de la texture\n";
-}
-texture.setSmooth(true);
-texture.setRepeated(true);
-
-sf::Sprite sprite;
-sprite.setTexture(texture);
-//sprite.setTextureRect(sf::IntRect(500, 500, 320, 32));
-sprite.setColor(sf::Color::Red);
-sprite.rotate(42);
-sprite.scale(sf::Vector2f(1.5f, 1.f));
-
-sf::Font font;
-if (!font.loadFromFile("fonts/FLOWER.ttf")) {
-    std::cout << "Erreur lors du chargement de la police\n";
-}
-sf::Text text;
-text.setFont(font);
-text.setString("Hello World!");
-text.setCharacterSize(56);
-text.setStyle(sf::Text::Bold | sf::Text::Underlined);
-text.setColor(sf::Color::Cyan);
-text.move(sf::Vector2f(500, 45));*/
