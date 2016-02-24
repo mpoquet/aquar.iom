@@ -64,13 +64,13 @@ int main()
     Position pos = {13, 31};
     NonInitialNeutralCell nonInitialeNeutre = {10, 12, pos}; //id, mass, position
 
-    pos = {78, 87};
+    pos = {130, 310};
     Virus vir{11, pos};
     Cellule* virus = new Cellule(vir, parameters.virus_mass);
     jeu.addNewCell(virus);
 
     pos = {130, 310};
-    PlayerCell joueuse0 = {12, 0, pos, 14, 7};
+    PlayerCell joueuse0 = {12, 0, pos, parameters.virus_mass, 7};
     Cellule* cellule0 = new Cellule(joueuse0);
     jeu.addNewCell(cellule0);
 
@@ -170,8 +170,38 @@ int main()
         jeu.afficheTout();
 
 
-
     }
+
+    /*sf::RenderWindow fenetre;
+    fenetre.create(sf::VideoMode(800, 600), "titre");
+
+    sf::Texture texture_virus;
+    std::string chemin("sprites/bomb_alpha.png");
+    sf::Sprite sprite_virus;
+    if(texture_virus.loadFromFile(chemin)) {
+        texture_virus.setSmooth(true);
+        std::cout << texture_virus.getSize().x << " " << texture_virus.getSize().y << std::endl;
+        sprite_virus.setTexture(texture_virus);
+        sprite_virus.setPosition(0, 0);
+        //sprite_virus.setColor(sf::Color::Red);
+    }
+
+    while (fenetre.isOpen()) {
+        sf::Event event;
+        while (fenetre.pollEvent(event)) {
+            switch (event.type) {
+            case sf::Event::Closed:
+                fenetre.close();
+                break;
+
+            default:
+                break;
+            }
+        }
+        fenetre.clear(sf::Color::Green);
+        fenetre.draw(sprite_virus);
+        fenetre.display();
+    }*/
 
     return 0;
 }

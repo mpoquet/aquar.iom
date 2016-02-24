@@ -65,7 +65,7 @@ Cellule::Cellule(Virus cellule, float virus_mass) {
     remaining_isolated_turns = 0;
 
     // couleur rouge
-    color = sf::Color::Red;
+    color = sf::Color::Black;
 
     estVivante = true;
 }

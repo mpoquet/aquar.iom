@@ -92,6 +92,7 @@ private:
     sf::View vue_cadre;
     sf::RectangleShape cadre; // zone de la fenêtre où est affichée le plateau de jeu
 
+
 public:
     std::map<quint32, Cellule*> allCells; // toutes les cellules, tous types confondus, par m_id croissant. Les premières sont les initiales neutres
     std::vector<Cellule*> allCellsByMass; // toutes les cellules, triées par masse décroissante. Plus tard on utilisera l'algo timsort pour améliorer les performances https://github.com/gfx/cpp-TimSort
