@@ -45,10 +45,6 @@ void CellGame::onPlayerConnected(Client *client)
         else
         {
             Q_ASSERT(_server != nullptr);
-            connect(this, &Game::wantToSendGameStarts, _server, &Server::sendGameStarts);
-            connect(this, &Game::wantToSendWelcome, _server, &Server::sendWelcome);
-            connect(this, &Game::wantToSendTurn, _server, &Server::sendTurn);
-            connect(this, &Game::wantToSendGameEnds, _server, &Server::sendGameEnds);
 
             QByteArray welcome_message = generate_welcome();
             emit wantToSendWelcome(client, welcome_message);
@@ -1413,6 +1409,27 @@ void CellGame::load_parameters(const QString &filename)
     _server->setServerMaxPlayers(_parameters.max_nb_players);
 
     emit message("Parameters have been loaded");
+}
+
+void CellGame::setServer(Server *server)
+{
+    if (_server != nullptr)
+    {
+        disconnect(this, &Game::wantToSendGameStarts, _server, &Server::sendGameStarts);
+        disconnect(this, &Game::wantToSendWelcome, _server, &Server::sendWelcome);
+        disconnect(this, &Game::wantToSendTurn, _server, &Server::sendTurn);
+        disconnect(this, &Game::wantToSendGameEnds, _server, &Server::sendGameEnds);
+    }
+
+    Game::setServer(server);
+
+    if (_server != nullptr)
+    {
+        connect(this, &Game::wantToSendGameStarts, _server, &Server::sendGameStarts);
+        connect(this, &Game::wantToSendWelcome, _server, &Server::sendWelcome);
+        connect(this, &Game::wantToSendTurn, _server, &Server::sendTurn);
+        connect(this, &Game::wantToSendGameEnds, _server, &Server::sendGameEnds);
+    }
 }
 
 void CellGame::make_player_repop(CellGame::Player *player)

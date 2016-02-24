@@ -31,14 +31,28 @@ void Server::onClientDisconnected(QTcpSocket *socket)
     {
         Client * client = mit.value();
         if (client->type() == Client::PLAYER)
+        {
+            _nbPlayers--;
             emit playerDisconnected(client);
+        }
         else if (client->type() == Client::VISU)
+        {
+            _nbVisus--;
             emit visuDisconnected(client);
+        }
+        else
+        {
+            emit message("Unlogged client disconnected");
+        }
 
         _clients.remove(client);
         _socketToClient.erase(mit);
 
         socket->deleteLater();
+    }
+    else
+    {
+        emit message(QString("Unknown client disconnected"));
     }
 }
 
@@ -84,7 +98,7 @@ void Server::onClientWantToBeAVisu(const QString &nick)
         c->kick("cannot login while game is running");
 }
 
-void Server::onClientTurnAckReceived(int turn, const QByteArray &data)
+void Server::onClientTurnAckReceived(int turn, QByteArray &data)
 {
     Client * c = dynamic_cast<Client *>(sender());
     Q_ASSERT(c != nullptr);
@@ -265,7 +279,7 @@ void Server::onClientConnected()
     connect(c, SIGNAL(disconnected(QTcpSocket*)), this, SLOT(onClientDisconnected(QTcpSocket*)));
     connect(c, SIGNAL(wantToBeAPlayer(QString)), this, SLOT(onClientWantToBeAPlayer(QString)));
     connect(c, SIGNAL(wantToBeAVisu(QString)), this, SLOT(onClientWantToBeAVisu(QString)));
-    connect(c, SIGNAL(messageTurnAckReceived(int,QByteArray)), this, SLOT(onClientTurnAckReceived(int,QByteArray)));
+    connect(c, SIGNAL(messageTurnAckReceived(int,QByteArray &)), this, SLOT(onClientTurnAckReceived(int,QByteArray&)));
 
     if (!_isGameRunning)
     {

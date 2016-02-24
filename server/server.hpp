@@ -29,7 +29,7 @@ public slots:
     void onClientDisconnected(QTcpSocket * socket);
     void onClientWantToBeAPlayer(const QString & nick);
     void onClientWantToBeAVisu(const QString & nick);
-    void onClientTurnAckReceived(int turn, const QByteArray & data);
+    void onClientTurnAckReceived(int turn, QByteArray & data);
 
     /**
      * @brief This slot must be called when the game starts.

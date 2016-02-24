@@ -220,6 +220,8 @@ public slots:
 
     void load_parameters(const QString & filename);
 
+    void setServer(Server *server) override;
+
 private slots:
     void onTurnEnd(); // Called on turn end
 

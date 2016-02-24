@@ -47,7 +47,7 @@ public slots:
     virtual void onStop() = 0;
     virtual void onTurnTimerChanged(quint32 ms) = 0;
 
-    void setServer(Server * server);
+    virtual void setServer(Server * server);
 
 protected:
     // These two attributes store players and visus. If the game is running, the size of those attributes won't change.
