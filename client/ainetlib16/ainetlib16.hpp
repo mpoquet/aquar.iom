@@ -69,6 +69,7 @@ namespace ainet16
 
     class Actions
     {
+        friend class Session;
     public:
         Actions();
         ~Actions();
@@ -107,7 +108,7 @@ namespace ainet16
         int nb_starting_cells_per_player;
         float player_cells_starting_mass;
         float initial_neutral_cells_mass;
-        int neutral_cells_repop_time;
+        int initial_neutral_cells_repop_time;
     };
 
     struct Welcome
@@ -210,6 +211,7 @@ namespace ainet16
         bool _is_player;
         Welcome _welcome;
         Turn _turn;
+        unsigned int _last_received_turn;
     };
 
 };

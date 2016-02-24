@@ -102,7 +102,10 @@ void ainet16::Session::login_player(string name) throw(Exception)
     MetaProtocolStamp stamp = (MetaProtocolStamp) stamp_ui8;
 
     if (stamp == MetaProtocolStamp::LOGIN_ACK)
+    {
+        _is_player = true;
         return;
+    }
     else if (stamp == MetaProtocolStamp::KICK)
     {
         string kick_reason = read_string();
@@ -130,7 +133,10 @@ void ainet16::Session::login_visu(string name) throw(Exception)
     MetaProtocolStamp stamp = (MetaProtocolStamp) stamp_ui8;
 
     if (stamp == MetaProtocolStamp::LOGIN_ACK)
+    {
+        _is_player = false;
         return;
+    }
     else if (stamp == MetaProtocolStamp::KICK)
     {
         string kick_reason = read_string();
@@ -142,47 +148,234 @@ void ainet16::Session::login_visu(string name) throw(Exception)
 
 void ainet16::Session::wait_for_welcome() throw(Exception)
 {
+    // Metaprotocol
+    sf::Uint8 stamp_ui8 = read_uint8();
+    MetaProtocolStamp stamp = (MetaProtocolStamp) stamp_ui8;
 
+    if (stamp != MetaProtocolStamp::WELCOME)
+    {
+        if (stamp == MetaProtocolStamp::KICK)
+        {
+            string kick_reason = read_string();
+            throw KickException(kick_reason);
+        }
+        else
+            throw Exception("Invalid stamp received while waiting for WELCOME, received_stamp=" + std::to_string(stamp_ui8));
+    }
+
+    sf::Uint32 gdc_size = read_uint32();
+    (void) gdc_size;
+
+    // Game-dependent protocol
+    // Reading the game parameters
+    _welcome.parameters.map_width = read_float();
+    _welcome.parameters.map_height = read_float();
+    _welcome.parameters.min_nb_players = read_uint32();
+    _welcome.parameters.max_nb_players = read_uint32();
+    _welcome.parameters.mass_absorption = read_float();
+    _welcome.parameters.minimum_mass_ratio_to_absorb = read_float();
+    _welcome.parameters.minimum_pcell_mass = read_float();
+    _welcome.parameters.radius_factor = read_float();
+    _welcome.parameters.max_cells_per_player = read_uint32();
+    _welcome.parameters.mass_loss_per_frame = read_float();
+    _welcome.parameters.base_cell_speed = read_float();
+    _welcome.parameters.speed_loss_factor = read_float();
+    _welcome.parameters.virus_mass = read_float();
+    _welcome.parameters.virus_creation_mass_loss = read_float();
+    _welcome.parameters.virus_max_split = read_uint32();
+    _welcome.parameters.nb_starting_cells_per_player = read_uint32();
+    _welcome.parameters.player_cells_starting_mass = read_uint32();
+    _welcome.parameters.initial_neutral_cells_mass = read_float();
+    _welcome.parameters.initial_neutral_cells_repop_time = read_uint32();
+
+    // Reading the position of the initial neutral cells
+    sf::Uint32 nb_initial_neutral_cells = read_uint32();
+    _welcome.initial_ncells_positions.resize(nb_initial_neutral_cells);
+
+    for (Position & position : _welcome.initial_ncells_positions)
+    {
+        position.x = read_float();
+        position.y = read_float();
+    }
 }
 
 void ainet16::Session::send_actions(const ainet16::Actions &actions) throw(Exception)
 {
+    // Compute game-dependent content size
+    sf::Uint32 gdc_size = 0;
 
+    gdc_size += 4 + actions._move_actions.size() * (4 + 4*2);
+    gdc_size += 4 + actions._divide_actions.size() * (4 + 4*2 + 4);
+    gdc_size += 4 + actions._create_virus_actions.size() * (4 + 4*2);
+    gdc_size += 1;
+
+    sf::Packet packet;
+
+    // Metaprotocol header
+    packet << sf::Uint8(MetaProtocolStamp::TURN_ACK)
+           << sf::Uint32(gdc_size)
+           << sf::Uint32(_last_received_turn);
+
+    // Game-dependent content
+    // Send move actions
+    packet << sf::Uint32(actions._move_actions.size());
+    for (const MoveAction & action : actions._move_actions)
+        packet << sf::Uint32(action.pcell_id)
+               << action.position.x
+               << action.position.y;
+
+    // Send divide actions
+    packet << sf::Uint32(actions._divide_actions.size());
+    for (const DivideAction & action : actions._divide_actions)
+        packet << sf::Uint32(action.pcell_id)
+               << action.position.x
+               << action.position.y
+               << action.mass;
+
+    // Send create virus actions
+    packet << sf::Uint32(actions._create_virus_actions.size());
+    for (const CreateVirusAction & action : actions._create_virus_actions)
+        packet << sf::Uint32(action.pcell_id)
+               << action.position.x
+               << action.position.y;
+
+    // Send surrender action
+    packet << sf::Uint8(actions._will_surrender);
+    send_packet(packet);
 }
 
 void ainet16::Session::wait_for_next_turn() throw(Exception)
 {
+    // Metaprotocol
+    sf::Uint8 stamp_ui8 = read_uint8();
+    MetaProtocolStamp stamp = (MetaProtocolStamp) stamp_ui8;
 
+    if (stamp != MetaProtocolStamp::TURN)
+    {
+        if (stamp == MetaProtocolStamp::KICK)
+        {
+            string kick_reason = read_string();
+            throw KickException(kick_reason);
+        }
+        else
+            throw Exception("Invalid stamp received while waiting for TURNR, received_stamp=" + std::to_string(stamp_ui8));
+    }
+
+    sf::Uint32 gdc_size = read_uint32();
+    (void) gdc_size;
+
+    _last_received_turn = read_uint32();
+
+    // Game-dependent protocol
+    // Read initial neutral cells' positions
+    sf::Uint32 nb_initial_ncells = read_uint32();
+    if (nb_initial_ncells != _welcome.initial_ncells_positions.size())
+        throw Exception("Incoherent number of initial neutral cells received (welcome/turn)");
+
+    _turn.initial_ncells.resize(nb_initial_ncells);
+    for (TurnInitialNeutralCell & ncell : _turn.initial_ncells)
+        ncell.remaining_turns_before_apparition = read_uint32();
+
+    // Read non-initial neutral cells
+    sf::Uint32 nb_non_initial_ncells = read_uint32();
+    _turn.non_initial_ncells.resize(nb_non_initial_ncells);
+    for (TurnNonInitialNeutralCell & ncell : _turn.non_initial_ncells)
+    {
+        ncell.ncell_id = read_uint32();
+        ncell.mass = read_float();
+        ncell.position = read_position();
+    }
+
+    // Read viruses
+    sf::Uint32 nb_viruses = read_uint32();
+    _turn.viruses.resize(nb_viruses);
+    for (TurnVirus & virus : _turn.viruses)
+    {
+        virus.id = read_uint32();
+        virus.position = read_position();
+    }
+
+    // Read player cells
+    sf::Uint32 nb_pcells = read_uint32();
+    _turn.pcells.resize(nb_pcells);
+    for (TurnPlayerCell & pcell : _turn.pcells)
+    {
+        pcell.pcell_id = read_uint32();
+        pcell.position = read_position();
+        pcell.player_id = read_uint32();
+        pcell.mass = read_float();
+        pcell.remaining_isolated_turns = read_uint32();
+    }
+
+    // Read players
+    sf::Uint32 nb_players = read_uint32();
+    _turn.players.resize(nb_players);
+    for (TurnPlayer & player : _turn.players)
+    {
+        player.player_id = read_uint32();
+        player.nb_cells = read_uint32();
+        player.mass = read_float();
+        player.score = read_uint64();
+    }
 }
 
 ainet16::Welcome ainet16::Session::welcome() const
 {
-
+    return _welcome;
 }
 
 ainet16::Turn ainet16::Session::turn() const
 {
-
+    return _turn;
 }
 
 std::vector<ainet16::NeutralCell> ainet16::Session::all_neutral_cells() const
 {
+    std::vector<ainet16::NeutralCell> res;
+    res.resize(_welcome.initial_ncells_positions.size() + _turn.non_initial_ncells.size());
 
+    int i = 0;
+
+    // Sets initial neutral cells
+    for (const Position & pos : _welcome.initial_ncells_positions)
+    {
+        res[i].id = i;
+        res[i].position = pos;
+        res[i].mass = _welcome.parameters.initial_neutral_cells_mass;
+        res[i].is_initial = true;
+        res[i].remaining_turns_before_apparition = _turn.initial_ncells[i].remaining_turns_before_apparition;
+
+        i++;
+    }
+
+    // Sets non-initial neutral cells
+    for (const TurnNonInitialNeutralCell & ncell : _turn.non_initial_ncells)
+    {
+        res[i].id = ncell.ncell_id;
+        res[i].position = ncell.position;
+        res[i].mass = ncell.mass;
+        res[i].is_initial = false;
+        res[i].remaining_turns_before_apparition = 0;
+
+        i++;
+    }
+
+    return res;
 }
 
 bool ainet16::Session::is_connected() const
 {
-
+    return _is_connected;
 }
 
 bool ainet16::Session::is_logged() const
 {
-
+    return _is_logged;
 }
 
 bool ainet16::Session::is_player() const
 {
-
+    return _is_player;
 }
 
 
