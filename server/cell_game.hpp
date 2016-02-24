@@ -171,6 +171,7 @@ class CellGame : public Game
     {
         QuadTreeNode(unsigned int depth, Position top_left,
                      Position bottom_right, QuadTreeNode * parent = nullptr);
+        ~QuadTreeNode();
 
         Position top_left_position;
         Position bottom_right_position;
@@ -278,6 +279,8 @@ private:
     int compress_cell_ids();
 
     Position compute_barycenter(const Position & a, float cA, const Position & b, float cB);
+
+    void generate_initial_ncells();
 
     QByteArray generate_welcome();
     QByteArray generate_game_starts(int player_id);

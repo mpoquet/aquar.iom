@@ -1405,6 +1405,19 @@ void CellGame::load_parameters(const QString &filename)
                                            _parameters.initial_neutral_cells_matrix_height;
     _parameters.is_loaded = true;
 
+    if (_tree_root != nullptr)
+    {
+        delete _tree_root;
+        _tree_root = nullptr;
+    }
+
+    Position top_left(0,0);
+    Position bottom_right(_parameters.map_width, _parameters.map_height);
+
+    _tree_root = new QuadTreeNode(0, top_left, bottom_right);
+
+    generate_initial_ncells();
+
     Q_ASSERT(_server != nullptr);
     _server->setServerMaxPlayers(_parameters.max_nb_players);
 
@@ -1777,7 +1790,6 @@ float CellGame::GameParameters::compute_max_speed_from_mass(float mass) const
 CellGame::QuadTreeNode::QuadTreeNode(unsigned int depth, Position top_left,
                                      Position bottom_right, CellGame::QuadTreeNode *parent)
 {
-    Q_ASSERT(depth > 0);
     this->parent = parent;
     this->depth = depth;
     top_left_position = top_left;
@@ -1788,12 +1800,39 @@ CellGame::QuadTreeNode::QuadTreeNode(unsigned int depth, Position top_left,
     mid_position.x = (top_left.x + bottom_right.x) / 2;
     mid_position.y = (top_left.y + bottom_right.y) / 2;
 
-    if (depth > 1)
+    if (depth > 0)
     {
         child_top_left = new QuadTreeNode(depth - 1, top_left_position, mid_position, this);
         child_top_right = new QuadTreeNode(depth - 1, Position(mid_position.x, top_left_position.y), Position(bottom_right_position.x, mid_position.y), this);
         child_bottom_left = new QuadTreeNode(depth - 1, Position(top_left_position.x, mid_position.y), Position(mid_position.x, bottom_right_position.y), this);
         child_bottom_right = new QuadTreeNode(depth - 1, mid_position, bottom_right_position, this);
+    }
+}
+
+CellGame::QuadTreeNode::~QuadTreeNode()
+{
+    if (child_top_left != nullptr)
+    {
+        delete child_top_left;
+        child_top_left = nullptr;
+    }
+
+    if (child_top_right != nullptr)
+    {
+        delete child_top_right;
+        child_top_right = nullptr;
+    }
+
+    if (child_bottom_left != nullptr)
+    {
+        delete child_bottom_left;
+        child_bottom_left = nullptr;
+    }
+
+    if (child_bottom_right != nullptr)
+    {
+        delete child_bottom_right;
+        child_bottom_right = nullptr;
     }
 }
 
@@ -1933,13 +1972,47 @@ CellGame::Position CellGame::compute_barycenter(const Position & a, float cA, co
                     a.y + c*dy);
 }
 
+void CellGame::generate_initial_ncells()
+{
+    Q_ASSERT(_isRunning == false);
+
+    for (NeutralCell * ncell : _initial_neutral_cells)
+        delete ncell;
+    _initial_neutral_cells.clear();
+
+    int ncell_id = 0;
+    float dx = _parameters.map_width / _parameters.initial_neutral_cells_matrix_width;
+    float dy = _parameters.map_height / _parameters.initial_neutral_cells_matrix_height;
+
+    for (unsigned int y = 0; y < _parameters.initial_neutral_cells_matrix_height; ++y)
+    {
+        for (unsigned int x = 0; x < _parameters.initial_neutral_cells_matrix_width; ++x)
+        {
+            NeutralCell * ncell = new NeutralCell;
+            ncell->id = ncell_id;
+            ncell->position.x = dx * x + dx/2;
+            ncell->position.y = dy * y + dy/2;
+            ncell->mass = _parameters.initial_neutral_cells_mass;
+            ncell->remaining_turns_before_apparition = 0;
+            ncell->responsible_node = _tree_root->find_responsible_node(ncell->position);
+
+            ncell->is_initial = true;
+
+            _initial_neutral_cells[ncell->id] = ncell;
+            ncell->responsible_node->alive_neutral_cells[ncell->id] = ncell;
+
+            ++ncell_id;
+        }
+    }
+}
+
 QByteArray CellGame::generate_turn()
 {
     QByteArray qba, message;
 
     // Append Initial_neutral_cells
     qba.resize(sizeof(quint32));
-    (*(quint32*)qba.data()) = _parameters.nb_initial_neutral_cells;
+    (*(quint32*)qba.data()) = (quint32) _initial_neutral_cells.size();
     message.append(qba);
 
     QMapIterator<int, NeutralCell*> it_initial_ncells(_initial_neutral_cells);
