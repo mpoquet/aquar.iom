@@ -491,7 +491,7 @@ sf::Color colorFromPlayerId(quint32 playerId, int nbePlayers)
     return sf::Color(sf::Uint8(255*r), sf::Uint8(g*255), sf::Uint8(b*255));
 }
 
-static void hsvToRgb(double h, double s, double v, double & r, double & g, double & b) {
+void hsvToRgb(double h, double s, double v, double & r, double & g, double & b) {
     // r g b, s v entre [0,1], h entre [0,360]
     if (s == 0) // Achromatic (grey)
     {

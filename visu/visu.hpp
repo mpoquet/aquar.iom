@@ -38,7 +38,7 @@ class Visu
 {
 // Méthodes
 public:
-    explicit Visu();
+    Visu();
     ~Visu();
 
     void onWelcomeReceived(const Welcome &welcome);
@@ -115,5 +115,5 @@ public:
 sf::Color colorFromPlayerId(quint32 playerId, int nbePlayers);
 
 // Convertit les couleurs du système hsv vers rgb.
-static void hsvToRgb(double h, double s, double v, double & r, double & g, double & b);
+void hsvToRgb(double h, double s, double v, double & r, double & g, double & b);
 

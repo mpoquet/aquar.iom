@@ -11,7 +11,7 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = visu
 TEMPLATE = app
 LIBS += -lsfml-graphics -lsfml-window -lsfml-system
-QMAKE_CXXFLAGS += -std=c++11
+QMAKE_CXXFLAGS += -std=c++11 -Wall -Wextra
 
 
 SOURCES += main.cpp\
