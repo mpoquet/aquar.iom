@@ -12,6 +12,7 @@ int main(int argc, char **argv)
     auto s = new Server();
     auto cli = new CLI();
     auto game = new CellGame();
+    game->setServer(s);
 
     a.connect(s, SIGNAL(message(QString)), cli, SLOT(displayMessage(QString)));
     a.connect(game, SIGNAL(message(QString)), cli, SLOT(displayMessage(QString)));

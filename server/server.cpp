@@ -162,7 +162,7 @@ void Server::setServerMaxClients(quint32 maxClients)
     if (_clients.size() <= _maxClients)
         emit message(QString("Maximum number of clients set to %1").arg(_maxClients));
     else
-        emit message(QString("Maximum number of clients set to %1. They are however %2 currently connected clients").arg(_maxClients).arg(_clients.size()));
+        emit message(QString("Maximum number of clients set to %1. There are however %2 currently connected clients").arg(_maxClients).arg(_clients.size()));
 }
 
 void Server::setServerMaxPlayers(quint32 maxPlayers)
@@ -172,7 +172,7 @@ void Server::setServerMaxPlayers(quint32 maxPlayers)
     if (_nbPlayers <= _maxPlayers)
         emit message(QString("Maximum number of players set to %1").arg(_maxPlayers));
     else
-        emit message(QString("Maximum number of players set to %1. They are however %2 currently connected players").arg(_maxPlayers).arg(_nbPlayers));
+        emit message(QString("Maximum number of players set to %1. There are however %2 currently connected players").arg(_maxPlayers).arg(_nbPlayers));
 }
 
 void Server::setServerMaxVisus(quint32 maxVisus)
@@ -182,7 +182,7 @@ void Server::setServerMaxVisus(quint32 maxVisus)
     if (_nbVisus <= _maxVisus)
         emit message(QString("Maximum number of visus set to %1").arg(_maxVisus));
     else
-        emit message(QString("Maximum number of visus set to %1. They are however %2 currently connected visus").arg(_maxVisus).arg(_nbVisus));
+        emit message(QString("Maximum number of visus set to %1. There are however %2 currently connected visus").arg(_maxVisus).arg(_nbVisus));
 }
 
 void Server::listServerClients()

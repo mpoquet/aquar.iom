@@ -1409,6 +1409,9 @@ void CellGame::load_parameters(const QString &filename)
                                            _parameters.initial_neutral_cells_matrix_height;
     _parameters.is_loaded = true;
 
+    Q_ASSERT(_server != nullptr);
+    _server->setServerMaxPlayers(_parameters.max_nb_players);
+
     emit message("Parameters have been loaded");
 }
 
