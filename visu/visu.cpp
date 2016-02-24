@@ -56,7 +56,7 @@ void Visu::onWelcomeReceived(const Welcome &welcome)
     parameters.neutral_cells_repop_time = welcome.parameters.neutral_cells_repop_time;
 
     /// initialiser la vue. Par défaut on affiche l'ensemble de la carte dans 3/4 de l'écran
-    vue_carte.reset(sf::FloatRect(0, 0, parameters.map_width/0.75, parameters.map_height/0.75));
+    vue_carte.reset(sf::FloatRect(0, 0, parameters.map_width, parameters.map_height));
 
     cadre.setSize(sf::Vector2f(parameters.map_width, parameters.map_height));
     vue_cadre.reset(sf::FloatRect(0, 0, parameters.map_width/0.75, parameters.map_height/0.75));
@@ -181,13 +181,15 @@ void Visu::afficheCellule(Cellule* cellule)
     float rayon = cellule->mass * parameters.radius_factor;
     sf::CircleShape cercle(rayon, 128);
     cercle.setFillColor(cellule->color);
-    cercle.setPosition(cellule->position.x - rayon, cellule->position.y - rayon); // setPosition prend la position du coin supérieur gauche =(
 
     // mettre un contour pour les cellules isolées et les cellules neutres
     if ((cellule->remaining_isolated_turns != 0) | (cellule->typeDeCellule == initialNeutral) | (cellule->typeDeCellule == nonInitialNeutral)) {
         cercle.setOutlineColor(borders_color);
         cercle.setOutlineThickness(rayon/6);
+        rayon = 5.0/6.0 * rayon; // on change la valeur du rayon car la bordure est rajoutée à l'extérieur du circleshape
+        cercle.setRadius(rayon);
     }
+    cercle.setPosition(cellule->position.x - rayon, cellule->position.y - rayon); // setPosition prend la position du coin supérieur gauche =(1
     window.draw(cercle);
 }
 

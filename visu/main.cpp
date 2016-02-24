@@ -74,12 +74,12 @@ int main()
     Cellule* cellule0 = new Cellule(joueuse0);
     jeu.addNewCell(cellule0);
 
-    pos = {800, 420};
-    PlayerCell joueuse1 = {13, 1, pos, 4, 7};
+    pos = {600, 420};
+    PlayerCell joueuse1 = {13, 1, pos, 7, 7};
     Cellule* cellule1 = new Cellule(joueuse1);
     jeu.addNewCell(cellule1);
 
-    pos = {800, 400};
+    pos = {600, 410};
     PlayerCell joueuse2 = {14, 2, pos, 7, 0};
     Cellule* cellule2 = new Cellule(joueuse2);
     jeu.addNewCell(cellule2);
