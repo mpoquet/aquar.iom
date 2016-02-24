@@ -101,6 +101,10 @@ int main()
     Turn tour = {initial_ncells, non_initial_ncells, viruses, pcells, players};
 
     while (jeu.window.isOpen()) {
+        jeu.handleEvents(tour);
+    }
+
+   /* while (jeu.window.isOpen()) {
         sf::Event event;
 
         // seules les fonctions pollEvent et waitEvent produisent des sf::Event
@@ -174,7 +178,7 @@ int main()
         jeu.afficheTout();
 
 
-    }
+    }*/
 
     /*sf::RenderWindow fenetre;
     fenetre.create(sf::VideoMode(800, 600), "titre");

@@ -58,8 +58,10 @@ void Visu::onWelcomeReceived(const Welcome &welcome)
     vue_carte.reset(sf::FloatRect(0, 0, parameters.map_width, parameters.map_height));
     vue_carte.setViewport(sf::FloatRect(0, 0, 0.85, 0.85));
 
-    cadre.setSize(sf::Vector2f(parameters.map_width, parameters.map_height));
-    vue_cadre.reset(sf::FloatRect(0, 0, parameters.map_width/0.85, parameters.map_height/0.85));
+    /*cadre.setSize(sf::Vector2f(parameters.map_width, parameters.map_height));
+    vue_cadre.reset(sf::FloatRect(0, 0, parameters.map_width/0.85, parameters.map_height/0.85));*/
+    cadre.setSize(sf::Vector2f(vue_carte.getViewport().width, vue_carte.getViewport().height));
+    vue_cadre.reset(sf::FloatRect(0, 0, cadre.getSize().x, cadre.getSize().y));
 
     /// initialiser l'ensemble des cellules avec leurs positions initiales
     QVector<InitialNeutralCellWelcome>::const_iterator it;
@@ -209,7 +211,7 @@ void Visu::afficheScore()
     // pour cacher les cellules qui dépassent de l'aire de jeu on met un rectangle blanc par-dessus
     window.setView(bas);
     sf::RectangleShape cache_bas;
-    cache_bas.setSize(sf::Vector2f(bas.getSize().x, bas.getSize().y));
+    cache_bas.setSize(sf::Vector2f(bas.getSize().x, bas.getSize().y+cadre.getOutlineThickness()));
     cache_bas.setPosition(bas.getCenter().x-bas.getSize().x/2, bas.getCenter().y-bas.getSize().y/2 + cadre.getOutlineThickness());
     //std::cout << cache_bas.getSize().x << " " << bas.getSize().y << std::endl;
     cache_bas.setFillColor(sf::Color::White);
@@ -217,7 +219,7 @@ void Visu::afficheScore()
 
     window.setView(droite);
     sf::RectangleShape cache_droite;
-    cache_droite.setSize(sf::Vector2f(droite.getSize().x, droite.getSize().y));
+    cache_droite.setSize(sf::Vector2f(droite.getSize().x+cadre.getOutlineThickness(), droite.getSize().y));
     cache_droite.setPosition(droite.getCenter().x-droite.getSize().x/2 + cadre.getOutlineThickness(), droite.getCenter().y-droite.getSize().y/2);
     cache_droite.setFillColor(sf::Color::White);
     window.draw(cache_droite);
@@ -303,6 +305,77 @@ void Visu::afficheTout()
     afficheScore();
 
     window.display(); // dessine tous les objets avec lesquels on a appelé draw
+}
+
+void Visu::handleEvents(Turn tour)
+{
+    sf::Event event;
+    window.pollEvent(event);
+    switch(event.type) {
+
+    // fermeture de la fenêtre
+    case sf::Event::Closed:
+        window.close();
+        break;
+
+        // appui sur un bouton du clavier
+    case sf::Event::KeyPressed:
+        switch(event.key.code) {
+
+        case sf::Keyboard::I:
+            // todo : inverser la couleur de fond de la fenêtre et celle des contours (cellules + cadre)
+            inverseCouleurs();
+            break;
+
+        case sf::Keyboard::T:
+            // test de la fonction onTurnReceived
+            tour.viruses[0].position.y += 100;
+            tour.pcells[0].position.x += 100;
+            tour.pcells[2].position.y -= 20;
+            tour.initial_ncells[0].remaining_turns_before_apparition = 0;
+            tour.non_initial_ncells[0].mass = 50;
+            onTurnReceived(tour);
+            tour.players[2].score = 21;
+            break;
+
+        case sf::Keyboard::Add:
+            zoom();
+            break;
+
+        case sf::Keyboard::Subtract:
+            dezoom();
+            break;
+
+        case sf::Keyboard::Equal:
+            resetCarte();
+            break;
+
+        case sf::Keyboard::Right:
+            deplaceVueDroite();
+            break;
+
+        case sf::Keyboard::Left:
+            deplaceVueGauche();
+            break;
+
+        case sf::Keyboard::Up:
+            deplaceVueHaut();
+            break;
+
+        case sf::Keyboard::Down:
+            deplaceVueBas();
+            break;
+
+        default:
+            break;
+        }
+
+    default:
+        break;
+
+    }
+
+    afficheTout();
 }
 
 void Visu::zoom()

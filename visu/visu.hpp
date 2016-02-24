@@ -56,6 +56,7 @@ public:
     // Met à jour tout l'affichage
     void afficheTout();
 
+    void handleEvents(Turn tour); // todo : en version finale, ne prend plus rien en paramètre. C'est juste pour tester l'affichage
     void zoom();
     void dezoom();
     void resetCarte(); // remet la vue comme au démarrage
