@@ -69,6 +69,7 @@ namespace ainet16
 
     class Actions
     {
+        friend class Session;
     public:
         Actions();
         ~Actions();
@@ -210,6 +211,7 @@ namespace ainet16
         bool _is_player;
         Welcome _welcome;
         Turn _turn;
+        int _last_received_turn;
     };
 
 };

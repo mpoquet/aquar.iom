@@ -147,7 +147,43 @@ void ainet16::Session::wait_for_welcome() throw(Exception)
 
 void ainet16::Session::send_actions(const ainet16::Actions &actions) throw(Exception)
 {
+    // Compute game-dependent content size
+    sf::Uint32 gdc_size = 0;
 
+    gdc_size += 4 + actions._move_actions.size() * (4 + 4*2);
+    gdc_size += 4 + actions._divide_actions.size() * (4 + 4*2 + 4);
+    gdc_size += 4 + actions._create_virus_actions.size() * (4 + 4*2);
+    gdc_size += 1;
+
+    sf::Packet packet;
+
+    // Metaprotocol header
+    packet << sf::Uint8(MetaProtocolStamp::TURN_ACK)
+           << sf::Uint32(gdc_size)
+           << sf::Uint32(_last_received_turn);
+
+    // Game-dependent content
+    packet << sf::Uint32(actions._move_actions.size());
+    for (const MoveAction & action : actions._move_actions)
+        packet << sf::Uint32(action.pcell_id)
+               << action.position.x
+               << action.position.y;
+
+    packet << sf::Uint32(actions._divide_actions.size());
+    for (const DivideAction & action : actions._divide_actions)
+        packet << sf::Uint32(action.pcell_id)
+               << action.position.x
+               << action.position.y
+               << action.mass;
+
+    packet << sf::Uint32(actions._create_virus_actions.size());
+    for (const CreateVirusAction & action : actions._create_virus_actions)
+        packet << sf::Uint32(action.pcell_id)
+               << action.position.x
+               << action.position.y;
+
+    packet << sf::Uint8(actions._will_surrender);
+    send_packet(packet);
 }
 
 void ainet16::Session::wait_for_next_turn() throw(Exception)
