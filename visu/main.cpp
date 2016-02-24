@@ -65,22 +65,22 @@ int main()
     NonInitialNeutralCell nonInitialeNeutre = {10, 12, pos}; //id, mass, position
 
     pos = {130, 310};
-    Virus vir{11, pos};
+    Virus vir{11, pos}; //id, position
     Cellule* virus = new Cellule(vir, parameters.virus_mass);
     jeu.addNewCell(virus);
 
     pos = {130, 310};
-    PlayerCell joueuse0 = {12, 0, pos, parameters.virus_mass, 7};
+    PlayerCell joueuse0 = {12, 0, pos, parameters.virus_mass, 7};//id, player id, position, mass, isolated turns
     Cellule* cellule0 = new Cellule(joueuse0, 4);
     jeu.addNewCell(cellule0);
 
     pos = {600, 420};
-    PlayerCell joueuse1 = {13, 1, pos, 7, 7};
+    PlayerCell joueuse1 = {13, 1, pos, 7, 7}; //id, player id, position, mass, isolated turns
     Cellule* cellule1 = new Cellule(joueuse1, 4);
     jeu.addNewCell(cellule1);
 
     pos = {600, 410};
-    PlayerCell joueuse2 = {14, 2, pos, 7, 0};
+    PlayerCell joueuse2 = {14, 2, pos, 5, 0}; //id, player id, position, mass, isolated turns
     Cellule* cellule2 = new Cellule(joueuse2, 4);
     jeu.addNewCell(cellule2);
 
@@ -101,7 +101,8 @@ int main()
     Turn tour = {initial_ncells, non_initial_ncells, viruses, pcells, players};
 
     while (jeu.window.isOpen()) {
-        jeu.handleEvents(tour);
+        jeu.handleEvents(&tour);
+        jeu.afficheTout();
     }
 
    /* while (jeu.window.isOpen()) {
@@ -180,63 +181,5 @@ int main()
 
     }*/
 
-    /*sf::RenderWindow fenetre;
-    fenetre.create(sf::VideoMode(800, 600), "titre");
-
-    sf::Texture texture_virus;
-    std::string chemin("sprites/bomb_alpha.png");
-    sf::Sprite sprite_virus;
-    if(texture_virus.loadFromFile(chemin)) {
-        texture_virus.setSmooth(true);
-        std::cout << texture_virus.getSize().x << " " << texture_virus.getSize().y << std::endl;
-        sprite_virus.setTexture(texture_virus);
-        sprite_virus.setPosition(0, 0);
-        //sprite_virus.setColor(sf::Color::Red);
-    }
-
-    while (fenetre.isOpen()) {
-        sf::Event event;
-        while (fenetre.pollEvent(event)) {
-            switch (event.type) {
-            case sf::Event::Closed:
-                fenetre.close();
-                break;
-
-            default:
-                break;
-            }
-        }
-        fenetre.clear(sf::Color::Green);
-        fenetre.draw(sprite_virus);
-        fenetre.display();
-    }*/
-
     return 0;
 }
-
-/*sf::Texture texture;
-//if (!texture.loadFromFile("/home/sophie/Images/Firefox_wallpaper.png")) {
-if(!texture.loadFromFile("/home/sophie/Images/pikachu.png")) {
-    std::cout << "Erreur lors du chargement de la texture\n";
-}
-texture.setSmooth(true);
-texture.setRepeated(true);
-
-sf::Sprite sprite;
-sprite.setTexture(texture);
-//sprite.setTextureRect(sf::IntRect(500, 500, 320, 32));
-sprite.setColor(sf::Color::Red);
-sprite.rotate(42);
-sprite.scale(sf::Vector2f(1.5f, 1.f));
-
-sf::Font font;
-if (!font.loadFromFile("fonts/FLOWER.ttf")) {
-    std::cout << "Erreur lors du chargement de la police\n";
-}
-sf::Text text;
-text.setFont(font);
-text.setString("Hello World!");
-text.setCharacterSize(56);
-text.setStyle(sf::Text::Bold | sf::Text::Underlined);
-text.setColor(sf::Color::Cyan);
-text.move(sf::Vector2f(500, 45));*/

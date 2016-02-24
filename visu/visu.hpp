@@ -56,14 +56,24 @@ public:
     // Met à jour tout l'affichage
     void afficheTout();
 
-    void handleEvents(Turn tour); // todo : en version finale, ne prend plus rien en paramètre. C'est juste pour tester l'affichage
+    // Fait changer la couleur de l'arrière-plan entre blanc et noir
+    void inverseCouleurs();
+
+    // Gestion des évènements
+    void handleEvents(Turn *tour); // todo : en version finale, ne prend plus rien en paramètre. C'est juste pour tester l'affichage
+
+    // Ajustement du niveau de zoom
     void zoom();
     void dezoom();
-    void resetCarte(); // remet la vue comme au démarrage
-    void deplaceVueDroite(); // pour regarder vers la droite ; déplace les objets vers la gauche
+
+    // Déplacement de la vue
+    void deplaceVueDroite();
     void deplaceVueGauche();
-    void deplaceVueHaut(); // pour regarder vers le haut ; déplace les objets vers le bas
+    void deplaceVueHaut();
     void deplaceVueBas();
+
+    // Remet la vue comme au démarrage (carte entière dans le cadre)
+    void resetCarte();
 
     // Ajoute une cellule dans le conteneur allCells
     void addNewCell(Cellule* cellule);
@@ -72,8 +82,6 @@ public:
     // Ajoute un joueur dans le conteneur players
     void addNewPlayer(Player p);
 
-    // Fait changer la couleur de l'arrière-plan entre blanc et noir
-    void inverseCouleurs();
 
 // Accesseurs
     int nbeJoueurs();
@@ -102,6 +110,10 @@ public:
     sf::RenderWindow window; // RenderWindow hérite de Window et contient des fonctions pour le dessin
 };
 
-sf::Color colorFromPlayerId(quint32 playerId, int nbePlayers); // détermine la couleur d'un joueur
+// Détermine la couleur d'un joueur en fonction de son identifiant et du nombre total de joueurs grâce au système hsv.
+// La saturation et la valeur sont fixes mais les teintes des joueurs sont équiréparties entre 0 et 360.
+sf::Color colorFromPlayerId(quint32 playerId, int nbePlayers);
+
+// Convertit les couleurs du système hsv vers rgb.
 static void hsvToRgb(double h, double s, double v, double & r, double & g, double & b);
 
