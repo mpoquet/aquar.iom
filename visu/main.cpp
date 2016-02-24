@@ -51,7 +51,7 @@ int main()
     jeu.onWelcomeReceived(welcome);
 
     Player joueur0 = {0, 0, 0, 1};
-    Player joueur1 = {1, 0, 0, 10};
+    Player joueur1 = {1, 0, 0, 20};
     Player joueur2 = {2, 0, 0, 20};
     Player joueur3 = {3, 0, 0, 5};
 
@@ -74,12 +74,12 @@ int main()
     Cellule* cellule0 = new Cellule(joueuse0);
     jeu.addNewCell(cellule0);
 
-    pos = {800, 420};
-    PlayerCell joueuse1 = {13, 1, pos, 4, 7};
+    pos = {600, 420};
+    PlayerCell joueuse1 = {13, 1, pos, 7, 7};
     Cellule* cellule1 = new Cellule(joueuse1);
     jeu.addNewCell(cellule1);
 
-    pos = {800, 400};
+    pos = {600, 410};
     PlayerCell joueuse2 = {14, 2, pos, 7, 0};
     Cellule* cellule2 = new Cellule(joueuse2);
     jeu.addNewCell(cellule2);
@@ -116,9 +116,6 @@ int main()
                 // appui sur un bouton du clavier
             case sf::Event::KeyPressed:
                 switch(event.key.code) {
-                case sf::Keyboard::F:
-                    // todo : alterner entre plein écran ou fenêtré
-                    break;
 
                 case sf::Keyboard::I:
                     // todo : inverser la couleur de fond de la fenêtre et celle des contours (cellules + cadre)
@@ -133,6 +130,31 @@ int main()
                     tour.initial_ncells[0].remaining_turns_before_apparition = 0;
                     tour.non_initial_ncells[0].mass = 50;
                     jeu.onTurnReceived(tour);
+                    tour.players[2].score = 21;
+                    break;
+
+                case sf::Keyboard::Add:
+                    jeu.zoom();
+                    break;
+
+                case sf::Keyboard::Subtract:
+                    jeu.dezoom();
+                    break;
+
+                case sf::Keyboard::Right:
+                    jeu.deplaceVueDroite();
+                    break;
+
+                case sf::Keyboard::Left:
+                    jeu.deplaceVueGauche();
+                    break;
+
+                case sf::Keyboard::Up:
+                    jeu.deplaceVueHaut();
+                    break;
+
+                case sf::Keyboard::Down:
+                    jeu.deplaceVueBas();
                     break;
 
                 default:
@@ -145,13 +167,9 @@ int main()
             }
         }
 
-        jeu.window.clear(sf::Color::White);
+        jeu.afficheTout();
 
-        jeu.afficheCadre();
-        jeu.afficheToutesCellules();
-        jeu.afficheScore();
 
-        jeu.window.display(); // dessine tous les objets avec lesquels on a appelé draw
 
     }
 
