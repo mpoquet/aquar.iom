@@ -21,16 +21,17 @@ int main(int argc, char ** argv)
     {
         Session session;
         session.connect(address, port);
-
         session.login_player("AFK");
+
         session.wait_for_welcome();
+        session.wait_for_game_starts();
 
         while(session.is_logged())
         {
-            session.wait_for_next_turn();
-
             Actions actions;
             session.send_actions(actions);
+
+            session.wait_for_next_turn();
         }
     }
     catch (ainet16::Exception & exception)

@@ -204,6 +204,61 @@ void ainet16::Session::wait_for_welcome() throw(Exception)
     }
 }
 
+void ainet16::Session::wait_for_game_starts() throw(Exception)
+{
+    // Metaprotocol
+    sf::Uint8 stamp_ui8 = read_uint8();
+    MetaProtocolStamp stamp = (MetaProtocolStamp) stamp_ui8;
+
+    if (stamp != MetaProtocolStamp::GAME_STARTS)
+    {
+        if (stamp == MetaProtocolStamp::KICK)
+        {
+            string kick_reason = read_string();
+            throw KickException(kick_reason);
+        }
+        else
+            throw Exception("Invalid stamp received while waiting for WELCOME, received_stamp=" + std::to_string(stamp_ui8));
+    }
+
+    sf::Uint32 gdc_size = read_uint32();
+    (void) gdc_size;
+
+    // Game-dependent protocol
+    _player_id = read_uint32();
+
+    // Reading the game parameters
+    _welcome.parameters.map_width = read_float();
+    _welcome.parameters.map_height = read_float();
+    _welcome.parameters.min_nb_players = read_uint32();
+    _welcome.parameters.max_nb_players = read_uint32();
+    _welcome.parameters.mass_absorption = read_float();
+    _welcome.parameters.minimum_mass_ratio_to_absorb = read_float();
+    _welcome.parameters.minimum_pcell_mass = read_float();
+    _welcome.parameters.radius_factor = read_float();
+    _welcome.parameters.max_cells_per_player = read_uint32();
+    _welcome.parameters.mass_loss_per_frame = read_float();
+    _welcome.parameters.base_cell_speed = read_float();
+    _welcome.parameters.speed_loss_factor = read_float();
+    _welcome.parameters.virus_mass = read_float();
+    _welcome.parameters.virus_creation_mass_loss = read_float();
+    _welcome.parameters.virus_max_split = read_uint32();
+    _welcome.parameters.nb_starting_cells_per_player = read_uint32();
+    _welcome.parameters.player_cells_starting_mass = read_uint32();
+    _welcome.parameters.initial_neutral_cells_mass = read_float();
+    _welcome.parameters.initial_neutral_cells_repop_time = read_uint32();
+
+    // Reading the position of the initial neutral cells
+    sf::Uint32 nb_initial_neutral_cells = read_uint32();
+    _welcome.initial_ncells_positions.resize(nb_initial_neutral_cells);
+
+    for (Position & position : _welcome.initial_ncells_positions)
+    {
+        position.x = read_float();
+        position.y = read_float();
+    }
+}
+
 void ainet16::Session::send_actions(const ainet16::Actions &actions) throw(Exception)
 {
     // Compute game-dependent content size
@@ -332,6 +387,11 @@ ainet16::Welcome ainet16::Session::welcome() const
 ainet16::Turn ainet16::Session::turn() const
 {
     return _turn;
+}
+
+int ainet16::Session::player_id() const
+{
+    return _player_id;
 }
 
 std::vector<ainet16::NeutralCell> ainet16::Session::all_neutral_cells() const

@@ -182,11 +182,13 @@ namespace ainet16
         void login_visu(std::string name) throw(Exception);
 
         void wait_for_welcome() throw(Exception);
+        void wait_for_game_starts() throw(Exception);
         void send_actions(const Actions & actions) throw(Exception);
         void wait_for_next_turn() throw(Exception);
 
         Welcome welcome() const;
         Turn turn() const;
+        int player_id() const;
         std::vector<NeutralCell> all_neutral_cells() const;
 
         bool is_connected() const;
@@ -212,6 +214,7 @@ namespace ainet16
         Welcome _welcome;
         Turn _turn;
         unsigned int _last_received_turn;
+        unsigned int _player_id;
     };
 
 };
