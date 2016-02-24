@@ -19,7 +19,7 @@ class Cellule
 // Méthodes
 public:
     // constructeurs:
-    Cellule(PlayerCell cellule);
+    Cellule(PlayerCell cellule, int nbe_players);
     Cellule(NonInitialNeutralCell cellule);
     Cellule(InitialNeutralCell cellule, float initialNeutralCellsMass, quint32 id);
     Cellule(Virus cellule, float virus_mass);

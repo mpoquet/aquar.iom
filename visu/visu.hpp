@@ -100,5 +100,6 @@ public:
     sf::RenderWindow window; // RenderWindow hérite de Window et contient des fonctions pour le dessin
 };
 
-sf::Color colorFromPlayerId(quint32 playerId); // détermine la couleur d'un joueur
+sf::Color colorFromPlayerId(quint32 playerId, int nbePlayers); // détermine la couleur d'un joueur
+static void hsvToRgb(double h, double s, double v, double & r, double & g, double & b);
 
