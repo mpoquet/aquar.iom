@@ -315,6 +315,11 @@ void Visu::dezoom()
     vue_carte.zoom(1/0.75);
 }
 
+void Visu::resetCarte()
+{
+    vue_carte.reset(sf::FloatRect(0, 0, parameters.map_width, parameters.map_height));
+}
+
 void Visu::deplaceVueDroite()
 {
     vue_carte.move(5, 0);

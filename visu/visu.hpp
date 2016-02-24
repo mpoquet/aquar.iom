@@ -58,6 +58,7 @@ public:
 
     void zoom();
     void dezoom();
+    void resetCarte(); // remet la vue comme au démarrage
     void deplaceVueDroite(); // pour regarder vers la droite ; déplace les objets vers la gauche
     void deplaceVueGauche();
     void deplaceVueHaut(); // pour regarder vers le haut ; déplace les objets vers le bas

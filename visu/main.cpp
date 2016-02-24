@@ -141,6 +141,10 @@ int main()
                     jeu.dezoom();
                     break;
 
+                case sf::Keyboard::Equal:
+                    jeu.resetCarte();
+                    break;
+
                 case sf::Keyboard::Right:
                     jeu.deplaceVueDroite();
                     break;
