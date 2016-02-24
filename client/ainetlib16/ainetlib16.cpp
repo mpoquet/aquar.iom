@@ -217,12 +217,14 @@ void ainet16::Session::send_actions(const ainet16::Actions &actions) throw(Excep
            << sf::Uint32(_last_received_turn);
 
     // Game-dependent content
+    // Send move actions
     packet << sf::Uint32(actions._move_actions.size());
     for (const MoveAction & action : actions._move_actions)
         packet << sf::Uint32(action.pcell_id)
                << action.position.x
                << action.position.y;
 
+    // Send divide actions
     packet << sf::Uint32(actions._divide_actions.size());
     for (const DivideAction & action : actions._divide_actions)
         packet << sf::Uint32(action.pcell_id)
@@ -230,12 +232,14 @@ void ainet16::Session::send_actions(const ainet16::Actions &actions) throw(Excep
                << action.position.y
                << action.mass;
 
+    // Send create virus actions
     packet << sf::Uint32(actions._create_virus_actions.size());
     for (const CreateVirusAction & action : actions._create_virus_actions)
         packet << sf::Uint32(action.pcell_id)
                << action.position.x
                << action.position.y;
 
+    // Send surrender action
     packet << sf::Uint8(actions._will_surrender);
     send_packet(packet);
 }
@@ -263,11 +267,16 @@ void ainet16::Session::wait_for_next_turn() throw(Exception)
     _last_received_turn = read_uint32();
 
     // Game-dependent protocol
+    // Read initial neutral cells' positions
     sf::Uint32 nb_initial_ncells = read_uint32();
+    if (nb_initial_ncells != _welcome.initial_ncells_positions.size())
+        throw Exception("Incoherent number of initial neutral cells received (welcome/turn)");
+
     _turn.initial_ncells.resize(nb_initial_ncells);
     for (TurnInitialNeutralCell & ncell : _turn.initial_ncells)
         ncell.remaining_turns_before_apparition = read_uint32();
 
+    // Read non-initial neutral cells
     sf::Uint32 nb_non_initial_ncells = read_uint32();
     _turn.non_initial_ncells.resize(nb_non_initial_ncells);
     for (TurnNonInitialNeutralCell & ncell : _turn.non_initial_ncells)
@@ -277,6 +286,7 @@ void ainet16::Session::wait_for_next_turn() throw(Exception)
         ncell.position = read_position();
     }
 
+    // Read viruses
     sf::Uint32 nb_viruses = read_uint32();
     _turn.viruses.resize(nb_viruses);
     for (TurnVirus & virus : _turn.viruses)
@@ -285,6 +295,7 @@ void ainet16::Session::wait_for_next_turn() throw(Exception)
         virus.position = read_position();
     }
 
+    // Read player cells
     sf::Uint32 nb_pcells = read_uint32();
     _turn.pcells.resize(nb_pcells);
     for (TurnPlayerCell & pcell : _turn.pcells)
@@ -296,6 +307,7 @@ void ainet16::Session::wait_for_next_turn() throw(Exception)
         pcell.remaining_isolated_turns = read_uint32();
     }
 
+    // Read players
     sf::Uint32 nb_players = read_uint32();
     _turn.players.resize(nb_players);
     for (TurnPlayer & player : _turn.players)
@@ -319,7 +331,36 @@ ainet16::Turn ainet16::Session::turn() const
 
 std::vector<ainet16::NeutralCell> ainet16::Session::all_neutral_cells() const
 {
+    std::vector<ainet16::NeutralCell> res;
+    res.resize(_welcome.initial_ncells_positions.size() + _turn.non_initial_ncells.size());
 
+    int i = 0;
+
+    // Sets initial neutral cells
+    for (const Position & pos : _welcome.initial_ncells_positions)
+    {
+        res[i].id = i;
+        res[i].position = pos;
+        res[i].mass = _welcome.parameters.initial_neutral_cells_mass;
+        res[i].is_initial = true;
+        res[i].remaining_turns_before_apparition = _turn.initial_ncells[i].remaining_turns_before_apparition;
+
+        i++;
+    }
+
+    // Sets non-initial neutral cells
+    for (const TurnNonInitialNeutralCell & ncell : _turn.non_initial_ncells)
+    {
+        res[i].id = ncell.ncell_id;
+        res[i].position = ncell.position;
+        res[i].mass = ncell.mass;
+        res[i].is_initial = false;
+        res[i].remaining_turns_before_apparition = 0;
+
+        i++;
+    }
+
+    return res;
 }
 
 bool ainet16::Session::is_connected() const
