@@ -212,8 +212,6 @@ namespace ainet16
         void send_position(const Position & pos) throw(Exception);
         void send_bool(bool b) throw(Exception);
 
-        void send_packet(sf::Packet & packet) throw(Exception);
-
     private:
         sf::TcpSocket _socket;
         bool _is_connected;
@@ -221,7 +219,7 @@ namespace ainet16
         bool _is_player;
         Welcome _welcome;
         Turn _turn;
-        unsigned int _last_received_turn;
+        unsigned int _last_received_turn = 0;
         int _player_id;
         bool _debug = true;
     };

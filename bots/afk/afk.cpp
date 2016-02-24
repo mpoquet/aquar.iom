@@ -36,12 +36,12 @@ int main(int argc, char ** argv)
 
         while(session.is_logged())
         {
+            printf("Waiting for next turn...\n");
+            session.wait_for_next_turn();
+
             Actions actions;
             printf("Sending actions...\n");
             session.send_actions(actions);
-
-            printf("Waiting for next turn...\n");
-            session.wait_for_next_turn();
         }
     }
     catch (ainet16::Exception & exception)

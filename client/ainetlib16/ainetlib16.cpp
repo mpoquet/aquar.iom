@@ -75,7 +75,7 @@ ainet16::Session::Session()
 
 ainet16::Session::~Session()
 {
-
+    _socket.disconnect();
 }
 
 void ainet16::Session::connect(string address, int port) throw(Exception)
@@ -87,6 +87,8 @@ void ainet16::Session::connect(string address, int port) throw(Exception)
 
     if (status != sf::Socket::Done)
         throw Exception("Impossible to connect on socket");
+
+    _is_connected = true;
 }
 
 void ainet16::Session::login_player(string name) throw(Exception)
@@ -101,6 +103,7 @@ void ainet16::Session::login_player(string name) throw(Exception)
 
     if (stamp == MetaProtocolStamp::LOGIN_ACK)
     {
+        _is_logged = true;
         _is_player = true;
         return;
     }
@@ -116,15 +119,8 @@ void ainet16::Session::login_player(string name) throw(Exception)
 void ainet16::Session::login_visu(string name) throw(Exception)
 {
     // Sending LOGIN_VISU message
-    sf::Packet packet;
-
-    packet << sf::Uint8(LOGIN_VISU);
-    packet << sf::Uint32(name.size());
-
-    for (unsigned int i = 0; i < name.size(); ++i)
-        packet << sf::Uint8(name[i]);
-
-    send_packet(packet);
+    send_uint8(LOGIN_VISU);
+    send_string(name);
 
     // Waiting for LOGIN_ACK
     sf::Uint8 stamp_ui8 = read_uint8();
@@ -132,6 +128,7 @@ void ainet16::Session::login_visu(string name) throw(Exception)
 
     if (stamp == MetaProtocolStamp::LOGIN_ACK)
     {
+        _is_logged = true;
         _is_player = false;
         return;
     }
@@ -220,8 +217,8 @@ void ainet16::Session::wait_for_welcome() throw(Exception)
 
         printf("  nb_initial_ncells=%d\n", (int)nb_initial_neutral_cells);
 
-        for (Position & position : _welcome.initial_ncells_positions)
-            printf("    (%f, %f)\n", position.x, position.y);
+        /*for (Position & position : _welcome.initial_ncells_positions)
+            printf("    (%f, %f)\n", position.x, position.y);*/
     }
 }
 
@@ -247,7 +244,6 @@ void ainet16::Session::wait_for_game_starts() throw(Exception)
 
     // Game-dependent protocol
     _player_id = read_uint32();
-    printf("  player_id=%d\n", _player_id);
     // Read initial neutral cells' positions
     sf::Uint32 nb_initial_ncells = read_uint32();
     if (nb_initial_ncells != _welcome.initial_ncells_positions.size())
@@ -298,6 +294,37 @@ void ainet16::Session::wait_for_game_starts() throw(Exception)
         player.mass = read_float();
         player.score = read_uint64();
     }
+
+    if (_debug)
+    {
+        printf("  Turn number: %d\n", _last_received_turn);
+        printf("  Initial ncells:\n");
+        //for (const TurnInitialNeutralCell & ncell : _turn.initial_ncells)
+        //    printf("    %d\n", ncell.remaining_turns_before_apparition);
+        printf("    {not displayed}\n");
+
+        printf("  Non-initial ncells:\n");
+        for (const TurnNonInitialNeutralCell & ncell : _turn.non_initial_ncells)
+            printf("    (id=%d,mass=%g,pos=(%g,%g))\n", ncell.ncell_id, ncell.mass,
+                   ncell.position.x, ncell.position.y);
+
+        printf("  Viruses:\n");
+        for (const TurnVirus & virus : _turn.viruses)
+            printf("    (id=%d,pos=(%g,%g))\n", virus.id, virus.position.x,
+                   virus.position.y);
+
+        printf("  Player cells:\n");
+        for (const TurnPlayerCell & pcell : _turn.pcells)
+            printf("    (id=%d,pid=%d,iso=%d,mass=%g,pos=(%g,%g))\n", pcell.pcell_id,
+                   pcell.player_id, pcell.remaining_isolated_turns,
+                   pcell.mass, pcell.position.x, pcell.position.y);
+
+        printf("  Players:\n");
+        for (const TurnPlayer & player : _turn.players)
+            printf("    (id=%d,nb_pcells=%d,mass=%g,score=%ld)\n",
+                   player.player_id, player.nb_cells,
+                   player.mass, player.score);
+    }
 }
 
 void ainet16::Session::send_actions(const ainet16::Actions &actions) throw(Exception)
@@ -310,39 +337,39 @@ void ainet16::Session::send_actions(const ainet16::Actions &actions) throw(Excep
     gdc_size += 4 + actions._create_virus_actions.size() * (4 + 4*2);
     gdc_size += 1;
 
-    sf::Packet packet;
-
     // Metaprotocol header
-    packet << sf::Uint8(MetaProtocolStamp::TURN_ACK)
-           << sf::Uint32(gdc_size)
-           << sf::Uint32(_last_received_turn);
+    send_uint8(MetaProtocolStamp::TURN_ACK);
+    send_uint32(gdc_size);
+    send_uint32(_last_received_turn);
 
     // Game-dependent content
     // Send move actions
-    packet << sf::Uint32(actions._move_actions.size());
+    send_uint32(actions._move_actions.size());
     for (const MoveAction & action : actions._move_actions)
-        packet << sf::Uint32(action.pcell_id)
-               << action.position.x
-               << action.position.y;
+    {
+        send_uint32(action.pcell_id);
+        send_position(action.position);
+    }
 
     // Send divide actions
-    packet << sf::Uint32(actions._divide_actions.size());
+    send_uint32(actions._divide_actions.size());
     for (const DivideAction & action : actions._divide_actions)
-        packet << sf::Uint32(action.pcell_id)
-               << action.position.x
-               << action.position.y
-               << action.mass;
+    {
+        send_uint32(action.pcell_id);
+        send_position(action.position);
+        send_float(action.mass);
+    }
 
     // Send create virus actions
-    packet << sf::Uint32(actions._create_virus_actions.size());
+    send_uint32(actions._create_virus_actions.size());
     for (const CreateVirusAction & action : actions._create_virus_actions)
-        packet << sf::Uint32(action.pcell_id)
-               << action.position.x
-               << action.position.y;
+    {
+        send_uint32(action.pcell_id);
+        send_position(action.position);
+    }
 
     // Send surrender action
-    packet << sf::Uint8(actions._will_surrender);
-    send_packet(packet);
+    send_bool(actions._will_surrender);
 }
 
 void ainet16::Session::wait_for_next_turn() throw(Exception)
@@ -417,6 +444,37 @@ void ainet16::Session::wait_for_next_turn() throw(Exception)
         player.nb_cells = read_uint32();
         player.mass = read_float();
         player.score = read_uint64();
+    }
+
+    if (_debug)
+    {
+        printf("  Turn number: %d\n", _last_received_turn);
+        printf("  Initial ncells:\n");
+        //for (const TurnInitialNeutralCell & ncell : _turn.initial_ncells)
+        //    printf("    %d\n", ncell.remaining_turns_before_apparition);
+        printf("    {not displayed}\n");
+
+        printf("  Non-initial ncells:\n");
+        for (const TurnNonInitialNeutralCell & ncell : _turn.non_initial_ncells)
+            printf("    (id=%d,mass=%g,pos=(%g,%g))\n", ncell.ncell_id, ncell.mass,
+                   ncell.position.x, ncell.position.y);
+
+        printf("  Viruses:\n");
+        for (const TurnVirus & virus : _turn.viruses)
+            printf("    (id=%d,pos=(%g,%g))\n", virus.id, virus.position.x,
+                   virus.position.y);
+
+        printf("  Player cells:\n");
+        for (const TurnPlayerCell & pcell : _turn.pcells)
+            printf("    (id=%d,pid=%d,iso=%d,mass=%g,pos=(%g,%g))\n", pcell.pcell_id,
+                   pcell.player_id, pcell.remaining_isolated_turns,
+                   pcell.mass, pcell.position.x, pcell.position.y);
+
+        printf("  Players:\n");
+        for (const TurnPlayer & player : _turn.players)
+            printf("    (id=%d,nb_pcells=%d,mass=%g,score=%ld)\n",
+                   player.player_id, player.nb_cells,
+                   player.mass, player.score);
     }
 }
 
@@ -639,14 +697,6 @@ void ainet16::Session::send_bool(bool b) throw(Exception)
 {
     sf::Uint8 ui8 = (int)b;
     send_uint8(ui8);
-}
-
-void ainet16::Session::send_packet(sf::Packet &packet) throw(Exception)
-{
-    sf::Socket::Status status = _socket.send(packet);
-
-    if (status != sf::Socket::Done)
-        throw Exception("Impossible to send LOGIN_PLAYER");
 }
 
 

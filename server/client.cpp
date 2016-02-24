@@ -122,7 +122,7 @@ void Client::onReadyRead()
                     internalSendTurn(_turnToSend, _sendBuffer);
             }
             else
-                kick(QString("invalid TURN_ACK message received: wrong turn (%1 instead of %2").arg(turn).arg(_lastTurnSent));
+                kick(QString("invalid TURN_ACK message received: wrong turn (%1 instead of %2)").arg(turn).arg(_lastTurnSent));
         }
         else
             kick(QString("invalid message type received (stamp=%1)").arg((quint32)stamp));

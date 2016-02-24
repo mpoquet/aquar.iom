@@ -255,6 +255,9 @@ void CellGame::onStart()
         return;
     }
 
+    generate_initial_pcells();
+    generate_initial_players();
+
     // Send GAME_STARTS to all players with the first TURN
     int player_id = 0;
     for (const GameClient & client : _playerClients)
@@ -333,6 +336,8 @@ void CellGame::onTurnEnd()
     _move_actions.clear();
     _surrender_actions.clear();
 
+    update_players_info();
+
     ++_current_turn;
     send_turn_to_everyone();
 }
@@ -403,11 +408,11 @@ void CellGame::compute_cell_divisions()
         new_cell->player_id = cell->player_id;
         new_cell->position.x = std::max(0.f, std::min(cell->position.x + new_cell_translation.x(), _parameters.map_width));
         new_cell->position.y = std::max(0.f, std::min(cell->position.y + new_cell_translation.y(), _parameters.map_height));
-        new_cell->updateMass(action->new_cell_mass, _parameters);
+        new_cell->remaining_isolated_turns = 0;
         new_cell->responsible_node = _tree_root;
         new_cell->responsible_node_bbox = _tree_root;
+        new_cell->updateMass(action->new_cell_mass, _parameters);
         new_cell->updateQuadtreeNodes();
-        new_cell->remaining_isolated_turns = 0;
 
         _player_cells[new_cell->id] = new_cell;
 
@@ -1405,18 +1410,7 @@ void CellGame::load_parameters(const QString &filename)
                                            _parameters.initial_neutral_cells_matrix_height;
     _parameters.is_loaded = true;
 
-    if (_tree_root != nullptr)
-    {
-        delete _tree_root;
-        _tree_root = nullptr;
-    }
-
-    Position top_left(0,0);
-    Position bottom_right(_parameters.map_width, _parameters.map_height);
-
-    _tree_root = new QuadTreeNode(0, top_left, bottom_right);
-
-    generate_initial_ncells();
+    initialize_game_after_load();
 
     Q_ASSERT(_server != nullptr);
     _server->setServerMaxPlayers(_parameters.max_nb_players);
@@ -1523,7 +1517,7 @@ void CellGame::PlayerCell::updateBBox(const CellGame::GameParameters & parameter
     top_left.x = std::max(0.0f, position.x - radius);
     top_left.y = std::max(0.0f, position.y - radius);
 
-    bottom_right.y = std::min(position.x + radius, parameters.map_width);
+    bottom_right.x = std::min(position.x + radius, parameters.map_width);
     bottom_right.y = std::min(position.y + radius, parameters.map_height);
 }
 
@@ -1972,6 +1966,23 @@ CellGame::Position CellGame::compute_barycenter(const Position & a, float cA, co
                     a.y + c*dy);
 }
 
+void CellGame::initialize_game_after_load()
+{
+    if (_tree_root != nullptr)
+    {
+        delete _tree_root;
+        _tree_root = nullptr;
+    }
+
+    Position top_left(0,0);
+    Position bottom_right(_parameters.map_width, _parameters.map_height);
+
+    _tree_root = new QuadTreeNode(0, top_left, bottom_right);
+
+    generate_initial_ncells();
+    generate_initial_viruses();
+}
+
 void CellGame::generate_initial_ncells()
 {
     Q_ASSERT(_isRunning == false);
@@ -1980,7 +1991,8 @@ void CellGame::generate_initial_ncells()
         delete ncell;
     _initial_neutral_cells.clear();
 
-    int ncell_id = 0;
+    _next_cell_id = 0;
+
     float dx = _parameters.map_width / _parameters.initial_neutral_cells_matrix_width;
     float dy = _parameters.map_height / _parameters.initial_neutral_cells_matrix_height;
 
@@ -1989,7 +2001,7 @@ void CellGame::generate_initial_ncells()
         for (unsigned int x = 0; x < _parameters.initial_neutral_cells_matrix_width; ++x)
         {
             NeutralCell * ncell = new NeutralCell;
-            ncell->id = ncell_id;
+            ncell->id = next_cell_id();
             ncell->position.x = dx * x + dx/2;
             ncell->position.y = dy * y + dy/2;
             ncell->mass = _parameters.initial_neutral_cells_mass;
@@ -2000,9 +2012,115 @@ void CellGame::generate_initial_ncells()
 
             _initial_neutral_cells[ncell->id] = ncell;
             ncell->responsible_node->alive_neutral_cells[ncell->id] = ncell;
-
-            ++ncell_id;
         }
+    }
+}
+
+void CellGame::generate_initial_viruses()
+{
+    Q_ASSERT(_isRunning == false);
+
+    for (const Position & pos : _parameters.viruses_starting_positions)
+    {
+        Virus * virus = new Virus;
+        virus->id = next_cell_id();
+        virus->position = pos;
+        virus->responsible_node = _tree_root->find_responsible_node(pos);
+        virus->turn_of_birth = 0;
+
+        _viruses[virus->id] = virus;
+        virus->responsible_node->viruses[virus->id] = virus;
+    }
+}
+
+void CellGame::generate_initial_pcells()
+{
+    Q_ASSERT(_isRunning == false);
+
+    int player_id = 0;
+    int k = 0;
+
+    // todo : remove (here) the previously generated pcells if any
+
+    // todo: check (not here in the code but somewhere in this class or its parent) that _playerClients and its visu
+    // sister remain consistent on client disconnection
+
+    Q_ASSERT(_playerClients.size() * (int)_parameters.nb_starting_cells_per_player <= _parameters.players_starting_positions.size());
+
+    for (const GameClient & player : _playerClients)
+    {
+        (void) player;
+        for (unsigned int i = 0; i < _parameters.nb_starting_cells_per_player; ++i)
+        {
+            PlayerCell * pcell = new PlayerCell;
+            pcell->id = next_cell_id();
+            pcell->player_id = player_id;
+            pcell->position = _parameters.players_starting_positions[k];
+            pcell->remaining_isolated_turns = 0;
+            pcell->responsible_node = _tree_root;
+            pcell->responsible_node_bbox = _tree_root;
+            pcell->updateMass(_parameters.player_cells_starting_mass, _parameters);
+            pcell->updateQuadtreeNodes();
+
+            _player_cells[pcell->id] = pcell;
+
+            k++;
+        }
+
+        ++player_id;
+    }
+}
+
+void CellGame::generate_initial_players()
+{
+    int player_id = 0;
+    for (const GameClient & p : _playerClients)
+    {
+        (void) p;
+
+        Player * player = new Player;
+        player->id = player_id;
+        player->mass = 0;
+        player->moved_this_turn = false;
+        player->nb_cells = 0;
+        player->score = 0;
+
+        _players[player->id] = player;
+
+        ++player_id;
+    }
+
+    update_players_info();
+}
+
+void CellGame::update_players_info()
+{
+    // Used to check server coherency
+    QMap<int, unsigned int> player_id_to_previous_nb_cells;
+    for (Player * player : _players)
+    {
+        player_id_to_previous_nb_cells[player->id] = player->nb_cells;
+        player->nb_cells = 0;
+        player->mass = 0;
+    }
+
+    for (PlayerCell * pcell : _player_cells)
+    {
+        Player * player = _players[pcell->player_id];
+        player->mass += pcell->mass;
+        player->nb_cells += 1;
+    }
+
+    // todo: check (not here) that one player does not play twice a turn
+
+    for (Player * player : _players)
+    {
+        if (player_id_to_previous_nb_cells[player->id] != player->nb_cells)
+        {
+            if (_current_turn != 0)
+                emit message(QString("Server incoherency on player->nb_pcells"));
+        }
+        player->score += (quint64) player->mass;
     }
 }
 
@@ -2114,6 +2232,10 @@ QByteArray CellGame::generate_turn()
 
         qba.resize(sizeof(float));
         (*(float*)qba.data()) = pcell->mass;
+        message.append(qba);
+
+        qba.resize(sizeof(quint32));
+        (*(quint32*)qba.data()) = pcell->remaining_isolated_turns;
         message.append(qba);
     }
 

@@ -88,8 +88,8 @@ class CellGame : public Game
         quint32 remaining_isolated_turns;
 
         // Attributes related to the quadtree
-        QuadTreeNode * responsible_node;
-        QuadTreeNode * responsible_node_bbox;
+        QuadTreeNode * responsible_node = nullptr;
+        QuadTreeNode * responsible_node_bbox = nullptr;
 
     public:
         void updateMass(float new_mass, const GameParameters & parameters);
@@ -280,7 +280,13 @@ private:
 
     Position compute_barycenter(const Position & a, float cA, const Position & b, float cB);
 
+    void initialize_game_after_load();
     void generate_initial_ncells();
+    void generate_initial_viruses();
+    void generate_initial_pcells();
+    void generate_initial_players();
+
+    void update_players_info();
 
     QByteArray generate_welcome();
     QByteArray generate_game_starts(int player_id);
