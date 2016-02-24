@@ -133,7 +133,7 @@ void Visu::onTurnReceived(const Turn &turn)
         if (allCells.count(indice) == 0) {
             // créer la cellule et l'ajouter dans l'ensemble
             std::cout << "Création de la cellule joueuse " << indice << std::endl;
-            Cellule* cell = new Cellule(turn.pcells[i]);
+            Cellule* cell = new Cellule(turn.pcells[i], players.size());
             addNewCell(cell);
         }
         else {
@@ -184,7 +184,7 @@ void Visu::afficheCellule(Cellule* cellule)
     cercle.setFillColor(cellule->color);
 
     // mettre un contour pour les cellules isolées, les cellules neutres et les virus
-    if ((cellule->remaining_isolated_turns != 0) | (cellule->typeDeCellule == initialNeutral) | (cellule->typeDeCellule == nonInitialNeutral | (cellule->typeDeCellule == virus))) {
+    if ((cellule->remaining_isolated_turns != 0) | (cellule->typeDeCellule == initialNeutral) | (cellule->typeDeCellule == nonInitialNeutral) | (cellule->typeDeCellule == virus)) {
         cercle.setOutlineColor(borders_color);
         cercle.setOutlineThickness(rayon/6);
         rayon = 5.0/6.0 * rayon; // on change la valeur du rayon car la bordure est rajoutée à l'extérieur du circleshape
@@ -255,7 +255,7 @@ void Visu::afficheScore()
         window.setView(droite);
         // création de l'étiquette de chaque joueur
         pos_pastille.x = window_width*vue_carte.getViewport().width+ 10;
-        pastille.setFillColor(colorFromPlayerId((*joueur).id));
+        pastille.setFillColor(colorFromPlayerId((*joueur).id, players.size()));
         pastille.setPosition(pos_pastille.x-5, pos_pastille.y-5);
         window.draw(pastille);
 
@@ -272,7 +272,7 @@ void Visu::afficheScore()
         // création du rectangle qui représente le score du joueur
         largeur_rect = (*joueur).score * facteur_score;
         rect.setSize(sf::Vector2f(largeur_rect, hauteur_rect));
-        rect.setFillColor(colorFromPlayerId((*joueur).id));
+        rect.setFillColor(colorFromPlayerId((*joueur).id, players.size()));
         rect.setPosition(sf::Vector2f(abscisse_rect,ordonnee_rect));
         abscisse_rect += largeur_rect; // on décale le rectangle pour afficher tous les rectangles côte à côte
         window.draw(rect);
@@ -313,6 +313,11 @@ void Visu::zoom()
 void Visu::dezoom()
 {
     vue_carte.zoom(1/0.75);
+}
+
+void Visu::resetCarte()
+{
+    vue_carte.reset(sf::FloatRect(0, 0, parameters.map_width, parameters.map_height));
 }
 
 void Visu::deplaceVueDroite()
@@ -383,11 +388,64 @@ int Visu::nbeJoueurs()
     return players.size();
 }
 
-sf::Color colorFromPlayerId(quint32 playerId)
+sf::Color colorFromPlayerId(quint32 playerId, int nbePlayers)
 {
-    //Il ne faut pas que green et blue soient nuls en même temps car ça fait du rouge et la couleur est déjà prise par les virus.
-    sf::Uint8 red = cos(2*playerId)*255.0;
-    sf::Uint8 green = sin(7.2*playerId+1.89)*255.0;
-    sf::Uint8 blue = tan(8.1*playerId);
-    return sf::Color(red, green, blue);
+    double saturation = 1;
+    double value = 1;
+    double hue = (double(playerId)/double(nbePlayers) * 360);
+
+    double r, g, b;
+    hsvToRgb(hue, saturation, value, r, g, b);
+
+    return sf::Color(sf::Uint8(255*r), sf::Uint8(g*255), sf::Uint8(b*255));
+}
+
+static void hsvToRgb(double h, double s, double v, double & r, double & g, double & b) {
+    // r g b, s v entre [0,1], h entre [0,360]
+    if (s == 0) // Achromatic (grey)
+    {
+        r = g = b = v;
+        return;
+    }
+
+    h /= 60;            // sector 0 to 5
+    int i = floor(h);
+    float f = h-i;      // factorial part of h
+    float p = v*(1-s);
+    float q = v*(1-s*f);
+    float t = v*(1-s*(1-f));
+
+    switch(i)
+    {
+    case 0:
+        r = v;
+        g = t;
+        b = p;
+        break;
+    case 1:
+        r = q;
+        g = v;
+        b = p;
+        break;
+    case 2:
+        r = p;
+        g = v;
+        b = t;
+        break;
+    case 3:
+        r = p;
+        g = q;
+        b = v;
+        break;
+    case 4:
+        r = t;
+        g = p;
+        b = v;
+        break;
+    default:    // case 5:
+        r = v;
+        g = p;
+        b = q;
+        break;
+    }
 }

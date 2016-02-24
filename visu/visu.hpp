@@ -58,6 +58,7 @@ public:
 
     void zoom();
     void dezoom();
+    void resetCarte(); // remet la vue comme au démarrage
     void deplaceVueDroite(); // pour regarder vers la droite ; déplace les objets vers la gauche
     void deplaceVueGauche();
     void deplaceVueHaut(); // pour regarder vers le haut ; déplace les objets vers le bas
@@ -100,5 +101,6 @@ public:
     sf::RenderWindow window; // RenderWindow hérite de Window et contient des fonctions pour le dessin
 };
 
-sf::Color colorFromPlayerId(quint32 playerId); // détermine la couleur d'un joueur
+sf::Color colorFromPlayerId(quint32 playerId, int nbePlayers); // détermine la couleur d'un joueur
+static void hsvToRgb(double h, double s, double v, double & r, double & g, double & b);
 

@@ -71,17 +71,17 @@ int main()
 
     pos = {130, 310};
     PlayerCell joueuse0 = {12, 0, pos, parameters.virus_mass, 7};
-    Cellule* cellule0 = new Cellule(joueuse0);
+    Cellule* cellule0 = new Cellule(joueuse0, 4);
     jeu.addNewCell(cellule0);
 
     pos = {600, 420};
     PlayerCell joueuse1 = {13, 1, pos, 7, 7};
-    Cellule* cellule1 = new Cellule(joueuse1);
+    Cellule* cellule1 = new Cellule(joueuse1, 4);
     jeu.addNewCell(cellule1);
 
     pos = {600, 410};
     PlayerCell joueuse2 = {14, 2, pos, 7, 0};
-    Cellule* cellule2 = new Cellule(joueuse2);
+    Cellule* cellule2 = new Cellule(joueuse2, 4);
     jeu.addNewCell(cellule2);
 
     QVector<Virus> viruses;
@@ -139,6 +139,10 @@ int main()
 
                 case sf::Keyboard::Subtract:
                     jeu.dezoom();
+                    break;
+
+                case sf::Keyboard::Equal:
+                    jeu.resetCarte();
                     break;
 
                 case sf::Keyboard::Right:

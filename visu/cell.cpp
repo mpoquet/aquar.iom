@@ -2,7 +2,7 @@
 #include "visu.hpp"
 #include <iostream>
 
-Cellule::Cellule(PlayerCell cellule)
+Cellule::Cellule(PlayerCell cellule, int nbe_players)
 {
     m_id = cellule.id;
     mass = cellule.mass;
@@ -14,7 +14,7 @@ Cellule::Cellule(PlayerCell cellule)
     remaining_isolated_turns = cellule.remaining_isolated_turns;
 
     // déterminer la couleur en fonction du numéro du joueur
-    color = colorFromPlayerId(player_id);
+    color = colorFromPlayerId(player_id, nbe_players);
 
     estVivante = true;
 }
