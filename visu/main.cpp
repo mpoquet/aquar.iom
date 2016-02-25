@@ -4,9 +4,6 @@
 #include <iostream>
 #include <ainetlib16.hpp>
 
-const int WINDOW_HEIGHT(768);
-const int WINDOW_WIDTH(1024);
-
 void testDonneesSynthese(Visu &jeu) {
     // Teste la classe Visu en utilisant des données de synthèse fabriquées de toutes pièces
 
@@ -111,11 +108,11 @@ void testDonneesSynthese(Visu &jeu) {
 
 int main(int argc, char* argv[])
 {
-    Visu jeu;
+    Visu visu;
     bool test = false;
 
     if (test == true) {
-        testDonneesSynthese(jeu);
+        testDonneesSynthese(visu);
     }
 
     else {
@@ -136,12 +133,18 @@ int main(int argc, char* argv[])
 
             session.wait_for_welcome();
             ainet16::Welcome welcome = session.welcome();
+            visu.onWelcomeReceived(welcome);
+            visu.afficheTout();
+
             session.wait_for_game_starts();
 
             while(session.is_logged())
             {
                 session.wait_for_next_turn();
                 ainet16::Turn turn = session.turn();
+                visu.onTurnReceived(turn);
+                visu.handleEvents(turn);
+                visu.afficheTout();
 
                 ainet16::Actions actions;
                 session.send_actions(actions);

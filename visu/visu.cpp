@@ -16,7 +16,7 @@ Visu::Visu()
     sf::ContextSettings settings;
     settings.antialiasingLevel = 8;
     window.create(sf::VideoMode(window_width, window_height), "Le jeu des cellules qui se mangent", sf::Style::Default, settings);
-    window.setVerticalSyncEnabled(true);
+    window.setVerticalSyncEnabled(false);
     window.setKeyRepeatEnabled(true); // activer/désactiver la répétition des touches si on les maintient appuyées
 
     droite.reset(sf::FloatRect(0.85*window_width, 0, 0.15*window_width, window_height));
