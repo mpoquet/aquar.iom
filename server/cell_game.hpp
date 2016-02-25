@@ -61,6 +61,8 @@ class CellGame : public Game
         QVector<Position> players_starting_positions;
         QVector<Position> viruses_starting_positions;
 
+        quint32 nb_turns;
+
         void clear();
         bool is_valid(QString & invalidity_reason) const;
 
@@ -210,6 +212,7 @@ public:
 
 public slots:
     void onPlayerConnected(Client * client) override;
+    void onVisuConnected(Client * client) override;
     void onPlayerMove(Client * client, int turn, QByteArray data) override;
     void onVisuAck(Client * client, int turn, QByteArray data) override;
 
@@ -293,6 +296,7 @@ private:
     QByteArray generate_turn();
 
     void send_turn_to_everyone();
+    void send_game_ends_to_everyone();
 
 private:
     QMap<int, PlayerCell *> _player_cells;

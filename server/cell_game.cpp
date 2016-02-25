@@ -20,11 +20,11 @@ using namespace std;
 CellGame::CellGame()
 {
     connect(&_timer, &QTimer::timeout, this, &CellGame::onTurnEnd);
+    _timer.setInterval(100);
 }
 
 CellGame::~CellGame()
 {
-
 }
 
 void CellGame::onPlayerConnected(Client *client)
@@ -49,6 +49,22 @@ void CellGame::onPlayerConnected(Client *client)
             QByteArray welcome_message = generate_welcome();
             emit wantToSendWelcome(client, welcome_message);
         }
+    }
+}
+
+void CellGame::onVisuConnected(Client *client)
+{
+    Game::onVisuConnected(client);
+
+    int visu_id = _visuClients.indexOf({client,true});
+
+    // If the player has been accepted
+    if (visu_id != -1)
+    {
+        Q_ASSERT(_server != nullptr);
+
+        QByteArray welcome_message = generate_welcome();
+        emit wantToSendWelcome(client, welcome_message);
     }
 }
 
@@ -339,7 +355,16 @@ void CellGame::onTurnEnd()
     update_players_info();
 
     ++_current_turn;
-    send_turn_to_everyone();
+
+    //if (_current_turn < _parameters.nb_turns)
+        send_turn_to_everyone();
+    /*else
+    {
+        send_game_ends_to_everyone();
+
+        _timer.stop();
+        // todo: clear data correctly
+    }*/
 }
 
 void CellGame::compute_cell_divisions()
@@ -1351,6 +1376,16 @@ void CellGame::load_parameters(const QString &filename)
     }
     _parameters.virus_max_split = doc.object()["virus_max_split"].toInt();
 
+    if (!doc.object().contains("nb_turns")) {
+        emit message(QString("Invalid file '%1': the root object does not contain the 'nb_turns' key").arg(filename));
+        return;
+    }
+    else if (!doc.object()["nb_turns"].isDouble()) {
+        emit message(QString("Invalid file '%1': the value associated to key 'nb_turns' is not a number").arg(filename));
+        return;
+    }
+    _parameters.nb_turns = doc.object()["nb_turns"].toInt();
+
     if (!doc.object().contains("viruses_starting_positions")) {
         emit message(QString("Invalid file '%1': the root object does not contain the 'viruses_starting_positions' key").arg(filename));
         return;
@@ -1585,6 +1620,7 @@ void CellGame::GameParameters::clear()
     max_nb_players = -1;
     nb_starting_cells_per_player = -1;
     player_cells_starting_mass = -1;
+    nb_turns = -1;
     players_starting_positions.clear();
 
     viruses_starting_positions.clear();
@@ -1724,6 +1760,12 @@ bool CellGame::GameParameters::is_valid(QString &invalidity_reason) const
     {
         ret = false;
         invalidity_reason += "nb_starting_cells_per_player cannot exceed max_cells_per_player\n";
+    }
+
+    if (nb_turns > 1000000)
+    {
+        ret = false;
+        invalidity_reason += "nb_turns cannot exceed 1000000\n";
     }
 
     if (player_cells_starting_mass <= initial_neutral_cells_mass * minimum_mass_ratio_to_absorb)
@@ -2414,4 +2456,9 @@ void CellGame::send_turn_to_everyone()
     Player_cells: (nb_player_cells:ui32, (pcell_id:ui32, position:pos, player_id:ui32, mass:float32, remaining_isolated_turns:ui32)*nb_player_cells)
     Players: (nb_players:ui32, (player_id:ui32, nb_pcells:ui32, score:ui64)*nb_players)
 */
+}
+
+void CellGame::send_game_ends_to_everyone()
+{
+    // todo
 }
