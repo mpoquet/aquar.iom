@@ -2,7 +2,6 @@
 #define CELL_H
 
 #include <QObject>
-#include "structures.hpp"
 #include <SFML/Graphics.hpp>
 
 #include "ainetlib16.hpp"
@@ -39,7 +38,7 @@ private:
 
 public:
     float mass;
-    Position position;
+    ainet16::Position position;
     cellType typeDeCellule;
     qint32 player_id; // vaut -1 si ce n'est pas une cellule de joueur
     quint32 remaining_turns_before_apparition;

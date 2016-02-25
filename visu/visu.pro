@@ -16,12 +16,9 @@ QMAKE_CXXFLAGS += -std=c++11 -Wall -Wextra
 
 SOURCES += main.cpp\
         visu.cpp \
-    network.cpp \
     cell.cpp \
     test.cpp
 
 HEADERS  += visu.hpp \
-    network.hpp \
-    structures.hpp \
     cell.hpp \
     test.h

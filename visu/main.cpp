@@ -119,6 +119,10 @@ int main(int argc, char* argv[])
     }
 
     else {
+        // todo: use main parameters
+        (void) argc;
+        (void) argv;
+
         // utiliser les fonctions du réseau
         std::string address = "127.0.0.1";
         std::string port_str = "4242";
@@ -128,7 +132,7 @@ int main(int argc, char* argv[])
         {
             ainet16::Session session;
             session.connect(address, port);
-            session.login_visu("Ta miniblouce");
+            session.login_visu  ("Ta miniblouce");
 
             session.wait_for_welcome();
             ainet16::Welcome welcome = session.welcome();

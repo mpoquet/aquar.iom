@@ -9,7 +9,6 @@
 #include <string>
 #include <QDebug>
 
-#include "structures.hpp"
 #include "cell.hpp"
 
 #include <ainetlib16.hpp>
@@ -90,7 +89,7 @@ public:
 
 // Attributs
 private:
-    GameParameters parameters;
+    ainet16::GameParameters parameters;
     sf::Color background_color;
     sf::Color borders_color;
     std::vector<ainet16::TurnPlayer> players;

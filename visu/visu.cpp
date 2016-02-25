@@ -52,7 +52,7 @@ void Visu::onWelcomeReceived(const ainet16::Welcome &welcome)
     parameters.nb_starting_cells_per_player = welcome.parameters.nb_starting_cells_per_player; // not useful for visu
     parameters.player_cells_starting_mass = welcome.parameters.player_cells_starting_mass; // not useful for visu
     parameters.initial_neutral_cells_mass = welcome.parameters.initial_neutral_cells_mass;
-    parameters.neutral_cells_repop_time = welcome.parameters.initial_neutral_cells_repop_time;
+    parameters.initial_neutral_cells_repop_time = welcome.parameters.initial_neutral_cells_repop_time;
 
     /// initialiser la vue
     vue_carte.reset(sf::FloatRect(0, 0, parameters.map_width, parameters.map_height));
@@ -259,7 +259,7 @@ void Visu::afficheScore()
     float facteur_score = bas.getSize().x / somme_scores;
 
     // pastilles pour la légende des couleurs des joueurs
-    Position pos_pastille;
+    ainet16::Position pos_pastille;
     pos_pastille.y = 20;
     sf::CircleShape pastille(10, 128);
 
