@@ -26,5 +26,7 @@
     "virus_mass": 100.0,
     "virus_creation_mass_loss": 0.2,
     "virus_max_split": 8,
-    "viruses_starting_positions": [[2000, 1500]]
+    "viruses_starting_positions": [[2000, 1500]],
+
+    "nb_turns": 100
 }
