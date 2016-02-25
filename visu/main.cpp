@@ -2,7 +2,7 @@
 
 #include <SFML/Graphics.hpp>
 #include <iostream>
-
+#include <ainetlib16.hpp>
 
 const int WINDOW_HEIGHT(768);
 const int WINDOW_WIDTH(1024);
@@ -10,8 +10,8 @@ const int WINDOW_WIDTH(1024);
 void testDonneesSynthese(Visu &jeu) {
     // Teste la classe Visu en utilisant des données de synthèse fabriquées de toutes pièces
 
-    /// Création des structures nécessaires pour fabriquer un tour
-    GameParameters parameters = {800, //map_width
+    /// Création des structures nécessaires pour un tour
+    ainet16::GameParameters parameters = {800, //map_width
                                  600, //map_height
                                  1, //min_nb_players
                                  0, //max_nb_players
@@ -31,86 +31,88 @@ void testDonneesSynthese(Visu &jeu) {
                                  2, //initial_neutral_cells_mass
                                  0}; //neutral_cells_repop_time
 
-    QVector<InitialNeutralCellWelcome> initial_ncells_w;
-    InitialNeutralCellWelcome p1;
-    p1.position.x = 0;
-    p1.position.y = 0;
-    initial_ncells_w.append(p1);
+    std::vector<ainet16::Position> initial_ncells_w;
+    ainet16::Position p1;
+    p1.x = 0;
+    p1.y = 0;
+    initial_ncells_w.push_back(p1);
 
-    InitialNeutralCellWelcome p2;
-    p2.position.x = 300;
-    p2.position.y = 300;
-    initial_ncells_w.append(p2);
+    ainet16::Position p2;
+    p2.x = 300;
+    p2.y = 300;
+    initial_ncells_w.push_back(p2);
 
-    InitialNeutralCellWelcome p3;
-    p3.position.x = 150;
-    p3.position.y = 600;
-    initial_ncells_w.append(p3);
+    ainet16::Position p3;
+    p3.x = 150;
+    p3.y = 600;
+    initial_ncells_w.push_back(p3);
 
-    Welcome welcome = {parameters, initial_ncells_w};
+    ainet16::Welcome welcome;
+    welcome.parameters = parameters;
+    welcome.initial_ncells_positions = initial_ncells_w;
     jeu.onWelcomeReceived(welcome);
 
-    Player joueur0 = {0, 0, 0, 1};
-    Player joueur1 = {1, 0, 0, 20};
-    Player joueur2 = {2, 0, 0, 20};
-    Player joueur3 = {3, 0, 0, 5};
+    ainet16::TurnPlayer joueur0 = {0, 0, 0, 1};
+    ainet16::TurnPlayer joueur1 = {1, 0, 0, 20};
+    ainet16::TurnPlayer joueur2 = {2, 0, 0, 20};
+    ainet16::TurnPlayer joueur3 = {3, 0, 0, 5};
 
-    QVector<Player> players;
+    std::vector<ainet16::TurnPlayer> players;
     players.push_back(joueur0);
     players.push_back(joueur1);
     players.push_back(joueur2);
     players.push_back(joueur3);
 
-    Position pos = {13, 31};
-    NonInitialNeutralCell nonInitialeNeutre = {10, 12, pos}; //id, mass, position
+    ainet16::Position pos = {13, 31};
+    ainet16::TurnNonInitialNeutralCell nonInitialeNeutre = {10, 12, pos}; //id, mass, position
 
     pos = {130, 310};
-    Virus vir{11, pos}; //id, position
+    ainet16::TurnVirus vir{11, pos}; //id, position
     Cellule* virus = new Cellule(vir, parameters.virus_mass);
     jeu.addNewCell(virus);
 
     pos = {130, 310};
-    PlayerCell joueuse0 = {12, 0, pos, parameters.virus_mass, 7};//id, player id, position, mass, isolated turns
+    ainet16::TurnPlayerCell joueuse0 = {12, 0, pos, parameters.virus_mass, 7};//id, player id, position, mass, isolated turns
     Cellule* cellule0 = new Cellule(joueuse0, 4);
     jeu.addNewCell(cellule0);
 
     pos = {600, 420};
-    PlayerCell joueuse1 = {13, 1, pos, 7, 7}; //id, player id, position, mass, isolated turns
+    ainet16::TurnPlayerCell joueuse1 = {13, 1, pos, 7, 7}; //id, player id, position, mass, isolated turns
     Cellule* cellule1 = new Cellule(joueuse1, 4);
     jeu.addNewCell(cellule1);
 
     pos = {600, 410};
-    PlayerCell joueuse2 = {14, 2, pos, 5, 0}; //id, player id, position, mass, isolated turns
+    ainet16::TurnPlayerCell joueuse2 = {14, 2, pos, 5, 0}; //id, player id, position, mass, isolated turns
     Cellule* cellule2 = new Cellule(joueuse2, 4);
     jeu.addNewCell(cellule2);
 
-    QVector<Virus> viruses;
+    std::vector<ainet16::TurnVirus> viruses;
     viruses.push_back(vir);
 
-    QVector<NonInitialNeutralCell> non_initial_ncells;
+    std::vector<ainet16::TurnNonInitialNeutralCell> non_initial_ncells;
     non_initial_ncells.push_back(nonInitialeNeutre);
 
-    QVector<PlayerCell> pcells;
+    std::vector<ainet16::TurnPlayerCell> pcells;
     pcells.push_back(joueuse0);
     pcells.push_back(joueuse1);
     pcells.push_back(joueuse2);
 
-    QVector<InitialNeutralCell> initial_ncells;
-    InitialNeutralCell cell1 = {1};
+    std::vector<ainet16::TurnInitialNeutralCell> initial_ncells;
+    ainet16::TurnInitialNeutralCell cell1 = {1};
     initial_ncells.push_back(cell1);
-    Turn tour = {initial_ncells, non_initial_ncells, viruses, pcells, players};
+    ainet16::Turn tour = {initial_ncells, non_initial_ncells, viruses, pcells, players};
 
     /// test de la classe visu avec les données créées
     while (jeu.window.isOpen()) {
-        jeu.handleEvents(&tour);
+        jeu.handleEvents(tour);
         jeu.afficheTout();
     }
 }
 
-int main()
+int main(int argc, char* argv[])
 {
     Visu jeu;
-    bool test = true;
+    bool test = false;
 
     if (test == true) {
         testDonneesSynthese(jeu);
@@ -118,84 +120,35 @@ int main()
 
     else {
         // utiliser les fonctions du réseau
+        std::string address = "127.0.0.1";
+        std::string port_str = "4242";
+        int port = std::stoi(port_str);
+
+        try
+        {
+            ainet16::Session session;
+            session.connect(address, port);
+            session.login_visu("Ta miniblouce");
+
+            session.wait_for_welcome();
+            ainet16::Welcome welcome = session.welcome();
+            session.wait_for_game_starts();
+
+            while(session.is_logged())
+            {
+                session.wait_for_next_turn();
+                ainet16::Turn turn = session.turn();
+
+                ainet16::Actions actions;
+                session.send_actions(actions);
+            }
+        }
+        catch (ainet16::Exception & exception)
+        {
+            std::cout << exception.what() << std::endl;
+            return 1;
+        }
     }
-
-
-    /* while (jeu.window.isOpen()) {
-                sf::Event event;
-
-                // seules les fonctions pollEvent et waitEvent produisent des sf::Event
-                // http://www.sfml-dev.org/tutorials/2.1/window-events.php
-                while (jeu.window.pollEvent(event)) {
-                    switch(event.type) {
-
-                    // fermeture de la fenêtre
-                    case sf::Event::Closed:
-                        jeu.window.close();
-                        break;
-
-                        // appui sur un bouton du clavier
-                    case sf::Event::KeyPressed:
-                        switch(event.key.code) {
-
-                        case sf::Keyboard::I:
-                            // todo : inverser la couleur de fond de la fenêtre et celle des contours (cellules + cadre)
-                            jeu.inverseCouleurs();
-                            break;
-
-                        case sf::Keyboard::T:
-                            // test de la fonction onTurnReceived
-                            tour.viruses[0].position.y += 100;
-                            tour.pcells[0].position.x += 100;
-                            tour.pcells[2].position.y -= 20;
-                            tour.initial_ncells[0].remaining_turns_before_apparition = 0;
-                            tour.non_initial_ncells[0].mass = 50;
-                            jeu.onTurnReceived(tour);
-                            tour.players[2].score = 21;
-                            break;
-
-                        case sf::Keyboard::Add:
-                            jeu.zoom();
-                            break;
-
-                        case sf::Keyboard::Subtract:
-                            jeu.dezoom();
-                            break;
-
-                        case sf::Keyboard::Equal:
-                            jeu.resetCarte();
-                            break;
-
-                        case sf::Keyboard::Right:
-                            jeu.deplaceVueDroite();
-                            break;
-
-                        case sf::Keyboard::Left:
-                            jeu.deplaceVueGauche();
-                            break;
-
-                        case sf::Keyboard::Up:
-                            jeu.deplaceVueHaut();
-                            break;
-
-                        case sf::Keyboard::Down:
-                            jeu.deplaceVueBas();
-                            break;
-
-                        default:
-                            break;
-                        }
-
-                    default:
-                        break;
-
-                    }
-                }
-
-                jeu.afficheTout();
-
-
-            }*/
 
     return 0;
 }

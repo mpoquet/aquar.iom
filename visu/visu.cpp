@@ -31,7 +31,7 @@ Visu::~Visu()
 {
 }
 
-void Visu::onWelcomeReceived(const Welcome &welcome)
+void Visu::onWelcomeReceived(const ainet16::Welcome &welcome)
 {
     /// enregistrer les paramètres de la partie dans la classe
     parameters.map_width = welcome.parameters.map_width;
@@ -52,7 +52,7 @@ void Visu::onWelcomeReceived(const Welcome &welcome)
     parameters.nb_starting_cells_per_player = welcome.parameters.nb_starting_cells_per_player; // not useful for visu
     parameters.player_cells_starting_mass = welcome.parameters.player_cells_starting_mass; // not useful for visu
     parameters.initial_neutral_cells_mass = welcome.parameters.initial_neutral_cells_mass;
-    parameters.neutral_cells_repop_time = welcome.parameters.neutral_cells_repop_time;
+    parameters.neutral_cells_repop_time = welcome.parameters.initial_neutral_cells_repop_time;
 
     /// initialiser la vue
     vue_carte.reset(sf::FloatRect(0, 0, parameters.map_width, parameters.map_height));
@@ -64,12 +64,14 @@ void Visu::onWelcomeReceived(const Welcome &welcome)
     vue_cadre.reset(sf::FloatRect(0, 0, cadre.getSize().x, cadre.getSize().y));
 
     /// initialiser l'ensemble des cellules avec leurs positions initiales
-    QVector<InitialNeutralCellWelcome>::const_iterator it;
+    std::vector<ainet16::Position>::const_iterator it;
     quint32 numero = 0;
 
-    for (it=welcome.initial_ncells.begin() ; it!=welcome.initial_ncells.end() ; ++it) {
+    for (it=welcome.initial_ncells_positions.begin() ; it!=welcome.initial_ncells_positions.end() ; ++it) {
         // créer la cellule
-        Cellule* cell = new Cellule(*it, parameters.initial_neutral_cells_mass, numero);
+        const ainet16::Position & pos = *it;
+
+        Cellule* cell = new Cellule(pos, parameters.initial_neutral_cells_mass, numero);
 
         // l'ajouter dans le conteneur de toutes les cellules
         addNewCell(cell);
@@ -83,20 +85,20 @@ void Visu::onWelcomeReceived(const Welcome &welcome)
 
 }
 
-void Visu::onTurnReceived(const Turn &turn)
+void Visu::onTurnReceived(const ainet16::Turn &turn)
 {
     std::cout << "on a reçu un nouveau tour\n";
     if (players.size()==0) {
         /// C'est la première fois qu'on reçoit un Turn : initialisation de la liste des joueurs
         std::cout << "Création des joueurs\n";
-        for (int i=0; i<turn.players.size(); ++i) {
+        for (unsigned int i=0; i<turn.players.size(); ++i) {
             addNewPlayer(turn.players[i]);
         }
     }
 
     else {
         /// mettre à jour le score des joueurs
-        std::vector<Player> temp_Players;
+        std::vector<ainet16::TurnPlayer> temp_Players;
         for (uint i=0; i<players.size(); ++i) {
             temp_Players.push_back(turn.players[i]);
         }
@@ -118,7 +120,7 @@ void Visu::onTurnReceived(const Turn &turn)
     }
 
     std::cout << "màj des virus\n";
-    for (int i=0; i<turn.viruses.size(); ++i) {
+    for (unsigned int i=0; i<turn.viruses.size(); ++i) {
         int indice = turn.viruses[i].id;
         // vérifier si allCells[indice] existe déjà
         if (allCells.count(indice) == 0) {
@@ -133,9 +135,10 @@ void Visu::onTurnReceived(const Turn &turn)
             allCells[indice]->estVivante = true;
         }
     }
+
     std::cout << "màj des cellules des joueurs\n";
-    for (int i=0; i<turn.pcells.size(); ++i) {
-        int indice = turn.pcells[i].id;
+    for (unsigned int i=0; i<turn.pcells.size(); ++i) {
+        int indice = turn.pcells[i].pcell_id;
         // vérifier si allCells[indice] existe déjà
         if (allCells.count(indice) == 0) {
             // créer la cellule et l'ajouter dans l'ensemble
@@ -154,15 +157,15 @@ void Visu::onTurnReceived(const Turn &turn)
     std::cout << "màj des cellules neutres initiales\n";
     // On sait que les cellules initiales neutres ont les numéros de 0 à nbCellulesInitiales - 1
     int indice(0);
-    for (int i=0; i<turn.initial_ncells.size(); ++i) {
+    for (unsigned int i=0; i<turn.initial_ncells.size(); ++i) {
         // Les cellules initiales neutres ne se déplacent pas
         allCells[indice]->remaining_turns_before_apparition = turn.initial_ncells[i].remaining_turns_before_apparition;
         allCells[indice]->estVivante = true;
         ++indice;
     }
     std::cout << "màj des cellules neutres non initiales\n";
-    for (int i=0; i<turn.non_initial_ncells.size(); ++i) {
-        int indice = turn.non_initial_ncells[i].id;
+    for (unsigned int i=0; i<turn.non_initial_ncells.size(); ++i) {
+        int indice = turn.non_initial_ncells[i].ncell_id;
         // vérifier si allCells[indice] existe déjà
         if (allCells.count(indice) == 0) {
             // créer la cellule et l'ajouter dans l'ensemble
@@ -248,7 +251,7 @@ void Visu::afficheScore()
     //std::cout << window_height*0.15 << " " << bas.getSize().y << " " << 0.85*window_height << " " << vue_carte.getViewport().height << std::endl;
     float abscisse_rect(0), ordonnee_rect(vue_carte.getViewport().height*window_height + hauteur_rect);
 
-    std::vector<Player>::iterator joueur;
+    std::vector<ainet16::TurnPlayer>::iterator joueur;
     float somme_scores(0);
     for (joueur=players.begin(); joueur!=players.end(); ++joueur) {
         somme_scores += (*joueur).score;
@@ -271,13 +274,13 @@ void Visu::afficheScore()
         window.setView(droite);
         // création de l'étiquette de chaque joueur
         pos_pastille.x = window_width*vue_carte.getViewport().width+ 10;
-        pastille.setFillColor(colorFromPlayerId((*joueur).id, players.size()));
+        pastille.setFillColor(colorFromPlayerId((*joueur).player_id, players.size()));
         pastille.setPosition(pos_pastille.x-5, pos_pastille.y-5);
         window.draw(pastille);
 
         etiquette.setPosition(pos_pastille.x + 2*pastille.getRadius(), pos_pastille.y);
         QString points = QString("%1").arg((*joueur).score);
-        QString numero = QString("%1").arg((*joueur).id);
+        QString numero = QString("%1").arg((*joueur).player_id);
         std::string score = "Joueur " + numero.toStdString() + " : \n" + points.toStdString() + " points";
         etiquette.setString(score);
         window.draw(etiquette);
@@ -288,7 +291,7 @@ void Visu::afficheScore()
         // création du rectangle qui représente le score du joueur
         largeur_rect = (*joueur).score * facteur_score;
         rect.setSize(sf::Vector2f(largeur_rect, hauteur_rect));
-        rect.setFillColor(colorFromPlayerId((*joueur).id, players.size()));
+        rect.setFillColor(colorFromPlayerId((*joueur).player_id, players.size()));
         rect.setPosition(sf::Vector2f(abscisse_rect,ordonnee_rect));
         abscisse_rect += largeur_rect; // on décale le rectangle pour afficher tous les rectangles côte à côte
         window.draw(rect);
@@ -321,7 +324,7 @@ void Visu::afficheTout()
     window.display(); // dessine tous les objets avec lesquels on a appelé draw
 }
 
-void Visu::handleEvents(Turn* tour)
+void Visu::handleEvents(ainet16::Turn & tour)
 {
     sf::Event event;
     window.pollEvent(event);
@@ -343,13 +346,13 @@ void Visu::handleEvents(Turn* tour)
 
         case sf::Keyboard::T:
             // test de la fonction onTurnReceived
-            tour->viruses[0].position.y += 100;
-            tour->pcells[0].position.x += 100;
-            tour->pcells[2].position.y -= 20;
-            tour->initial_ncells[0].remaining_turns_before_apparition = 0;
-            tour->non_initial_ncells[0].mass = 50;
-            onTurnReceived(*tour);
-            tour->players[2].score = 21;
+            tour.viruses[0].position.y += 100;
+            tour.pcells[0].position.x += 100;
+            tour.pcells[2].position.y -= 20;
+            tour.initial_ncells[0].remaining_turns_before_apparition = 0;
+            tour.non_initial_ncells[0].mass = 50;
+            onTurnReceived(tour);
+            tour.players[2].score = 21;
             break;
 
         case sf::Keyboard::Add:
@@ -453,7 +456,7 @@ void Visu::removeCell(quint32 id)
     allCells.erase(id);
 }
 
-void Visu::addNewPlayer(Player p)
+void Visu::addNewPlayer(ainet16::TurnPlayer p)
 {
     players.push_back(p);
     /*std::sort(players.begin(), players.end(), CompareIdJoueurs());

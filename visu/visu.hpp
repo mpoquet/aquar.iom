@@ -12,17 +12,19 @@
 #include "structures.hpp"
 #include "cell.hpp"
 
+#include <ainetlib16.hpp>
+
 class CompareScoresJoueurs {
 public:
-    bool operator()(const Player a, const Player b) {
+    bool operator()(const ainet16::TurnPlayer a, const ainet16::TurnPlayer b) {
         return a.score > b.score;
     }
 };
 
 class CompareIdJoueurs {
 public:
-    bool operator()(const Player a, const Player b) {
-        return a.id < b.id;
+    bool operator()(const ainet16::TurnPlayer a, const ainet16::TurnPlayer b) {
+        return a.player_id < b.player_id;
     }
 };
 
@@ -41,8 +43,8 @@ public:
     Visu();
     ~Visu();
 
-    void onWelcomeReceived(const Welcome &welcome);
-    void onTurnReceived(const Turn &turn);
+    void onWelcomeReceived(const ainet16::Welcome &welcome);
+    void onTurnReceived(const ainet16::Turn &turn);
 
     // Affiche une cellule dans la fenêtre
     void afficheCellule(Cellule *cellule);
@@ -60,7 +62,7 @@ public:
     void inverseCouleurs();
 
     // Gestion des évènements
-    void handleEvents(Turn *tour); // todo : en version finale, ne prend plus rien en paramètre. C'est juste pour tester l'affichage
+    void handleEvents(ainet16::Turn &tour); // todo : en version finale, ne prend plus rien en paramètre. C'est juste pour tester l'affichage
 
     // Ajustement du niveau de zoom
     void zoom();
@@ -80,7 +82,7 @@ public:
     // Supprime une cellule morte
     void removeCell(quint32 id);
     // Ajoute un joueur dans le conteneur players
-    void addNewPlayer(Player p);
+    void addNewPlayer(ainet16::TurnPlayer p);
 
 
 // Accesseurs
@@ -91,7 +93,7 @@ private:
     GameParameters parameters;
     sf::Color background_color;
     sf::Color borders_color;
-    std::vector<Player> players;
+    std::vector<ainet16::TurnPlayer> players;
     int nbCellulesInitiales;
     int window_height;
     int window_width;

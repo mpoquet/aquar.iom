@@ -5,6 +5,8 @@
 #include "structures.hpp"
 #include <SFML/Graphics.hpp>
 
+#include "ainetlib16.hpp"
+
 enum cellType {
     initialNeutral,
     nonInitialNeutral,
@@ -19,11 +21,11 @@ class Cellule
 // Méthodes
 public:
     // constructeurs:
-    Cellule(PlayerCell cellule, int nbe_players);
-    Cellule(NonInitialNeutralCell cellule);
-    Cellule(InitialNeutralCell cellule, float initialNeutralCellsMass, quint32 id);
-    Cellule(Virus cellule, float virus_mass);
-    Cellule(InitialNeutralCellWelcome cellule, float initial_mass, quint32 id);
+    Cellule(ainet16::TurnPlayerCell cellule, int nbe_players);
+    Cellule(ainet16::TurnNonInitialNeutralCell cellule);
+    Cellule(ainet16::TurnInitialNeutralCell cellule, float initialNeutralCellsMass, quint32 id);
+    Cellule(ainet16::TurnVirus cellule, float virus_mass);
+    Cellule(ainet16::Position cellule, float initial_mass, quint32 id);
 
     // accesseurs:
     quint32 id() const;

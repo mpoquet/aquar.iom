@@ -2,9 +2,9 @@
 #include "visu.hpp"
 #include <iostream>
 
-Cellule::Cellule(PlayerCell cellule, int nbe_players)
+Cellule::Cellule(ainet16::TurnPlayerCell cellule, int nbe_players)
 {
-    m_id = cellule.id;
+    m_id = cellule.pcell_id;
     mass = cellule.mass;
     position.x = cellule.position.x;
     position.y = cellule.position.y;
@@ -19,8 +19,8 @@ Cellule::Cellule(PlayerCell cellule, int nbe_players)
     estVivante = true;
 }
 
-Cellule::Cellule(NonInitialNeutralCell cellule) {
-    m_id = cellule.id;
+Cellule::Cellule(ainet16::TurnNonInitialNeutralCell cellule) {
+    m_id = cellule.ncell_id;
     mass = cellule.mass;
     position.x = cellule.position.x;
     position.y = cellule.position.y;
@@ -35,7 +35,7 @@ Cellule::Cellule(NonInitialNeutralCell cellule) {
     estVivante = true;
 }
 
-Cellule::Cellule(InitialNeutralCell cellule, float initialNeutralCellsMass, quint32 id) {
+Cellule::Cellule(ainet16::TurnInitialNeutralCell cellule, float initialNeutralCellsMass, quint32 id) {
     // todo : m_id
     m_id = id;
     mass = initialNeutralCellsMass;
@@ -53,7 +53,7 @@ Cellule::Cellule(InitialNeutralCell cellule, float initialNeutralCellsMass, quin
     estVivante = true;
 }
 
-Cellule::Cellule(Virus cellule, float virus_mass) {
+Cellule::Cellule(ainet16::TurnVirus cellule, float virus_mass) {
     m_id = cellule.id;
     mass = virus_mass;
     position.x = cellule.position.x;
@@ -70,12 +70,12 @@ Cellule::Cellule(Virus cellule, float virus_mass) {
     estVivante = true;
 }
 
-Cellule::Cellule(InitialNeutralCellWelcome cellule, float initial_mass, quint32 id)
+Cellule::Cellule(ainet16::Position cellule, float initial_mass, quint32 id)
 {
     m_id = id;
     mass = initial_mass;
-    position.x = cellule.position.x;
-    position.y = cellule.position.y;
+    position.x = cellule.x;
+    position.y = cellule.y;
     typeDeCellule = initialNeutral;
     // todo : player id
     player_id = -1;
