@@ -565,6 +565,8 @@ ainet16::Turn ainet16::Session::turn() const
 
 int ainet16::Session::player_id() const
 {
+    if (_player_id == -1)
+        throw Exception("Session::player_id cannot be called before receiving the GAME_STARTS message");
     return _player_id;
 }
 

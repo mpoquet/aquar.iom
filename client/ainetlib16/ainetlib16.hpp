@@ -257,7 +257,7 @@ namespace ainet16
         Welcome _welcome;
         Turn _turn;
         unsigned int _last_received_turn = 0;
-        int _player_id;
+        int _player_id = -1;
         bool _debug = true;
         std::vector<std::string> _stamp_to_string_vector;
     };
