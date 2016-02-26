@@ -35,10 +35,10 @@ int main(int argc, char ** argv)
 
         printf("Waiting for WELCOME...\n");
         session.wait_for_welcome();
-        int mon_id = session.player_id();
 
         printf("Waiting for GAME_STARTS...\n");
         session.wait_for_game_starts();
+        int mon_id = session.player_id();
 
         std::vector<NeutralCell> cellules_neutres;
         TurnPlayerCell temp_cell;
@@ -78,6 +78,8 @@ int main(int argc, char ** argv)
                     destination.y = temp_destination.position.y;
 
                     /// envoyer l'action
+                    printf("Adding move_action (pcell_id=%d, dest=(%g,%g))\n",
+                           temp_cell.pcell_id, destination.x, destination.y);
                     actions.add_move_action(temp_cell.pcell_id, destination.x, destination.y);
                 }
             }
