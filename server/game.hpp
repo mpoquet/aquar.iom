@@ -26,6 +26,9 @@ signals:
     //! The game wants to display something
     void message(const QString & msg);
 
+    void gameLaunched();
+    void gameFinished();
+
     void wantToKick(Client * client, const QString & reason);
     void wantToSendWelcome(Client * client, const QByteArray & data);
     void wantToSendGameStarts(Client * client, const QByteArray & data);

@@ -294,6 +294,7 @@ private:
     QByteArray generate_welcome();
     QByteArray generate_game_starts(int player_id);
     QByteArray generate_turn();
+    QByteArray generate_game_ends();
 
     void send_turn_to_everyone();
     void send_game_ends_to_everyone();
@@ -309,9 +310,10 @@ private:
     QMap<int, Player*> _players;
 
     quint32 _next_cell_id = 0;
-    int _current_turn = 0;
+    unsigned int _current_turn = 0;
 
     QTimer _timer;
+    bool _is_paused = false;
 
     QVector<MoveAction*> _move_actions;
     QVector<DivideAction*> _divide_actions;

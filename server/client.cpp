@@ -81,6 +81,34 @@ void Client::onReadyRead()
             else
                 kick(QString("invalid nick ('%1')").arg(nick));
         }
+        else if (_has_been_logged_out_recently && stamp == Stamp::TURN_ACK)
+        {
+            // The following code has been copy-pasted from an "if" below
+            // If the message size cannot be read
+            if (_buffer.size() < bytesRead + 4)
+                return;
+
+            int gameDependentSize = *((quint32*)(_buffer.data()+bytesRead));
+            bytesRead += 4;
+            gameDependentSize = qFromLittleEndian(gameDependentSize);
+
+            // If the message cannot be read entirely
+            if (_buffer.size() < bytesRead + 4 + gameDependentSize)
+                return;
+
+            quint32 turn = *((quint32*)(_buffer.data()+bytesRead));
+            bytesRead += 4;
+            turn = qFromLittleEndian(turn);
+
+            QByteArray message = _buffer.mid(bytesRead, gameDependentSize - 4);
+            bytesRead += gameDependentSize;
+
+            _buffer = _buffer.mid(bytesRead);
+            // End of copy-pasted section
+
+            emit Client::message(QString("Ignoring TURN_ACK message received from %1 because it has been logged out recently").arg(_name));
+            _has_been_logged_out_recently = false;
+        }
         else
             kick(QString("invalid message type received (stamp=%1)").arg((quint32)stamp));
     }
@@ -119,7 +147,10 @@ void Client::onReadyRead()
 
                 // Now that the TURN_ACK had been received, let's send the most up-to-date TURN message if needed
                 if (_turnToSend > _lastTurnAcknowledged)
+                {
+                    emit Client::message("Calling internalSendTurn indirectly (in onReadyRead)");
                     internalSendTurn(_turnToSend, _sendBuffer);
+                }
             }
             else
                 kick(QString("invalid TURN_ACK message received: wrong turn (%1 instead of %2)").arg(turn).arg(_lastTurnSent));
@@ -139,15 +170,18 @@ void Client::kick(const QString & reason)
 void Client::sendTurn(quint32 turn, const QByteArray & data)
 {
     Q_ASSERT(_type == PLAYER || _type == VISU);
+    _turnToSend = turn;
 
     // If the client did not acknowledged the last message
     if (_lastTurnAcknowledged != _lastTurnSent)
     {
         _sendBuffer = data;
-        _turnToSend = turn;
     }
     else
+    {
+        emit message("Calling internalSendTurn directly (in sendTurn)");
         internalSendTurn(turn, data);
+    }
 }
 
 void Client::sendStamp(const Stamp & stamp)
@@ -195,6 +229,7 @@ void Client::sendGameEnds(const QByteArray &data)
 void Client::internalSendTurn(quint32 turn, const QByteArray &data)
 {
     const quint32 gameDependentSize = data.size();
+    emit message(QString("Sending turn: (gdc_size=%1, turn=%2, data=...)").arg(gameDependentSize).arg(turn));
 
     sendStamp(Stamp::TURN);
     _socket->write((const char*)&gameDependentSize, 4);
@@ -206,7 +241,14 @@ void Client::internalSendTurn(quint32 turn, const QByteArray &data)
 
 void Client::onDisconnected()
 {
-    emit message(QString("Client %1 disconnected").arg(_name));
+    QString client_type = "Client";
+
+    if (_type == PLAYER)
+        client_type = "Player";
+    else if (_type == VISU)
+        client_type = "Visu";
+
+    emit message(QString("%1 %2 disconnected").arg(client_type, _name));
     emit disconnected(_socket);
 }
 
@@ -216,12 +258,23 @@ void Client::onError(QAbstractSocket::SocketError socketError)
         emit message(QString("Client %1 error:%1").arg(_name, socketError));
 }
 
-void Client::logout()
+void Client::logout(const QString & name)
 {
+    QString client_type = "Client";
+
+    if (_type == PLAYER)
+        client_type = "Player";
+    else if (_type == VISU)
+        client_type = "Visu";
+
+    emit message(QString("%1 logged out: %2 -> %3").arg(client_type, _name, name));
+
     _type = UNKNOWN;
     _nick = "Anonymous";
+    _name = name;
 
     sendStamp(Stamp::LOGOUT);
+    _has_been_logged_out_recently = true;
 }
 
 void Client::beAPlayer(const QString &nick)

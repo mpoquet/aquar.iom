@@ -81,11 +81,11 @@ private:
 
     void internalSendTurn(quint32 turn, const QByteArray & data);
 
-    void logout();
+    void logout(const QString &name);
     void beAPlayer(const QString & nick);
     void beAVisu(const QString & nick);
 
-public:
+private:
     QTcpSocket * _socket = nullptr;
     quint16 _id = 0;
     QString _nick = "Anonymous";
@@ -94,6 +94,7 @@ public:
     Server * _server = nullptr;
     QByteArray _buffer; // receive buffer
     const int _bufferMaxSize = 4096; // receive
+    bool _has_been_logged_out_recently = false;
 
     QByteArray _sendBuffer;
     quint32 _lastTurnSent = -1;

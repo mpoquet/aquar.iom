@@ -22,6 +22,12 @@ namespace ainet16
         TURN_ACK = 9
     };
 
+    struct GameEndsPlayer
+    {
+        int player_id;
+        uint64_t score;
+    };
+
     class Exception
     {
     public:
@@ -42,6 +48,27 @@ namespace ainet16
     {
     public:
         KickException(const std::string & what = "Kicked");
+    };
+
+    class SocketErrorException : public Exception
+    {
+    public:
+        SocketErrorException(const std::string & what = "Socket error");
+    };
+
+    class GameFinishedException : public Exception
+    {
+    public:
+        GameFinishedException(int winner_player_id,
+                              std::vector<GameEndsPlayer> players,
+                              const std::string & what = "Game finished");
+
+        int winner_player_id() const;
+        std::vector<GameEndsPlayer> players() const;
+
+    private:
+        int _winner_player_id;
+        std::vector<GameEndsPlayer> _players;
     };
 
     struct Position
@@ -192,6 +219,9 @@ namespace ainet16
         Turn turn() const;
         int player_id() const;
         std::vector<NeutralCell> all_neutral_cells() const;
+        // todo: method to get our player cells
+        // todo: method to get ennemy player cells
+        // todo: method to get viruses
 
         bool is_connected() const;
         bool is_logged() const;
@@ -205,6 +235,7 @@ namespace ainet16
         std::string read_string() throw(Exception);
         Position read_position() throw(Exception);
         bool read_bool() throw(Exception);
+        MetaProtocolStamp read_stamp() throw(Exception);
 
         void send_uint8(sf::Uint8 ui8) throw(Exception);
         void send_uint32(sf::Uint32 ui32) throw(Exception);
@@ -213,6 +244,10 @@ namespace ainet16
         void send_string(const std::string & s) throw(Exception);
         void send_position(const Position & pos) throw(Exception);
         void send_bool(bool b) throw(Exception);
+        void send_stamp(MetaProtocolStamp stamp) throw(Exception);
+
+        std::string stamp_to_string(MetaProtocolStamp stamp) const;
+        void handle_game_ends() throw (Exception);
 
     private:
         sf::TcpSocket _socket;
@@ -224,6 +259,7 @@ namespace ainet16
         unsigned int _last_received_turn = 0;
         int _player_id;
         bool _debug = true;
+        std::vector<std::string> _stamp_to_string_vector;
     };
 
-};
+}

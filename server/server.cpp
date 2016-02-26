@@ -52,7 +52,7 @@ void Server::onClientDisconnected(QTcpSocket *socket)
     }
     else
     {
-        emit message(QString("Unknown client disconnected"));
+        //emit message(QString("Unknown client disconnected"));
     }
 }
 
@@ -113,6 +113,7 @@ void Server::onClientTurnAckReceived(int turn, QByteArray &data)
 void Server::onGameLaunched()
 {
     Q_ASSERT(!_isGameRunning);
+    emit message("Server onGameLaunched");
     _isGameRunning = true;
 
     for (auto c : _clients)
@@ -123,11 +124,14 @@ void Server::onGameLaunched()
 void Server::onGameFinished()
 {
     Q_ASSERT(_isGameRunning);
+    emit message("Server onGameFinished");
     _isGameRunning = false;
 
     for (Client * c : _clients)
     {
-        c->logout();
+        QTcpSocket * sock = c->_socket;
+        QString cname = QString("(%1:%2)").arg(sock->peerAddress().toString()).arg(sock->peerPort());
+        c->logout(cname);
 
         if (c->type() == Client::PLAYER)
             emit playerDisconnected(c);

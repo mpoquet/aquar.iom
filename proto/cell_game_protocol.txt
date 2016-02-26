@@ -40,7 +40,7 @@ Cell game: network protocol description
 2.3 GAME_ENDS
     This message is sent from the server to the client when the game is finished.
 
-    Content : (win_player_id:ui32, (player_id:ui32, score:ui64))
+    Content : (win_player_id:ui32, nb_players:ui32, (player_id:ui32, score:ui64)*nb_players)
 
 2.4 TURN
     This message is sent from the server to the client when a new turn starts.

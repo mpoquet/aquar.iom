@@ -287,12 +287,17 @@ void CellGame::onStart()
         ++player_id;
     }
 
-    QByteArray message = generate_game_starts(42);
-    for (const GameClient & client : _visuClients)
+    if (_visuClients.size() > 0)
     {
-        if (client.connected)
-            emit wantToSendGameStarts(client.client, message);
+        QByteArray message = generate_game_starts(42);
+        for (const GameClient & client : _visuClients)
+        {
+            if (client.connected)
+                emit wantToSendGameStarts(client.client, message);
+        }
     }
+
+    emit gameLaunched();
 
     _timer.start();
     _isRunning = true;
@@ -300,22 +305,60 @@ void CellGame::onStart()
 
 void CellGame::onPause()
 {
-    emit message("Pausing this game is not implemented yet :)");
+    if (!_isRunning)
+    {
+        emit message("Cannot pause the game: it is not running...");
+        return;
+    }
+
+    if (_is_paused)
+    {
+        emit message("Cannot pause the game: it is already paused...");
+        return;
+    }
+
+    _is_paused = true;
+    _timer.stop();
 }
 
 void CellGame::onResume()
 {
-    emit message("Resuming this game is not implemented yet :)");
+    if (!_isRunning)
+    {
+        emit message("Cannot resume the game: it is not running...");
+        return;
+    }
+
+    if (!_is_paused)
+    {
+        emit message("Cannot resume the game: it is not paused...");
+        return;
+    }
+
+    _is_paused = false;
+    _timer.start();
 }
 
 void CellGame::onStop()
 {
-    emit message("Stopping this game is not implemented yet :)");
+    if (!_isRunning)
+    {
+        emit message("Cannot stop the game while it is not running ;o");
+        return;
+    }
+
+    _timer.stop();
+    send_game_ends_to_everyone();
+    _isRunning = false;
+
+    emit gameFinished();
+    // todo: clear data correctly
 }
 
 void CellGame::onTurnTimerChanged(quint32 ms)
 {
     _timer.setInterval(ms);
+    emit message(QString("The inter-turn interval has been set to %1 milliseconds").arg(ms));
 }
 
 void CellGame::onTurnEnd()
@@ -354,17 +397,16 @@ void CellGame::onTurnEnd()
 
     update_players_info();
 
+    emit message(QString("Turn %1 is over!").arg(_current_turn));
+
     ++_current_turn;
 
-    //if (_current_turn < _parameters.nb_turns)
+    if (_current_turn < _parameters.nb_turns)
         send_turn_to_everyone();
-    /*else
+    else
     {
-        send_game_ends_to_everyone();
-
-        _timer.stop();
-        // todo: clear data correctly
-    }*/
+        onStop();
+    }
 }
 
 void CellGame::compute_cell_divisions()
@@ -1461,6 +1503,8 @@ void CellGame::setServer(Server *server)
         disconnect(this, &Game::wantToSendWelcome, _server, &Server::sendWelcome);
         disconnect(this, &Game::wantToSendTurn, _server, &Server::sendTurn);
         disconnect(this, &Game::wantToSendGameEnds, _server, &Server::sendGameEnds);
+        disconnect(this, &Game::gameLaunched, _server, &Server::onGameLaunched);
+        disconnect(this, &Game::gameFinished, _server, &Server::onGameFinished);
     }
 
     Game::setServer(server);
@@ -1471,6 +1515,8 @@ void CellGame::setServer(Server *server)
         connect(this, &Game::wantToSendWelcome, _server, &Server::sendWelcome);
         connect(this, &Game::wantToSendTurn, _server, &Server::sendTurn);
         connect(this, &Game::wantToSendGameEnds, _server, &Server::sendGameEnds);
+        connect(this, &Game::gameLaunched, _server, &Server::onGameLaunched);
+        connect(this, &Game::gameFinished, _server, &Server::onGameFinished);
     }
 }
 
@@ -2155,6 +2201,8 @@ void CellGame::update_players_info()
 
     // todo: check (not here) that one player does not play twice a turn
 
+    // todo: better compute (here) player scores : mix integer and floating computations
+
     for (Player * player : _players)
     {
         if (player_id_to_previous_nb_cells[player->id] != player->nb_cells)
@@ -2307,6 +2355,42 @@ QByteArray CellGame::generate_turn()
         qba.resize(sizeof(quint64));
         (*(quint64*)qba.data()) = player->score;
         message.append(qba);
+
+        emit Game::message(QString("generate_turn, Player=(id=%1,nb_cells=%2,mass=%3,score=%4)").arg(
+                     player->id).arg(player->nb_cells).arg(player->mass).arg(player->score));
+    }
+
+    return message;
+}
+
+QByteArray CellGame::generate_game_ends()
+{
+    // Determine winner
+    int winner = _players.first()->id;
+
+    for (const Player * player : _players)
+        if (player->score > _players[winner]->score)
+            winner = player->id;
+
+    // Create message
+    QByteArray message, qba;
+    qba.resize(sizeof(quint32));
+    (*(quint32*)qba.data()) = winner;
+    message.append(qba);
+
+    qba.resize(sizeof(quint32));
+    (*(quint32*)qba.data()) = (quint32)_players.size();
+    message.append(qba);
+
+    for (const Player * player : _players)
+    {
+        qba.resize(sizeof(quint32));
+        (*(quint32*)qba.data()) = player->id;
+        message.append(qba);
+
+        qba.resize(sizeof(quint64));
+        (*(quint64*)qba.data()) = (quint64) player->score;
+        message.append(qba);
     }
 
     return message;
@@ -2447,18 +2531,22 @@ void CellGame::send_turn_to_everyone()
         if (client.connected)
             emit wantToSendTurn(client.client, _current_turn, message);
     }
-
-/*  Content: (Initial_neutral_cells, Non_initial_neutral_cells, Viruses, Player_cells, Players)
-
-    Initial_neutral_cells: (nb_initial_cells:ui32, (remaining_turns_before_apparition:ui32)*nb_initial_cells)
-    Non_initial_neutral_cells: (nb_non_initial_ncells:ui32, (ncell_id:ui32, mass:float32, position:pos)*nb_non_initial_ncells)
-    Viruses: (nb_viruses:ui32, (virus_id:ui32, position:pos)*nb_viruses)
-    Player_cells: (nb_player_cells:ui32, (pcell_id:ui32, position:pos, player_id:ui32, mass:float32, remaining_isolated_turns:ui32)*nb_player_cells)
-    Players: (nb_players:ui32, (player_id:ui32, nb_pcells:ui32, score:ui64)*nb_players)
-*/
 }
 
 void CellGame::send_game_ends_to_everyone()
 {
-    // todo
+    QByteArray message = generate_game_ends();
+
+    // Send the message to everyone
+    for (const GameClient & client : _playerClients)
+    {
+        if (client.connected)
+            emit wantToSendGameEnds(client.client, message);
+    }
+
+    for (const GameClient & client : _visuClients)
+    {
+        if (client.connected)
+            emit wantToSendGameEnds(client.client, message);
+    }
 }
