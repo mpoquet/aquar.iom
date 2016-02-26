@@ -51,6 +51,8 @@ int main(int argc, char ** argv)
 
         while(session.is_logged())
         {
+            actions.clear();
+
             printf("Waiting for next turn...\n");
             session.wait_for_next_turn();
 
