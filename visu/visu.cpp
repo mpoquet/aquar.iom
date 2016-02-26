@@ -8,6 +8,8 @@ Visu::Visu()
     background_color = sf::Color::Black;
     borders_color = sf::Color::White;
 
+    afficheCellulesNeutres = true; // par défaut les cellules neutres sont affichées dans la fenêtre
+
     cadre.setFillColor(background_color);
     cadre.setOutlineColor(borders_color);
     cadre.setOutlineThickness(1);
@@ -15,7 +17,7 @@ Visu::Visu()
     // création de la fenêtre
     sf::ContextSettings settings;
     settings.antialiasingLevel = 8;
-    window.create(sf::VideoMode(window_width, window_height), "Le jeu des cellules qui se mangent", sf::Style::Default, settings);
+    window.create(sf::VideoMode(window_width, window_height), "Aquar.iom", sf::Style::Default, settings);
     window.setVerticalSyncEnabled(false);
     window.setKeyRepeatEnabled(true); // activer/désactiver la répétition des touches si on les maintient appuyées
 
@@ -185,8 +187,8 @@ void Visu::onTurnReceived(const ainet16::Turn &turn)
 
 void Visu::afficheCellule(Cellule* cellule)
 {
-    if ((cellule->remaining_turns_before_apparition != 0)) {
-        return; // La cellule n'est pas encore apparue donc on ne l'affiche pas
+    if ((cellule->remaining_turns_before_apparition != 0) | (((cellule->typeDeCellule == initialNeutral)|(cellule->typeDeCellule == nonInitialNeutral)) & (afficheCellulesNeutres == false))) {
+        return;
     }
 
     if (cellule->estVivante == false) {
@@ -196,7 +198,7 @@ void Visu::afficheCellule(Cellule* cellule)
         return;
     }
 
-    qDebug() << cellule->id();
+    //qDebug() << cellule->id();
 
     float rayon = cellule->mass * parameters.radius_factor;
 
@@ -327,69 +329,73 @@ void Visu::afficheTout()
 void Visu::handleEvents(ainet16::Turn & tour)
 {
     sf::Event event;
-    window.pollEvent(event);
-    switch(event.type) {
+    while (window.pollEvent(event)) {
+        switch(event.type) {
 
-    // fermeture de la fenêtre
-    case sf::Event::Closed:
-        window.close();
-        break;
-
-        // appui sur un bouton du clavier
-    case sf::Event::KeyPressed:
-        switch(event.key.code) {
-
-        case sf::Keyboard::I:
-            // todo : inverser la couleur de fond de la fenêtre et celle des contours (cellules + cadre)
-            inverseCouleurs();
+        // fermeture de la fenêtre
+        case sf::Event::Closed:
+            window.close();
             break;
 
-        case sf::Keyboard::T:
-            // test de la fonction onTurnReceived
-            tour.viruses[0].position.y += 100;
-            tour.pcells[0].position.x += 100;
-            tour.pcells[2].position.y -= 20;
-            tour.initial_ncells[0].remaining_turns_before_apparition = 0;
-            tour.non_initial_ncells[0].mass = 50;
-            onTurnReceived(tour);
-            tour.players[2].score = 21;
-            break;
+            // appui sur un bouton du clavier
+        case sf::Event::KeyPressed:
+            switch(event.key.code) {
 
-        case sf::Keyboard::Add:
-            zoom();
-            break;
+            case sf::Keyboard::I:
+                inverseCouleurs();
+                break;
 
-        case sf::Keyboard::Subtract:
-            dezoom();
-            break;
+            case sf::Keyboard::N:
+                toggleNeutralCells();
+                break;
 
-        case sf::Keyboard::Equal:
-            resetCarte();
-            break;
+            case sf::Keyboard::T:
+                // test de la fonction onTurnReceived
+                tour.viruses[0].position.y += 100;
+                tour.pcells[0].position.x += 100;
+                tour.pcells[2].position.y -= 20;
+                tour.initial_ncells[0].remaining_turns_before_apparition = 0;
+                tour.non_initial_ncells[0].mass = 50;
+                onTurnReceived(tour);
+                tour.players[2].score = 21;
+                break;
 
-        case sf::Keyboard::Right:
-            deplaceVueDroite();
-            break;
+            case sf::Keyboard::Add:
+                zoom();
+                break;
 
-        case sf::Keyboard::Left:
-            deplaceVueGauche();
-            break;
+            case sf::Keyboard::Subtract:
+                dezoom();
+                break;
 
-        case sf::Keyboard::Up:
-            deplaceVueHaut();
-            break;
+            case sf::Keyboard::Equal:
+                resetCarte();
+                break;
 
-        case sf::Keyboard::Down:
-            deplaceVueBas();
-            break;
+            case sf::Keyboard::Right:
+                deplaceVueDroite();
+                break;
+
+            case sf::Keyboard::Left:
+                deplaceVueGauche();
+                break;
+
+            case sf::Keyboard::Up:
+                deplaceVueHaut();
+                break;
+
+            case sf::Keyboard::Down:
+                deplaceVueBas();
+                break;
+
+            default:
+                break;
+            }
 
         default:
             break;
+
         }
-
-    default:
-        break;
-
     }
 
 }
@@ -407,6 +413,11 @@ void Visu::dezoom()
 void Visu::resetCarte()
 {
     vue_carte.reset(sf::FloatRect(0, 0, parameters.map_width, parameters.map_height));
+}
+
+void Visu::toggleNeutralCells()
+{
+    afficheCellulesNeutres = !afficheCellulesNeutres;
 }
 
 void Visu::deplaceVueDroite()
@@ -438,13 +449,13 @@ void Visu::addNewCell(Cellule *cellule)
 
 void Visu::removeCell(quint32 id)
 {
-    qDebug() << "entrée dans removeCell\n";
+    //qDebug() << "entrée dans removeCell\n";
 
     // retirer la cellule de allCellsByMass
     bool ok = false;
     uint i(0);
     while ((i<allCellsByMass.size()) | (ok==false)) {
-        qDebug() << i << endl;
+        //qDebug() << i << endl;
         if (allCellsByMass[i]->id() == id) {
             ok = true;
             allCellsByMass.erase(allCellsByMass.begin()+i);
@@ -452,7 +463,7 @@ void Visu::removeCell(quint32 id)
         ++i;
     }
 
-    qDebug() << "supprimer la cellule de allCells\n";
+    //qDebug() << "supprimer la cellule de allCells\n";
     allCells.erase(id);
 }
 
