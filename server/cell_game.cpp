@@ -1572,6 +1572,11 @@ int CellGame::compress_cell_ids()
     // TODO
 }
 
+CellGame::PlayerCell::PlayerCell()
+{
+
+}
+
 void CellGame::PlayerCell::updateMass(float new_mass, const CellGame::GameParameters &parameters)
 {
     mass = std::max(new_mass, parameters.minimum_player_cell_mass);
@@ -1608,7 +1613,9 @@ void CellGame::PlayerCell::updateQuadtreeNodes()
     responsible_node_bbox->player_cells_bbox.remove(id);
 
     responsible_node = responsible_node->find_responsible_node(position);
+    Q_ASSERT(responsible_node != nullptr);
     responsible_node_bbox = responsible_node_bbox->find_responsible_node(top_left, bottom_right);
+    Q_ASSERT(responsible_node_bbox != nullptr);
 }
 
 float CellGame::PlayerCell::squared_distance_to(const CellGame::PlayerCell *oth_pcell) const
@@ -2026,10 +2033,10 @@ CellGame::QuadTreeNode *CellGame::QuadTreeNode::find_responsible_node_r(const Ce
     else
     {
         // The rectangle is not in the current node...
-        // If the current node is the root, nullptr is returned.
+        // If the current node is the root, let the root be returned.
         // Otherwise, let's call this method recursively on our parent
         if (is_root())
-            return nullptr;
+            return this;
         else
             return parent->find_responsible_node_r(top_left, bottom_right);
     }

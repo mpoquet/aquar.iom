@@ -74,6 +74,8 @@ public:
 
     struct PlayerCell
     {
+        PlayerCell();
+
         // Primary attributes
         quint32 id;
         quint32 player_id;
