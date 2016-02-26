@@ -20,6 +20,7 @@ Visu::Visu()
     window.create(sf::VideoMode(window_width, window_height), "Aquar.iom", sf::Style::Default, settings);
     window.setVerticalSyncEnabled(false);
     window.setKeyRepeatEnabled(true); // activer/désactiver la répétition des touches si on les maintient appuyées
+    window.setFramerateLimit(30);
 
     droite.reset(sf::FloatRect(0.85*window_width, 0, 0.15*window_width, window_height));
     droite.setViewport(sf::FloatRect(0.85, 0, 0.15, 1));
@@ -339,6 +340,7 @@ void Visu::handleEvents(ainet16::Turn & tour)
 
             // appui sur un bouton du clavier
         case sf::Event::KeyPressed:
+            //qDebug() << "une touche a été pressée\n";
             switch(event.key.code) {
 
             case sf::Keyboard::I:

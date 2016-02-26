@@ -4,6 +4,10 @@
 #include <iostream>
 #include <ainetlib16.hpp>
 
+#include <thread>
+
+using namespace std;
+
 void testDonneesSynthese(Visu &jeu) {
     // Teste la classe Visu en utilisant des données de synthèse fabriquées de toutes pièces
 
@@ -109,9 +113,12 @@ void testDonneesSynthese(Visu &jeu) {
 int main(int argc, char* argv[])
 {
     Visu visu;
-    bool test = true;
+    bool test = false;
 
     if (test == true) {
+        // création d'un thread
+        std::thread thread_principal;
+
         testDonneesSynthese(visu);
     }
 
@@ -150,10 +157,30 @@ int main(int argc, char* argv[])
                 session.send_actions(actions);
             }
         }
-        catch (ainet16::Exception & exception)
+
+        catch (const ainet16::GameFinishedException & e)
         {
-            std::cout << exception.what() << std::endl;
+            cout << "Game finished!" << endl;
+            cout << "Winner = " << e.winner_player_id() << endl << endl;
+            std::vector<ainet16::GameEndsPlayer> players = e.players();
+
+            cout << "Player scores:" << endl;
+            for (ainet16::GameEndsPlayer player : players)
+                printf("  (player_id=%d, score=%ld)\n", player.player_id, player.score);
+
+            // todo: tell visu who won
+        }
+        catch (const ainet16::Exception & exception)
+        {
+            cout << exception.what() << endl;
             return 1;
+        }
+
+        //todo: continuer d'afficher l'écran en boucle
+        while (visu.window.isOpen()) {
+            ainet16::Turn tour;
+            visu.handleEvents(tour);
+            visu.afficheTout();
         }
     }
 
