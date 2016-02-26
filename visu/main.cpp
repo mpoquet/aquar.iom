@@ -109,7 +109,7 @@ void testDonneesSynthese(Visu &jeu) {
 int main(int argc, char* argv[])
 {
     Visu visu;
-    bool test = false;
+    bool test = true;
 
     if (test == true) {
         testDonneesSynthese(visu);

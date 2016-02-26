@@ -72,9 +72,10 @@ public:
     void deplaceVueGauche();
     void deplaceVueHaut();
     void deplaceVueBas();
+    void resetCarte(); // Remet la vue comme au démarrage (carte entière dans le cadre)
 
-    // Remet la vue comme au démarrage (carte entière dans le cadre)
-    void resetCarte();
+    // Active/désactive l'affichage des cellules neutres
+    void toggleNeutralCells();
 
     // Ajoute une cellule dans le conteneur allCells
     void addNewCell(Cellule* cellule);
@@ -102,6 +103,8 @@ private:
     sf::View bas; // vue qui contient le diagramme des scores
     sf::View vue_cadre;
     sf::RectangleShape cadre; // zone de la fenêtre où est affichée le plateau de jeu
+
+    bool afficheCellulesNeutres;
 
 
 public:
