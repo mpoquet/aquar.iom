@@ -603,6 +603,8 @@ void CellGame::compute_cell_moves()
             // Otherwise, the cell goes as far as possible on that direction.
 
             float desired_distance = move_vector.length();
+            Position prev_pos = cell->position;
+            static const float epsilon = 1e-3;
 
             if (desired_distance <= cell->max_speed)
             {
@@ -614,8 +616,22 @@ void CellGame::compute_cell_moves()
             {
                 // Otherwise, let us compute where the cell should stop
                 move_vector /= desired_distance;
-                cell->position.x = std::max(0.0f, std::min(move_vector.x() * cell->max_speed, _parameters.map_width));
-                cell->position.y = std::max(0.0f, std::min(move_vector.y() * cell->max_speed, _parameters.map_height));
+                cell->position.x = std::max(0.0f, std::min(cell->position.x + move_vector.x() * cell->max_speed, _parameters.map_width));
+                cell->position.y = std::max(0.0f, std::min(cell->position.y + move_vector.y() * cell->max_speed, _parameters.map_height));
+            }
+
+            float dx = prev_pos.x - cell->position.x;
+            float dy = prev_pos.y - cell->position.y;
+            float traversed_distance = sqrt(dx*dx+dy*dy);
+
+            if (traversed_distance > cell->max_speed + epsilon)
+            {
+                emit message(QString("Invalid cell move. Traversed %1 whereas max_speed=%2."
+                                     " prev_pos=(%3,%4). curr_pos=(%5,%6). dest=(%7,%8)").arg(
+                                 traversed_distance).arg(cell->max_speed).arg(
+                                 prev_pos.x).arg(prev_pos.y).arg(cell->position.x).arg(
+                                 cell->position.y).arg(action->desired_destination.x).arg(
+                                 action->desired_destination.y));
             }
 
             cell->updateBBox(_parameters);

@@ -150,7 +150,7 @@ void Client::onReadyRead()
                     // Now that the TURN_ACK had been received, let's send the most up-to-date TURN message if needed
                     if (_turnToSend > _lastTurnAcknowledged)
                     {
-                        emit Client::message("Calling internalSendTurn indirectly (in onReadyRead)");
+                        //emit Client::message("Calling internalSendTurn indirectly (in onReadyRead)");
                         internalSendTurn(_turnToSend, _sendBuffer);
                     }
                 }
@@ -184,7 +184,7 @@ void Client::sendTurn(quint32 turn, const QByteArray & data)
     }
     else
     {
-        emit message("Calling internalSendTurn directly (in sendTurn)");
+        //emit message("Calling internalSendTurn directly (in sendTurn)");
         internalSendTurn(turn, data);
     }
 }
@@ -234,7 +234,7 @@ void Client::sendGameEnds(const QByteArray &data)
 void Client::internalSendTurn(quint32 turn, const QByteArray &data)
 {
     const quint32 gameDependentSize = data.size();
-    emit message(QString("Sending turn: (gdc_size=%1, turn=%2, data=...)").arg(gameDependentSize).arg(turn));
+    //emit message(QString("Sending turn: (gdc_size=%1, turn=%2, data=...)").arg(gameDependentSize).arg(turn));
 
     sendStamp(Stamp::TURN);
     _socket->write((const char*)&gameDependentSize, 4);
