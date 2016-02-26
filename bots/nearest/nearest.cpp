@@ -64,9 +64,10 @@ int main(int argc, char ** argv)
             for (unsigned int i=0; i<tour.pcells.size(); ++i) {
                 if (tour.pcells[i].player_id == mon_id) {
                     temp_cell = tour.pcells[i];
-                    /// trier les cellules neutres par distance croissante en ne prenant que les vivantes
+                    /// trier les cellules neutres par distance croissante
                     for (unsigned int j=0; j<cellules_neutres.size(); ++j) {
                         if (cellules_neutres[j].remaining_turns_before_apparition == 0) {
+                            // on ne prend en compte que les cellules vivantes
                             temp_distance = distance(temp_cell, cellules_neutres[j]);
                             distances[temp_distance] = &cellules_neutres[j];
                         }

@@ -1,5 +1,5 @@
 TEMPLATE = app
-TARGET = afk
+TARGET = nearest
 INCLUDEPATH += .
 LIBS += -lainetlib16 -lsfml-network -lsfml-system
 QMAKE_CXXFLAGS += -std=c++11
