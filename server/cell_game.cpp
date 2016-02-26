@@ -1042,19 +1042,26 @@ void CellGame::compute_viruses_collisions_inside_node(CellGame::PlayerCell * cel
 
                 for (int satellite_id = 0; satellite_id < nb_satellites; ++satellite_id)
                 {
-                    PlayerCell * satellite = new PlayerCell;
-                    satellite->id = next_cell_id();
-                    satellite->player_id = cell->player_id;
-                    satellite->position.x = cell->position.x + dist_to_satellite * std::cos(satellite_id * angle_diff);
-                    satellite->position.y = cell->position.y + dist_to_satellite * std::sin(satellite_id * angle_diff);
-                    satellite->updateMass(mass_by_satellite, _parameters);
+                    Position satellite_position;
+                    satellite_position.x = cell->position.x + dist_to_satellite * std::cos(satellite_id * angle_diff);
+                    satellite_position.y = cell->position.y + dist_to_satellite * std::sin(satellite_id * angle_diff);
 
-                    _players[satellite->player_id]->nb_cells++;
+                    if (satellite_position.x >= 0 && satellite_position.x < _parameters.map_width &&
+                        satellite_position.y >= 0 && satellite_position.y < _parameters.map_height)
+                    {
+                        PlayerCell * satellite = new PlayerCell;
+                        satellite->id = next_cell_id();
+                        satellite->player_id = cell->player_id;
+                        satellite->position = satellite_position;
+                        satellite->updateMass(mass_by_satellite, _parameters);
 
-                    satellite->responsible_node = cell->responsible_node->find_responsible_node(satellite->position);
-                    satellite->responsible_node_bbox = cell->responsible_node_bbox->find_responsible_node(satellite->top_left, satellite->bottom_right);
-                    pcells_to_create.insert(satellite);
-                    pcells_to_recompute.insert(satellite);
+                        _players[satellite->player_id]->nb_cells++;
+
+                        satellite->responsible_node = cell->responsible_node->find_responsible_node(satellite->position);
+                        satellite->responsible_node_bbox = cell->responsible_node_bbox->find_responsible_node(satellite->top_left, satellite->bottom_right);
+                        pcells_to_create.insert(satellite);
+                        pcells_to_recompute.insert(satellite);
+                    }
                 }
             }
 
