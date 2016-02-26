@@ -142,15 +142,20 @@ void Client::onReadyRead()
 
             if (turn == _lastTurnSent)
             {
-                _lastTurnAcknowledged = turn;
-                emit messageTurnAckReceived(turn, message);
-
-                // Now that the TURN_ACK had been received, let's send the most up-to-date TURN message if needed
-                if (_turnToSend > _lastTurnAcknowledged)
+                if (_lastTurnAcknowledged != turn)
                 {
-                    emit Client::message("Calling internalSendTurn indirectly (in onReadyRead)");
-                    internalSendTurn(_turnToSend, _sendBuffer);
+                    _lastTurnAcknowledged = turn;
+                    emit messageTurnAckReceived(turn, message);
+
+                    // Now that the TURN_ACK had been received, let's send the most up-to-date TURN message if needed
+                    if (_turnToSend > _lastTurnAcknowledged)
+                    {
+                        emit Client::message("Calling internalSendTurn indirectly (in onReadyRead)");
+                        internalSendTurn(_turnToSend, _sendBuffer);
+                    }
                 }
+                else
+                    kick(QString("invalid TURN_ACK message received: turn %1 has been received whereas it has already been received before").arg(turn));
             }
             else
                 kick(QString("invalid TURN_ACK message received: wrong turn (%1 instead of %2)").arg(turn).arg(_lastTurnSent));

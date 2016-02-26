@@ -10,6 +10,7 @@ class CellGame : public Game
 {
     Q_OBJECT
 
+public:
     struct QuadTreeNode;
     struct PlayerCell;
     struct NeutralCell;
@@ -132,10 +133,12 @@ class CellGame : public Game
     struct Player
     {
         quint32 id;
-        quint64 score;
         quint32 nb_cells;
         float mass;
         bool moved_this_turn;
+
+        quint64 score; // Stores the integral (truncated) part of the score
+        long double score_frac; // Stores the fractional part of the score
     };
 
 
@@ -324,5 +327,7 @@ private:
 
     QuadTreeNode * _tree_root;
 };
+
+bool cellgame_player_score_comparator(const CellGame::Player * p1, const CellGame::Player * p2);
 
 #endif // CELLGAME_HPP
