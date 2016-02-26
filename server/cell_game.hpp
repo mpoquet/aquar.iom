@@ -54,6 +54,7 @@ public:
         float virus_mass;
         float virus_creation_mass_loss; // To create a virus, the cell loses virus_creation_mass_loss * cell_mass + virus_mass units of mass
         quint32 virus_max_split;
+        quint32 virus_isolation_duration;
 
         quint32 min_nb_players;
         quint32 max_nb_players;

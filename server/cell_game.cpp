@@ -1012,6 +1012,8 @@ void CellGame::compute_viruses_collisions_inside_node(CellGame::PlayerCell * cel
         if ((dist < cell->radius_squared) && (cell->mass > _parameters.virus_mass))
         {
             // The poor "cell" just ate a virus :(
+            cell->remaining_isolated_turns = _parameters.virus_isolation_duration;
+
             // First, let the virus mass be removed from the poor "cell"
             cell->removeMass(_parameters.virus_mass, _parameters);
             float total_mass = cell->mass;
@@ -1031,7 +1033,7 @@ void CellGame::compute_viruses_collisions_inside_node(CellGame::PlayerCell * cel
             if (nb_satellites > 0)
             {
                 // Let the satellite mass be computed
-                const float mass_by_satellite = total_mass / 2;
+                const float mass_by_satellite = (total_mass / 2) / nb_satellites;
                 Q_ASSERT(mass_by_satellite >= _parameters.minimum_player_cell_mass);
 
                 // Let the distance from cell.center to satellite.center be computed
@@ -1046,6 +1048,9 @@ void CellGame::compute_viruses_collisions_inside_node(CellGame::PlayerCell * cel
                     satellite_position.x = cell->position.x + dist_to_satellite * std::cos(satellite_id * angle_diff);
                     satellite_position.y = cell->position.y + dist_to_satellite * std::sin(satellite_id * angle_diff);
 
+                    float created_mass = 0;
+                    static const float epsilon = 1e-3;
+
                     if (satellite_position.x >= 0 && satellite_position.x < _parameters.map_width &&
                         satellite_position.y >= 0 && satellite_position.y < _parameters.map_height)
                     {
@@ -1054,6 +1059,8 @@ void CellGame::compute_viruses_collisions_inside_node(CellGame::PlayerCell * cel
                         satellite->player_id = cell->player_id;
                         satellite->position = satellite_position;
                         satellite->updateMass(mass_by_satellite, _parameters);
+                        satellite->remaining_isolated_turns = _parameters.virus_isolation_duration;
+                        created_mass += satellite->mass;
 
                         _players[satellite->player_id]->nb_cells++;
 
@@ -1062,6 +1069,10 @@ void CellGame::compute_viruses_collisions_inside_node(CellGame::PlayerCell * cel
                         pcells_to_create.insert(satellite);
                         pcells_to_recompute.insert(satellite);
                     }
+
+                    Q_ASSERT(created_mass <= (total_mass / 2));
+                    Q_ASSERT(cell->mass + created_mass <= total_mass + epsilon);
+
                 }
             }
 
@@ -1441,6 +1452,16 @@ void CellGame::load_parameters(const QString &filename)
     }
     _parameters.virus_max_split = doc.object()["virus_max_split"].toInt();
 
+    if (!doc.object().contains("virus_isolation_duration")) {
+        emit message(QString("Invalid file '%1': the root object does not contain the 'virus_isolation_duration' key").arg(filename));
+        return;
+    }
+    else if (!doc.object()["virus_isolation_duration"].isDouble()) {
+        emit message(QString("Invalid file '%1': the value associated to key 'virus_isolation_duration' is not a number").arg(filename));
+        return;
+    }
+    _parameters.virus_isolation_duration = doc.object()["virus_isolation_duration"].toInt();
+
     if (!doc.object().contains("nb_turns")) {
         emit message(QString("Invalid file '%1': the root object does not contain the 'nb_turns' key").arg(filename));
         return;
@@ -1691,6 +1712,7 @@ void CellGame::GameParameters::clear()
     virus_mass = -1;
     virus_creation_mass_loss = -1;
     virus_max_split = -1;
+    virus_isolation_duration = -1;
 
     min_nb_players = -1;
     max_nb_players = -1;
@@ -1806,6 +1828,12 @@ bool CellGame::GameParameters::is_valid(QString &invalidity_reason) const
     {
         ret = false;
         invalidity_reason += "virus_max_split must be in [0,64]\n";
+    }
+
+    if (virus_isolation_duration > 1000000)
+    {
+        ret = false;
+        invalidity_reason += "virus_isolation_duration must be in [0,1e6]\n";
     }
 
     if (min_nb_players < 1)
