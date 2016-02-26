@@ -2172,6 +2172,7 @@ void CellGame::generate_initial_players()
         player->moved_this_turn = false;
         player->nb_cells = 0;
         player->score = 0;
+        player->score_frac = 0;
 
         _players[player->id] = player;
 
@@ -2201,8 +2202,6 @@ void CellGame::update_players_info()
 
     // todo: check (not here) that one player does not play twice a turn
 
-    // todo: better compute (here) player scores : mix integer and floating computations
-
     for (Player * player : _players)
     {
         if (player_id_to_previous_nb_cells[player->id] != player->nb_cells)
@@ -2210,7 +2209,25 @@ void CellGame::update_players_info()
             if (_current_turn != 0)
                 emit message(QString("Server incoherency on player->nb_pcells"));
         }
-        player->score += (quint64) player->mass;
+
+        float integral_part;
+        float fractional_part;
+
+        fractional_part = modff(player->mass, &integral_part);
+
+        player->score += (quint64) integral_part;
+        player->score_frac += fractional_part;
+
+        if (player->score_frac >= 1)
+        {
+            long double ld_integral_part;
+            long double ld_fractional_part;
+
+            ld_fractional_part = modfl(player->score_frac, &ld_integral_part);
+
+            player->score += (quint64) ld_integral_part;
+            player->score_frac = ld_fractional_part;
+        }
     }
 }
 
@@ -2356,8 +2373,8 @@ QByteArray CellGame::generate_turn()
         (*(quint64*)qba.data()) = player->score;
         message.append(qba);
 
-        emit Game::message(QString("generate_turn, Player=(id=%1,nb_cells=%2,mass=%3,score=%4)").arg(
-                     player->id).arg(player->nb_cells).arg(player->mass).arg(player->score));
+        /*emit Game::message(QString("generate_turn, Player=(id=%1,nb_cells=%2,mass=%3,score=%4)").arg(
+                     player->id).arg(player->nb_cells).arg(player->mass).arg(player->score));*/
     }
 
     return message;
@@ -2366,11 +2383,24 @@ QByteArray CellGame::generate_turn()
 QByteArray CellGame::generate_game_ends()
 {
     // Determine winner
-    int winner = _players.first()->id;
+    QVector<const Player *> players_vector;
 
     for (const Player * player : _players)
-        if (player->score > _players[winner]->score)
-            winner = player->id;
+        players_vector.append(player);
+
+    int winner = players_vector.last()->id;
+
+    // Display scores within the server
+    QString display_message;
+    display_message += "==========================\n";
+    display_message += QString("Winner : player_id=%1\n").arg(winner);
+    display_message += "Player scores :\n";
+
+    for (const Player * player : players_vector)
+        display_message += QString("  (player_id=%1, score_int=%2, score_frac=%3)\n").arg(
+                           player->id).arg(player->score).arg((double)player->score_frac);
+    display_message += "==========================";
+    emit Game::message(display_message);
 
     // Create message
     QByteArray message, qba;
@@ -2549,4 +2579,11 @@ void CellGame::send_game_ends_to_everyone()
         if (client.connected)
             emit wantToSendGameEnds(client.client, message);
     }
+}
+
+bool cellgame_player_score_comparator(const CellGame::Player *p1, const CellGame::Player *p2)
+{
+    if (p1->score == p2->score)
+        return p1->score_frac < p2->score_frac;
+    return p1->score < p2->score;
 }
