@@ -61,7 +61,7 @@ public:
     void inverseCouleurs();
 
     // Gestion des évènements
-    void handleEvents(ainet16::Turn &tour); // todo : en version finale, ne prend plus rien en paramètre. C'est juste pour tester l'affichage
+    void handleEvents();
 
     // Ajustement du niveau de zoom
     void zoom();

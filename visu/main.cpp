@@ -5,6 +5,17 @@
 #include <ainetlib16.hpp>
 
 #include <thread>
+#include <mutex>
+
+using namespace std;
+
+struct SharedData
+{
+    Visu * visu;
+    mutex * m;
+    string address;
+    int port;
+};
 
 using namespace std;
 
@@ -105,83 +116,127 @@ void testDonneesSynthese(Visu &jeu) {
 
     /// test de la classe visu avec les données créées
     while (jeu.window.isOpen()) {
-        jeu.handleEvents(tour);
+        jeu.handleEvents();
         jeu.afficheTout();
     }
 }
 
+void display_loop(const SharedData & data)
+{
+    float fps = 24;
+    float theoretical_seconds_to_sleep = 1 / fps;
+
+    sf::Time theoretical_time_to_sleep = sf::seconds(theoretical_seconds_to_sleep);
+
+    bool is_window_open = true;
+
+    sf::Clock clock;
+
+    while (is_window_open)
+    {
+        data.m->lock();
+        sf::Time t1 = clock.getElapsedTime();
+        is_window_open = data.visu->window.isOpen();
+
+        if (is_window_open)
+        {
+            data.visu->handleEvents();
+            printf("Display\n");
+            data.visu->afficheTout();
+        }
+
+        sf::Time t2 = clock.getElapsedTime();
+        data.m->unlock();
+
+        sf::Time elapsed = t2 - t1;
+        float seconds_to_sleep = std::max(0.02f, (theoretical_time_to_sleep - elapsed).asSeconds());
+        sf::sleep(sf::seconds(seconds_to_sleep));
+    }
+}
+
+void network_loop(const SharedData & data)
+{
+    try
+    {
+        ainet16::Session session;
+        session.connect(data.address, data.port);
+        session.login_visu("Ta miniblouce");
+
+        session.wait_for_welcome();
+        ainet16::Welcome welcome = session.welcome();
+
+        data.m->lock();
+        data.visu->onWelcomeReceived(welcome);
+        data.m->unlock();
+
+        session.wait_for_game_starts();
+
+        while(session.is_logged())
+        {
+            session.wait_for_next_turn();
+            ainet16::Turn turn = session.turn();
+
+            data.m->lock();
+            printf("Turn update\n");
+            data.visu->onTurnReceived(turn);
+            data.m->unlock();
+
+            ainet16::Actions actions;
+            session.send_actions(actions);
+        }
+    }
+    catch (const ainet16::GameFinishedException & e)
+    {
+        cout << "Game finished!" << endl;
+        cout << "Winner = " << e.winner_player_id() << endl << endl;
+        std::vector<ainet16::GameEndsPlayer> players = e.players();
+
+        cout << "Player scores:" << endl;
+        for (ainet16::GameEndsPlayer player : players)
+            printf("  (player_id=%d, score=%ld)\n", player.player_id, player.score);
+
+        // todo: tell visu who won
+    }
+    catch (const ainet16::Exception & exception)
+    {
+        cout << exception.what() << endl;
+        // todo: tell visu about it
+    }
+}
+
+
 int main(int argc, char* argv[])
 {
-    Visu visu;
-    bool test = false;
-
-    if (test == true) {
-        // création d'un thread
-        std::thread thread_principal;
-
-        testDonneesSynthese(visu);
+    if (argc != 3)
+    {
+        printf("Usage: %s IP PORT\n", argv[0]);
+        return 1;
     }
 
-    else {
-        // todo: use main parameters
-        (void) argc;
-        (void) argv;
+    try
+    {
+        SharedData data;
+        data.address = argv[1];
+        data.port = stoi(argv[2]);
 
-        // utiliser les fonctions du réseau
-        std::string address = "127.0.0.1";
-        std::string port_str = "4242";
-        int port = std::stoi(port_str);
+        if (data.port < 1 || data.port > 65535)
+            throw invalid_argument("Invalid port value");
 
-        try
-        {
-            ainet16::Session session;
-            session.connect(address, port);
-            session.login_visu  ("Ta miniblouce");
+        data.visu = new Visu;
+        data.m = new mutex;
 
-            session.wait_for_welcome();
-            ainet16::Welcome welcome = session.welcome();
-            visu.onWelcomeReceived(welcome);
-            visu.afficheTout();
+        thread display_thread(display_loop, data);
+        thread network_thread(network_loop, data);
 
-            session.wait_for_game_starts();
+        display_thread.join();
+        network_thread.join();
 
-            while(session.is_logged())
-            {
-                session.wait_for_next_turn();
-                ainet16::Turn turn = session.turn();
-                visu.onTurnReceived(turn);
-                visu.handleEvents(turn);
-                visu.afficheTout();
-
-                ainet16::Actions actions;
-                session.send_actions(actions);
-            }
-        }
-
-        catch (const ainet16::GameFinishedException & e)
-        {
-            cout << "Game finished!" << endl;
-            cout << "Winner = " << e.winner_player_id() << endl << endl;
-            std::vector<ainet16::GameEndsPlayer> players = e.players();
-
-            cout << "Player scores:" << endl;
-            for (ainet16::GameEndsPlayer player : players)
-                printf("  (player_id=%d, score=%ld)\n", player.player_id, player.score);
-
-            // todo: tell visu who won
-        }
-        catch (const ainet16::Exception & exception)
-        {
-            cout << exception.what() << endl;
-            return 1;
-        }
-
-        //todo: continuer d'afficher l'écran en boucle
-        while (visu.window.isOpen()) {
-            ainet16::Turn tour;
-            visu.handleEvents(tour);
-            visu.afficheTout();
-        }
+        delete data.visu;
+        delete data.m;
+    }
+    catch (const invalid_argument & e)
+    {
+        printf("Invalid PORT. An integer in range [1,65535] must be provided.\n");
     }
 
     return 0;

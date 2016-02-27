@@ -327,7 +327,7 @@ void Visu::afficheTout()
     window.display(); // dessine tous les objets avec lesquels on a appelé draw
 }
 
-void Visu::handleEvents(ainet16::Turn & tour)
+void Visu::handleEvents()
 {
     sf::Event event;
     while (window.pollEvent(event)) {
@@ -351,16 +351,16 @@ void Visu::handleEvents(ainet16::Turn & tour)
                 toggleNeutralCells();
                 break;
 
-            case sf::Keyboard::T:
-                // test de la fonction onTurnReceived
-                tour.viruses[0].position.y += 100;
-                tour.pcells[0].position.x += 100;
-                tour.pcells[2].position.y -= 20;
-                tour.initial_ncells[0].remaining_turns_before_apparition = 0;
-                tour.non_initial_ncells[0].mass = 50;
-                onTurnReceived(tour);
-                tour.players[2].score = 21;
-                break;
+//            case sf::Keyboard::T:
+//                // test de la fonction onTurnReceived
+//                tour.viruses[0].position.y += 100;
+//                tour.pcells[0].position.x += 100;
+//                tour.pcells[2].position.y -= 20;
+//                tour.initial_ncells[0].remaining_turns_before_apparition = 0;
+//                tour.non_initial_ncells[0].mass = 50;
+//                onTurnReceived(tour);
+//                tour.players[2].score = 21;
+//                break;
 
             case sf::Keyboard::Add:
                 zoom();
