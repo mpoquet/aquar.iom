@@ -8,7 +8,7 @@ Visu::Visu()
     background_color = sf::Color::Black;
     borders_color = sf::Color::White;
 
-    afficheCellulesNeutres = true; // par défaut les cellules neutres sont affichées dans la fenêtre
+    afficheCellulesNeutres = false; // par défaut les cellules neutres ne sont pas affichées dans la fenêtre
 
     cadre.setFillColor(background_color);
     cadre.setOutlineColor(borders_color);
