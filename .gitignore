@@ -3,6 +3,10 @@
 CMakeLists.txt.user
 moc_*.cpp
 bots/*/Makefile
+bots/afk/afk
+bots/sleeper/sleeper
+bots/nearest/nearest
+bots/move_to_corner/move_to_corner
 visu/Makefile
 visu/visu
 server/Makefile
