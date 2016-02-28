@@ -2244,10 +2244,10 @@ CellGame::QuadTreeNode *CellGame::QuadTreeNode::find_responsible_node_r(const Ce
     else
     {
         // The position is not in the current node...
-        // If the current node is the root, nullptr is returned.
+        // If the current node is the root, the root is returned.
         // Otherwise, let's call this method recursively on our parent
         if (is_root())
-            return nullptr;
+            return this;
         else
             return parent->find_responsible_node_r(position);
     }
@@ -2326,6 +2326,8 @@ void CellGame::initialize_game_after_load()
     Position bottom_right(_parameters.map_width, _parameters.map_height);
 
     _tree_root = new QuadTreeNode(0, top_left, bottom_right);
+    Q_ASSERT(_tree_root->is_root());
+    Q_ASSERT(_tree_root->is_leaf());
 
     generate_initial_ncells();
     generate_initial_viruses();
