@@ -6,6 +6,7 @@ bots/*/Makefile
 bots/afk/afk
 bots/sleeper/sleeper
 bots/nearest/nearest
+bots/sonic/sonic
 bots/move_to_corner/move_to_corner
 visu/Makefile
 visu/visu
