@@ -141,7 +141,7 @@ void display_loop(const SharedData & data)
         if (is_window_open)
         {
             data.visu->handleEvents();
-            printf("Display\n");
+            //printf("Display\n");
             data.visu->afficheTout();
         }
 
@@ -177,7 +177,7 @@ void network_loop(const SharedData & data)
             ainet16::Turn turn = session.turn();
 
             data.m->lock();
-            printf("Turn update\n");
+            //printf("Turn update\n");
             data.visu->onTurnReceived(turn);
             data.m->unlock();
 

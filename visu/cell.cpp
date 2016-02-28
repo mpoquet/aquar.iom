@@ -14,7 +14,7 @@ Cellule::Cellule(ainet16::TurnPlayerCell cellule, int nbe_players)
     remaining_isolated_turns = cellule.remaining_isolated_turns;
 
     // déterminer la couleur en fonction du numéro du joueur
-    color = colorFromPlayerId(player_id, nbe_players);
+    color = colorFromPlayerId(player_id, nbe_players); // todo: associate the color to the player to avoid O(n) computes instead of O(1)
 
     estVivante = true;
 }

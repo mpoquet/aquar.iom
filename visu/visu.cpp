@@ -83,9 +83,9 @@ void Visu::onWelcomeReceived(const ainet16::Welcome &welcome)
     }
     nbCellulesInitiales = numero;
 
+    sort(allCellsByMass.begin(), allCellsByMass.end(), CompareMasseCellules());
+
     // pas besoin d'initialiser les joueurs : on va les recevoir dans un Turn
-
-
 }
 
 void Visu::onTurnReceived(const ainet16::Turn &turn)
@@ -101,11 +101,11 @@ void Visu::onTurnReceived(const ainet16::Turn &turn)
 
     else {
         /// mettre à jour le score des joueurs
-        std::vector<ainet16::TurnPlayer> temp_Players;
-        for (uint i=0; i<players.size(); ++i) {
-            temp_Players.push_back(turn.players[i]);
-        }
-        std::sort(temp_Players.begin(), temp_Players.end(), CompareIdJoueurs()); // génère erreurs de compilation quand on utilise directement turn.players
+//        std::vector<ainet16::TurnPlayer> temp_Players;
+//        for (uint i=0; i<players.size(); ++i) {
+//            temp_Players.push_back(turn.players[i]);
+//        }
+//        std::sort(temp_Players.begin(), temp_Players.end(), CompareIdJoueurs()); // génère erreurs de compilation quand on utilise directement turn.players
         std::sort(players.begin(), players.end(), CompareIdJoueurs());
 
         for (uint i=0; i<players.size(); ++i) {
@@ -114,12 +114,14 @@ void Visu::onTurnReceived(const ainet16::Turn &turn)
             players[i].score = turn.players[i].score;
         }
     }
-    /// mettre à jour les cellules
-    // toutes les cellules sont mortes. Les mettre à jour va les rendre vivantes. Celles qui seront encore mortes à la fin de la
-    // fonction seront donc des cellules supprimées
-    std::map<quint32, Cellule*>::iterator it;
-    for (it=allCells.begin(); it!=allCells.end(); ++it) {
-        (*it).second->estVivante = false;
+
+    // Partir du principe que toutes les cellules courantes sont mortes.
+    // Celles qui sont présentes dans le tour actuel seront marquées comme étant vivantes.
+    // À la fin du parcours, supprimer les cellules étant toujours marquées comme étant mortes.
+    for (auto mit : allCells)
+    {
+        Cellule * cell = mit.second;
+        cell->estVivante = false;
     }
 
     std::cout << "màj des virus\n";
@@ -184,23 +186,40 @@ void Visu::onTurnReceived(const ainet16::Turn &turn)
             allCells[indice]->estVivante = true;
         }
     }
+
+    // Toutes les cellules ont été parcourues.
+    // On peut désormais savoir quelles cellules sont vraiment mortes et les
+    // supprimer de nos structures de données.
+    std::vector<Cellule *> cells_to_remove;
+    for (auto mit : allCells)
+    {
+        Cellule * cell = mit.second;
+        if (!cell->estVivante)
+            cells_to_remove.push_back(cell);
+    }
+
+    for (Cellule * cell : cells_to_remove)
+    {
+        // Removes the cell from data structures
+        removeCell(cell->id());
+        // Cleans memory
+        delete cell;
+    }
+
+    // Let all the cells be sorted by ascending mass
+    sort(allCellsByMass.begin(), allCellsByMass.end(), CompareMasseCellules());
 }
 
 void Visu::afficheCellule(Cellule* cellule)
 {
-    if ((cellule->remaining_turns_before_apparition != 0) | (((cellule->typeDeCellule == initialNeutral)|(cellule->typeDeCellule == nonInitialNeutral)) & (afficheCellulesNeutres == false))) {
-        return;
-    }
+    bool is_neutral_cell = (cellule->typeDeCellule == initialNeutral) ||
+                           (cellule->typeDeCellule == nonInitialNeutral);
 
-    if (cellule->estVivante == false) {
-        qDebug() << "Cellule morte\n";
-        // la cellule est morte : on ne l'affiche pas et on la supprime de l'ensemble des cellules
-        removeCell(cellule->id());
+    if (is_neutral_cell &&
+        (!afficheCellulesNeutres || cellule->remaining_turns_before_apparition > 0))
         return;
-    }
 
     //qDebug() << cellule->id();
-
     float rayon = cellule->mass * parameters.radius_factor;
 
     sf::CircleShape cercle(rayon, 128);
@@ -245,8 +264,8 @@ void Visu::afficheScore()
     cache_droite.setFillColor(sf::Color::White);
     window.draw(cache_droite);
 
-    // trier les joueurs par score décroissant
-    sort(players.begin(), players.end(), CompareScoresJoueurs());
+    // trier les joueurs par score décroissant; Pas besoin, déjà fait quand le tour est reçu
+    //sort(players.begin(), players.end(), CompareScoresJoueurs());
 
     // rectangles pour la représentation du score relatif des joueurs
     sf::RectangleShape rect; // rectangle de dimensions (0,0)
@@ -446,26 +465,24 @@ void Visu::addNewCell(Cellule *cellule)
 {
     allCells[cellule->id()] = cellule;
     allCellsByMass.push_back(cellule);
-    sort(allCellsByMass.begin(), allCellsByMass.end(), CompareMasseCellules());
+    //sort(allCellsByMass.begin(), allCellsByMass.end(), CompareMasseCellules());
 }
 
 void Visu::removeCell(quint32 id)
 {
     //qDebug() << "entrée dans removeCell\n";
 
-    // retirer la cellule de allCellsByMass
-    bool ok = false;
-    uint i(0);
-    while ((i<allCellsByMass.size()) | (ok==false)) {
-        //qDebug() << i << endl;
-        if (allCellsByMass[i]->id() == id) {
-            ok = true;
-            allCellsByMass.erase(allCellsByMass.begin()+i);
-        }
-        ++i;
-    }
+    // Let the cell be removed from the allCellsByMass vector
+    auto it = std::find_if(allCellsByMass.begin(), allCellsByMass.end(),
+                        [id](const Cellule * cell) -> bool
+                        {
+                            return cell->id() == id;
+                        });
 
-    //qDebug() << "supprimer la cellule de allCells\n";
+    Q_ASSERT(it != allCellsByMass.end());
+    allCellsByMass.erase(it);
+
+    // Let the cell be removed from the allCells map
     allCells.erase(id);
 }
 
