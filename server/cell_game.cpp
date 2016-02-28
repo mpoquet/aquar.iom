@@ -815,6 +815,10 @@ void CellGame::compute_cell_collisions()
             _player_cells.remove(cell->id);
             _players[cell->player_id]->nb_cells--;
             delete cell;
+
+            // If the pcell is also marked as needing a recompute,
+            // the mark is removed
+            pcells_to_recompute.remove(cell);
         }
         pcells_to_delete.clear();
 
