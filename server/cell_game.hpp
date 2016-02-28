@@ -36,6 +36,7 @@ public:
         float mass_absorption; // If cell A of mass mA eats cell B of mass mB and they belong to different players, mA is incremented by mass_absorption * mB
         float minimum_mass_ratio_to_absorb; // Cell A can eat cell B if and only if mA > minimum_mass_ratio_to_absorb * mB
         float minimum_player_cell_mass; // The minimum allowed mass for a player cell
+        float maximum_player_cell_mass; // The maximum allowed mass for a player cell
 
         float radius_factor; // cell_radius = radius_factor * cell_mass
         quint32 max_cells_per_player; // Each player cannot have more cells than this value
@@ -76,6 +77,7 @@ public:
     struct PlayerCell
     {
         PlayerCell();
+        ~PlayerCell();
 
         // Primary attributes
         quint32 id;
@@ -91,7 +93,9 @@ public:
         float radius_squared;
         float max_speed;
 
-        quint32 remaining_isolated_turns;
+        quint32 remaining_isolated_turns = 0;
+        bool should_be_deleted = false;
+        bool acted_this_turn = false;
 
         // Attributes related to the quadtree
         QuadTreeNode * responsible_node = nullptr;
@@ -138,7 +142,6 @@ public:
         quint32 id;
         quint32 nb_cells;
         float mass;
-        bool moved_this_turn;
 
         quint64 score; // Stores the integral (truncated) part of the score
         long double score_frac; // Stores the fractional part of the score
@@ -207,6 +210,8 @@ public:
         QuadTreeNode * find_responsible_node(const Position & position);
         QuadTreeNode * find_responsible_node(const Position & top_left, const Position & bottom_right);
 
+        QString display_debug(int initial_depth) const;
+
     private:
         QuadTreeNode * find_responsible_node_r(const Position & position);
         QuadTreeNode * find_responsible_node_r(const Position & top_left, const Position & bottom_right);
@@ -243,6 +248,8 @@ private:
     void compute_mass_loss();
     void update_pcells_remaining_isolated_turns();
     void update_dead_neutral_cells();
+
+    long double compute_total_player_mass() const;
 
     void compute_cell_collisions();
 

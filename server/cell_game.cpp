@@ -120,7 +120,16 @@ void CellGame::onPlayerMove(Client *client, int turn, QByteArray data)
                 // If the coordinates are not finite, the action is ignored
                 if (isfinite(move_action->desired_destination.x) &&
                     isfinite(move_action->desired_destination.y))
-                    _move_actions.append(move_action);
+                {
+                    // If the cell already has an action, the action is ignored
+                    if (!pcell->acted_this_turn)
+                    {
+                        pcell->acted_this_turn = true;
+                        _move_actions.append(move_action);
+                    }
+                    else
+                        delete move_action;
+                }
                 else
                     delete move_action;
             }
@@ -171,7 +180,16 @@ void CellGame::onPlayerMove(Client *client, int turn, QByteArray data)
                 // If the coordinates are not finite, the action is ignored
                 if (isfinite(divide_action->desired_new_cell_destination.x) &&
                     isfinite(divide_action->desired_new_cell_destination.y))
-                    _divide_actions.append(divide_action);
+                {
+                    // If the cell already has an action, the action is ignored
+                    if (!pcell->acted_this_turn)
+                    {
+                        pcell->acted_this_turn = true;
+                        _divide_actions.append(divide_action);
+                    }
+                    else
+                        delete divide_action;
+                }
                 else
                     delete divide_action;
             }
@@ -220,7 +238,16 @@ void CellGame::onPlayerMove(Client *client, int turn, QByteArray data)
                 // If the coordinates are not finite, the action is ignored
                 if (isfinite(cvirus_action->desired_virus_destination.x) &&
                     isfinite(cvirus_action->desired_virus_destination.y))
-                    _create_virus_actions.append(cvirus_action);
+                {
+                    // If the cell already has an action, the action is ignored
+                    if (!pcell->acted_this_turn)
+                    {
+                        pcell->acted_this_turn = true;
+                        _create_virus_actions.append(cvirus_action);
+                    }
+                    else
+                        delete cvirus_action;
+                }
                 else
                     delete cvirus_action;
             }
@@ -387,8 +414,28 @@ void CellGame::onTurnEnd()
 
     compute_mass_loss();
     update_pcells_remaining_isolated_turns();
+
     update_dead_neutral_cells();
+    long double total_mass_before = compute_total_player_mass();
+
+    QString qtree_dbg = "%%%%%%%%%%%%\n";
+    qtree_dbg += _tree_root->display_debug(0);
+    qtree_dbg += "\n%%%%%%%%%%%%";
+
+    emit message(qtree_dbg);
+
     compute_cell_collisions();
+    long double total_mass_after = compute_total_player_mass();
+
+    if (total_mass_after > total_mass_before * _parameters.minimum_mass_ratio_to_absorb)
+    {
+        emit message(QString("Warning: abnormal player mass increase (ratio is greater than %1)."
+                             " mass_before=%2. mass_after=%3.").arg(_parameters.minimum_mass_ratio_to_absorb).arg(
+                             (double)total_mass_before).arg((double)total_mass_after));
+    }
+
+    for (PlayerCell * cell : _player_cells)
+        cell->acted_this_turn = false;
 
     _divide_actions.clear();
     _create_virus_actions.clear();
@@ -730,6 +777,16 @@ void CellGame::update_dead_neutral_cells()
     }
 }
 
+long double CellGame::compute_total_player_mass() const
+{
+    long double mass = 0;
+
+    for (const PlayerCell * cell : _player_cells)
+        mass += cell->mass;
+
+    return mass;
+}
+
 void CellGame::compute_cell_collisions()
 {
     QSet<PlayerCell *> pcells_to_recompute;
@@ -756,7 +813,9 @@ void CellGame::compute_cell_collisions()
 
         for (PlayerCell * cell : pcells_to_delete)
         {
+            Q_ASSERT(cell->should_be_deleted);
             _player_cells.remove(cell->id);
+            _players[cell->player_id]->nb_cells--;
             delete cell;
         }
         pcells_to_delete.clear();
@@ -809,6 +868,7 @@ void CellGame::compute_cell_collisions()
                 cell->responsible_node->player_cells.remove(cell->id);
                 cell->responsible_node_bbox->player_cells_bbox.remove(cell->id);
                 pcells_to_delete.insert(cell);
+                cell->should_be_deleted = true;
             }
             else
             {
@@ -847,6 +907,8 @@ void CellGame::compute_first_collision_pass(QSet<CellGame::PlayerCell *> & pcell
                                             QSet<CellGame::Virus *> & viruses_to_delete,
                                             bool &did_something)
 {
+    emit message("First collision pass");
+
     pcells_to_recompute.clear();
     pcells_to_delete.clear();
     pcells_to_create.clear();
@@ -855,7 +917,7 @@ void CellGame::compute_first_collision_pass(QSet<CellGame::PlayerCell *> & pcell
     did_something = false;
 
     // The first pass consists in computing, for each pcell "cell"
-    //   - all possible collisions between "cell" and reachable player cells,
+    //   - all possible collisions between "cell" and reachable (smaller) player cells,
     //   - all possible collisions between "cell" and reachable neutral cells,
     //   - all possible collisions between "cell" and reachable viruses.
     for (PlayerCell * cell : _player_cells)
@@ -896,6 +958,7 @@ void CellGame::compute_pcells_collisions_inside_node(CellGame::PlayerCell * cell
                                                      QSet<CellGame::PlayerCell *> & pcells_to_delete,
                                                      bool & did_something)
 {
+    emit message("Hello?");
     // Let us check if "cell" collides with other player cells.
     // To do so, let us iterate over the oth_pcells whose position is inside the current node
     QMutableMapIterator<int, PlayerCell *> oth_pcell_it(node->player_cells);
@@ -908,40 +971,55 @@ void CellGame::compute_pcells_collisions_inside_node(CellGame::PlayerCell * cell
         // If oth_pcell is close enough to "cell" to be absorbed by it
         if (dist < cell->radius_squared)
         {
-            if (cell->player_id == oth_pcell->player_id)
+            if (cell->id != oth_pcell->id)
             {
-                if ((cell->id != oth_pcell->id) &&
-                    (cell->remaining_isolated_turns == 0) &&
-                    (oth_pcell->remaining_isolated_turns == 0))
+                emit message(QString("Comparing (id=%1,pid=%2,mass=%3) and (id=%4,pid=%5,mass=%6").arg(
+                                 cell->id).arg(cell->player_id).arg(cell->mass).arg(
+                                 oth_pcell->id).arg(oth_pcell->player_id).arg(oth_pcell->mass));
+                if (cell->player_id == oth_pcell->player_id)
                 {
-                    // Two cells of the same player merge
-                    Position g = compute_barycenter(cell->position, cell->mass, oth_pcell->position, oth_pcell->mass);
-                    cell->position = g;
-                    cell->addMass(oth_pcell->mass, _parameters);
-                    pcells_to_recompute.insert(cell);
+                    if ((cell->remaining_isolated_turns == 0) &&
+                        (oth_pcell->remaining_isolated_turns == 0) &&
+                        !oth_pcell->should_be_deleted)
+                    {
+                        emit message(QString("    Collision: (id=%1,pid=%2,mass=%3) merges with (id=%4,pid=%5,mass=%6").arg(
+                                         cell->id).arg(cell->player_id).arg(cell->mass).arg(
+                                         oth_pcell->id).arg(oth_pcell->player_id).arg(oth_pcell->mass));
+                        // Two cells of the same player merge
+                        //Position g = compute_barycenter(cell->position, cell->mass, oth_pcell->position, oth_pcell->mass);
+                        //cell->position = g;
+                        cell->addMass(oth_pcell->mass, _parameters);
+                        pcells_to_recompute.insert(cell);
 
-                    pcells_to_delete.insert(oth_pcell);
-                    oth_pcell->responsible_node_bbox->player_cells_bbox.remove(oth_pcell->id);
-                    oth_pcell_it.remove();
+                        oth_pcell->should_be_deleted = true;
+                        pcells_to_delete.insert(oth_pcell);
+                        oth_pcell->responsible_node_bbox->player_cells_bbox.remove(oth_pcell->id);
+                        oth_pcell_it.remove();
 
-                    did_something  = true;
+
+                        did_something  = true;
+                    }
                 }
-            }
-            else
-            {
-                if (cell->mass > _parameters.minimum_mass_ratio_to_absorb * oth_pcell->mass)
+                else
                 {
-                    // "cell" absorbs oth_pcell (not belonging to the same player)
-                    Position g = compute_barycenter(cell->position, cell->mass, oth_pcell->position, oth_pcell->mass);
-                    cell->position = g;
-                    cell->addMass(oth_pcell->mass * _parameters.mass_absorption, _parameters);
-                    pcells_to_recompute.insert(cell);
+                    if (cell->mass > _parameters.minimum_mass_ratio_to_absorb * oth_pcell->mass)
+                    {
+                        emit message(QString("    Collision: (id=%1,pid=%2,mass=%3) eats (id=%4,pid=%5,mass=%6").arg(
+                                         cell->id).arg(cell->player_id).arg(cell->mass).arg(
+                                         oth_pcell->id).arg(oth_pcell->player_id).arg(oth_pcell->mass));
+                        // "cell" absorbs oth_pcell (not belonging to the same player)
+                        Position g = compute_barycenter(cell->position, cell->mass, oth_pcell->position, oth_pcell->mass);
+                        cell->position = g;
+                        cell->addMass(oth_pcell->mass * _parameters.mass_absorption, _parameters);
+                        pcells_to_recompute.insert(cell);
 
-                    pcells_to_delete.insert(oth_pcell);
-                    oth_pcell->responsible_node->player_cells_bbox.remove(oth_pcell->id);
-                    oth_pcell_it.remove();
+                        oth_pcell->should_be_deleted = true;
+                        pcells_to_delete.insert(oth_pcell);
+                        oth_pcell->responsible_node->player_cells_bbox.remove(oth_pcell->id);
+                        oth_pcell_it.remove();
 
-                    did_something = true;
+                        did_something = true;
+                    }
                 }
             }
         }
@@ -1095,34 +1173,36 @@ bool CellGame::compute_pcell_outer_collisions_inside_node(CellGame::PlayerCell *
         // If the oth_pcell distance to "cell" may lead to "cell" being eaten
         if (dist < oth_pcell->radius_squared)
         {
-            if (cell->player_id == oth_pcell->player_id)
+            if (cell->id != oth_pcell->id)
             {
-                if ((cell->id != oth_pcell->id) &&
-                    (cell->remaining_isolated_turns == 0) &&
-                    (oth_pcell->remaining_isolated_turns == 0))
+                if (cell->player_id == oth_pcell->player_id && oth_pcell->mass > cell->mass)
                 {
-                    // Two cells of the same player merge
-                    Position g = compute_barycenter(cell->position, cell->mass, oth_pcell->position, oth_pcell->mass);
-                    oth_pcell->position = g;
-                    oth_pcell->addMass(cell->mass, _parameters);
-                    pcells_to_recompute.insert(oth_pcell);
+                    if ((cell->remaining_isolated_turns == 0) &&
+                        (oth_pcell->remaining_isolated_turns == 0))
+                    {
+                        // Two cells of the same player merge
+                        //Position g = compute_barycenter(cell->position, cell->mass, oth_pcell->position, oth_pcell->mass);
+                        //oth_pcell->position = g;
+                        oth_pcell->addMass(cell->mass, _parameters);
+                        pcells_to_recompute.insert(oth_pcell);
 
-                    did_something = true;
-                    return true;
+                        did_something = true;
+                        return true;
+                    }
                 }
-            }
-            else
-            {
-                if (oth_pcell->mass > _parameters.minimum_mass_ratio_to_absorb * cell->mass)
+                else
                 {
-                    // oth_pcell absorbs "cell" (not belonging to the same player)
-                    Position g = compute_barycenter(cell->position, cell->mass, oth_pcell->position, oth_pcell->mass);
-                    oth_pcell->position = g;
-                    oth_pcell->addMass(cell->mass * _parameters.mass_absorption, _parameters);
-                    pcells_to_recompute.insert(oth_pcell);
+                    if (oth_pcell->mass > _parameters.minimum_mass_ratio_to_absorb * cell->mass)
+                    {
+                        // oth_pcell absorbs "cell" (not belonging to the same player)
+                        Position g = compute_barycenter(cell->position, cell->mass, oth_pcell->position, oth_pcell->mass);
+                        oth_pcell->position = g;
+                        oth_pcell->addMass(cell->mass * _parameters.mass_absorption, _parameters);
+                        pcells_to_recompute.insert(oth_pcell);
 
-                    did_something = true;
-                    return true;
+                        did_something = true;
+                        return true;
+                    }
                 }
             }
         }
@@ -1371,6 +1451,16 @@ void CellGame::load_parameters(const QString &filename)
         return;
     }
     _parameters.minimum_player_cell_mass = doc.object()["minimum_player_cell_mass"].toDouble();
+
+    if (!doc.object().contains("maximum_player_cell_mass")) {
+        emit message(QString("Invalid file '%1': the root object does not contain the 'maximum_player_cell_mass' key").arg(filename));
+        return;
+    }
+    else if (!doc.object()["maximum_player_cell_mass"].isDouble()) {
+        emit message(QString("Invalid file '%1': the value associated to key 'maximum_player_cell_mass' is not a number").arg(filename));
+        return;
+    }
+    _parameters.maximum_player_cell_mass = doc.object()["maximum_player_cell_mass"].toDouble();
 
     if (!doc.object().contains("initial_neutral_cells_matrix_width")) {
         emit message(QString("Invalid file '%1': the root object does not contain the 'initial_neutral_cells_matrix_width' key").arg(filename));
@@ -1621,9 +1711,15 @@ CellGame::PlayerCell::PlayerCell()
 
 }
 
+CellGame::PlayerCell::~PlayerCell()
+{
+
+}
+
 void CellGame::PlayerCell::updateMass(float new_mass, const CellGame::GameParameters &parameters)
 {
-    mass = std::max(new_mass, parameters.minimum_player_cell_mass);
+    mass = std::min(parameters.maximum_player_cell_mass,
+                    std::max(new_mass, parameters.minimum_player_cell_mass));
 
     radius = parameters.compute_radius_from_mass(mass);
     radius_squared = radius * radius;
@@ -1644,11 +1740,12 @@ void CellGame::PlayerCell::removeMass(float mass_decrement, const CellGame::Game
 
 void CellGame::PlayerCell::updateBBox(const CellGame::GameParameters & parameters)
 {
-    top_left.x = std::max(0.0f, position.x - radius);
-    top_left.y = std::max(0.0f, position.y - radius);
+    (void) parameters;
+    top_left.x = position.x - radius;
+    top_left.y = position.y - radius;
 
-    bottom_right.x = std::min(position.x + radius, parameters.map_width);
-    bottom_right.y = std::min(position.y + radius, parameters.map_height);
+    bottom_right.x = position.x + radius;
+    bottom_right.y = position.y + radius;
 }
 
 void CellGame::PlayerCell::updateQuadtreeNodes()
@@ -1658,8 +1755,10 @@ void CellGame::PlayerCell::updateQuadtreeNodes()
 
     responsible_node = responsible_node->find_responsible_node(position);
     Q_ASSERT(responsible_node != nullptr);
+    responsible_node->player_cells[id] = this;
     responsible_node_bbox = responsible_node_bbox->find_responsible_node(top_left, bottom_right);
     Q_ASSERT(responsible_node_bbox != nullptr);
+    responsible_node_bbox->player_cells_bbox[id] = this;
 }
 
 float CellGame::PlayerCell::squared_distance_to(const CellGame::PlayerCell *oth_pcell) const
@@ -1694,6 +1793,7 @@ void CellGame::GameParameters::clear()
     mass_absorption = -1;
     minimum_mass_ratio_to_absorb = -1;
     minimum_player_cell_mass = -1;
+    maximum_player_cell_mass = -1;
 
     radius_factor = -1;
     max_cells_per_player = -1;
@@ -1884,18 +1984,24 @@ bool CellGame::GameParameters::is_valid(QString &invalidity_reason) const
         invalidity_reason += "players_starting_positions must contain nb_starting_cells_per_player * max_nb_players positions\n";
     }
 
+    if (minimum_player_cell_mass > maximum_player_cell_mass)
+    {
+        ret = false;
+        invalidity_reason += "minimum_player_cell_mass must be lesser than or equal to maximum_player_cell_mass\n";
+    }
+
     for (const Position & p : players_starting_positions)
     {
         if (p.x < 0 || p.y >= map_width)
         {
             ret = false;
-            invalidity_reason += QString("players_starting_positions is invalid: coordinate %1 is not in [0,map_width=%2[\n").arg(p.x, map_width);
+            invalidity_reason += QString("players_starting_positions is invalid: coordinate %1 is not in [0,map_width=%2[\n").arg(p.x).arg(map_width);
         }
 
         if (p.y < 0 || p.y >= map_height)
         {
             ret = false;
-            invalidity_reason += QString("players_starting_positions is invalid: coordinate %1 is not in [0,map_height=%2[\n").arg(p.y, map_height);
+            invalidity_reason += QString("players_starting_positions is invalid: coordinate %1 is not in [0,map_height=%2[\n").arg(p.y).arg(map_height);
         }
     }
 
@@ -1904,13 +2010,13 @@ bool CellGame::GameParameters::is_valid(QString &invalidity_reason) const
         if (p.x < 0 || p.y >= map_width)
         {
             ret = false;
-            invalidity_reason += QString("viruses_starting_positions is invalid: coordinate %1 is not in [0,map_width=%2[\n").arg(p.x, map_width);
+            invalidity_reason += QString("viruses_starting_positions is invalid: coordinate %1 is not in [0,map_width=%2[\n").arg(p.x).arg(map_width);
         }
 
         if (p.y < 0 || p.y >= map_height)
         {
             ret = false;
-            invalidity_reason += QString("viruses_starting_positions is invalid: coordinate %1 is not in [0,map_height=%2[\n").arg(p.y, map_height);
+            invalidity_reason += QString("viruses_starting_positions is invalid: coordinate %1 is not in [0,map_height=%2[\n").arg(p.y).arg(map_height);
         }
     }
 
@@ -2010,6 +2116,57 @@ CellGame::QuadTreeNode *CellGame::QuadTreeNode::find_responsible_node(const Cell
     Q_ASSERT(top_left.y < bottom_right.y);
 
     return find_responsible_node_r(top_left, bottom_right);
+}
+
+QString CellGame::QuadTreeNode::display_debug(int initial_depth) const
+{
+    QString res;
+    QString indent_str;
+    const int indent = (initial_depth - depth) * 2;
+
+    for (int i = 0; i < indent; ++i)
+        indent_str += " ";
+
+    res += QString("%1depth=%2, (%3,%4) -> (%5,%6)\n").arg(indent_str).arg(depth).arg(
+                top_left_position.x).arg(top_left_position.y).arg(
+                bottom_right_position.x).arg(bottom_right_position.y);
+
+    if (player_cells.size() > 0)
+    {
+        res += QString("%1pcells:").arg(indent_str);
+        for (const PlayerCell * pcell : player_cells)
+            res += QString(" (id=%1,pid=%2,pos=(%3,%4))").arg(pcell->id).arg(pcell->player_id).arg(
+                        pcell->position.x).arg(pcell->position.y);
+        res += "\n";
+    }
+
+    if (player_cells_bbox.size() > 0)
+    {
+        res += QString("%1pcells_bbox:").arg(indent_str);
+        for (const PlayerCell * pcell : player_cells_bbox)
+            res += QString(" (id=%1,pid=%2,bbox=(%3,%4)->(%5,%6))").arg(pcell->id).arg(pcell->player_id).arg(
+                        pcell->top_left.x).arg(pcell->top_left.y).arg(
+                        pcell->bottom_right.x).arg(pcell->bottom_right.y);
+        res += "\n";
+    }
+
+    if (viruses.size() > 0)
+    {
+        res += QString("%1viruses:").arg(indent_str);
+        for (const Virus * virus : viruses)
+            res += QString(" (id=%1, pos=(%2,%3))").arg(virus->id).arg(virus->position.x).arg(
+                        virus->position.y);
+    }
+
+    if (!is_leaf())
+    {
+        res += child_top_left->display_debug(initial_depth);
+        res += child_top_right->display_debug(initial_depth);
+        res += child_bottom_left->display_debug(initial_depth);
+        res += child_bottom_right->display_debug(initial_depth);
+    }
+
+    return res;
 }
 
 CellGame::QuadTreeNode *CellGame::QuadTreeNode::find_responsible_node_r(const CellGame::Position &position)
@@ -2227,7 +2384,6 @@ void CellGame::generate_initial_players()
         Player * player = new Player;
         player->id = player_id;
         player->mass = 0;
-        player->moved_this_turn = false;
         player->nb_cells = 0;
         player->score = 0;
         player->score_frac = 0;
@@ -2243,10 +2399,13 @@ void CellGame::generate_initial_players()
 void CellGame::update_players_info()
 {
     // Used to check server coherency
+    float previous_total_player_mass = 0;
+    float total_player_mass = 0;
     QMap<int, unsigned int> player_id_to_previous_nb_cells;
     for (Player * player : _players)
     {
         player_id_to_previous_nb_cells[player->id] = player->nb_cells;
+        previous_total_player_mass += player->mass;
         player->nb_cells = 0;
         player->mass = 0;
     }
@@ -2258,10 +2417,9 @@ void CellGame::update_players_info()
         player->nb_cells += 1;
     }
 
-    // todo: check (not here) that one player does not play twice a turn
-
     for (Player * player : _players)
     {
+        total_player_mass += player->mass;
         if (player_id_to_previous_nb_cells[player->id] != player->nb_cells)
         {
             if (_current_turn != 0)
@@ -2286,6 +2444,14 @@ void CellGame::update_players_info()
             player->score += (quint64) ld_integral_part;
             player->score_frac = ld_fractional_part;
         }
+    }
+
+    if (_current_turn != 0)
+    {
+        float max_allowed_ratio = 1.5;
+        if (total_player_mass >= max_allowed_ratio * previous_total_player_mass)
+            emit message(QString("Warning: the total player mass has been multiplied by %1 at least this turn").arg(
+                             max_allowed_ratio));
     }
 }
 

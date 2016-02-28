@@ -43,5 +43,8 @@ int main(int argc, char **argv)
 
     game->load_parameters("../maps/map2p.json");
 
+    //game->load_parameters("../maps/map2p_test_merge.json");
+    //game->onTurnTimerChanged(2000);
+
     return a.exec();
 }
