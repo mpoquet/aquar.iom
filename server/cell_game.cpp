@@ -2685,6 +2685,10 @@ QByteArray CellGame::generate_welcome()
     message.append(qba);
 
     qba.resize(sizeof(float));
+    (*(float*)qba.data()) = _parameters.maximum_player_cell_mass;
+    message.append(qba);
+
+    qba.resize(sizeof(float));
     (*(float*)qba.data()) = _parameters.radius_factor;
     message.append(qba);
 

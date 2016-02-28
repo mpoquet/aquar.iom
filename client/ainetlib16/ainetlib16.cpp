@@ -200,6 +200,7 @@ void ainet16::Session::wait_for_welcome() throw(Exception)
         _welcome.parameters.mass_absorption = read_float();
         _welcome.parameters.minimum_mass_ratio_to_absorb = read_float();
         _welcome.parameters.minimum_pcell_mass = read_float();
+        _welcome.parameters.maximum_pcell_mass = read_float();
         _welcome.parameters.radius_factor = read_float();
         _welcome.parameters.max_cells_per_player = read_uint32();
         _welcome.parameters.mass_loss_per_frame = read_float();
@@ -232,6 +233,7 @@ void ainet16::Session::wait_for_welcome() throw(Exception)
             printf("  mass_absorption=%f\n", _welcome.parameters.mass_absorption);
             printf("  minimum_mass_ratio_to_absorb=%f\n", _welcome.parameters.minimum_mass_ratio_to_absorb);
             printf("  minimum_pcell_mass=%f\n", _welcome.parameters.minimum_pcell_mass);
+            printf("  maximum_pcell_mass=%f\n", _welcome.parameters.maximum_pcell_mass);
             printf("  radius_factor=%f\n", _welcome.parameters.radius_factor);
             printf("  max_cells_per_player=%d\n", _welcome.parameters.max_cells_per_player);
             printf("  mass_loss_per_frame=%f\n", _welcome.parameters.mass_loss_per_frame);

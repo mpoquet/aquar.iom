@@ -126,6 +126,7 @@ namespace ainet16
         float mass_absorption;
         float minimum_mass_ratio_to_absorb;
         float minimum_pcell_mass;
+        float maximum_pcell_mass;
         float radius_factor;
         int max_cells_per_player;
         float mass_loss_per_frame;
@@ -222,6 +223,7 @@ namespace ainet16
         // todo: method to get our player cells
         // todo: method to get ennemy player cells
         // todo: method to get viruses
+        // todo: display something when one bot misses some turns
 
         bool is_connected() const;
         bool is_logged() const;

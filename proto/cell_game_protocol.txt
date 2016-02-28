@@ -21,7 +21,8 @@ Cell game: network protocol description
 
     Content : (map_width:float32, map_height:float32, min_nb_players:ui32,
                max_nb_players:ui32, mass_absorption:float32,
-               minimum_mass_ratio_to_absorb:float32, minimum_pcell_mass:float32,
+               minimum_mass_ratio_to_absorb:float32,
+               minimum_pcell_mass:float32, maximum_pcell_mass:float32
                radius_factor:float32, max_cells_per_player:ui32; mass_loss_per_frame:float32,
                base_cell_speed:float32, speed_loss_factor:float32,
                virus_mass:float32, virus_creation_mass_loss:float32,
