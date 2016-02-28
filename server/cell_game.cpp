@@ -421,7 +421,6 @@ void CellGame::onTurnEnd()
     QString qtree_dbg = "%%%%%%%%%%%%\n";
     qtree_dbg += _tree_root->display_debug(0);
     qtree_dbg += "\n%%%%%%%%%%%%";
-
     emit message(qtree_dbg);
 
     compute_cell_collisions();
@@ -522,7 +521,6 @@ void CellGame::compute_cell_divisions()
         new_cell->player_id = cell->player_id;
         new_cell->position.x = std::max(0.f, std::min(cell->position.x + new_cell_translation.x(), _parameters.map_width));
         new_cell->position.y = std::max(0.f, std::min(cell->position.y + new_cell_translation.y(), _parameters.map_height));
-        new_cell->remaining_isolated_turns = 0;
         new_cell->responsible_node = _tree_root;
         new_cell->responsible_node_bbox = _tree_root;
         new_cell->updateMass(action->new_cell_mass, _parameters);
@@ -1148,7 +1146,6 @@ void CellGame::compute_viruses_collisions_inside_node(CellGame::PlayerCell * cel
 
                     Q_ASSERT(created_mass <= (total_mass / 2));
                     Q_ASSERT(cell->mass + created_mass <= total_mass + epsilon);
-
                 }
             }
 
@@ -1654,18 +1651,52 @@ void CellGame::setServer(Server *server)
     }
 }
 
-void CellGame::make_player_repop(CellGame::Player *player)
-{
-    // todo
-}
-
 void CellGame::make_player_pop(CellGame::Player *player)
 {
     Q_ASSERT(player->nb_cells == 0);
-    // generate nb_starting_cells_per_player positions randomly.
-    // if the position is within another cell, regenerate it.
+    const float radius_of_starting_cell = _parameters.compute_radius_from_mass(_parameters.player_cells_starting_mass);
+    const int max_nb_tries = 100;
 
-    // TODO
+    for (unsigned int i = 0; i < _parameters.nb_starting_cells_per_player; ++i)
+    {
+        bool cell_created = false;
+        int nb_tries = 0;
+
+        while (!cell_created && nb_tries < max_nb_tries)
+        {
+            Position pos;
+            pos.x = ((float)rand() / RAND_MAX) * _parameters.map_width;
+            pos.y = ((float)rand() / RAND_MAX) * _parameters.map_height;
+
+            // If the coordinates are in the map
+            if (pos.x >= 0 && pos.x < _parameters.map_width &&
+                pos.y >= 0 && pos.y < _parameters.map_height)
+            {
+                // If there is no opponent around the cell
+                if (!is_there_opponent_pcell_in_neighbourhood(pos, 2*radius_of_starting_cell, player->id))
+                {
+                    PlayerCell * pcell = new PlayerCell;
+                    pcell->id = next_cell_id();
+                    pcell->player_id = player->id;
+                    pcell->position = pos;
+                    pcell->updateMass(_parameters.player_cells_starting_mass, _parameters);
+
+                    pcell->responsible_node = _tree_root;
+                    pcell->responsible_node_bbox = _tree_root;
+                    pcell->updateQuadtreeNodes();
+
+                    _player_cells[pcell->id] = pcell;
+                    player->nb_cells++;
+
+                    cell_created = true;
+                }
+            }
+        }
+
+        if (!cell_created)
+            emit message(QString("Sorry player %1, I was not able to find a position where one of your cells "
+                         "might reappear (tried %2 times)").arg(player->id).arg(max_nb_tries));
+    }
 }
 
 quint32 CellGame::next_cell_id()
@@ -1713,7 +1744,17 @@ CellGame::PlayerCell::PlayerCell()
 
 CellGame::PlayerCell::~PlayerCell()
 {
+    if (responsible_node != nullptr)
+    {
+        responsible_node->player_cells.remove(id);
+        responsible_node = nullptr;
+    }
 
+    if (responsible_node_bbox != nullptr)
+    {
+        responsible_node_bbox->player_cells_bbox.remove(id);
+        responsible_node_bbox = nullptr;
+    }
 }
 
 void CellGame::PlayerCell::updateMass(float new_mass, const CellGame::GameParameters &parameters)
@@ -2359,7 +2400,6 @@ void CellGame::generate_initial_pcells()
             pcell->id = next_cell_id();
             pcell->player_id = player_id;
             pcell->position = _parameters.players_starting_positions[k];
-            pcell->remaining_isolated_turns = 0;
             pcell->responsible_node = _tree_root;
             pcell->responsible_node_bbox = _tree_root;
             pcell->updateMass(_parameters.player_cells_starting_mass, _parameters);

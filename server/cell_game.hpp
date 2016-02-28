@@ -288,7 +288,6 @@ private:
                                                   float radius,
                                                   quint32 player_id);
 
-    void make_player_repop(Player * player);
     void make_player_pop(Player * player);
 
     quint32 next_cell_id();
