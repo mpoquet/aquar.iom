@@ -868,7 +868,6 @@ void CellGame::compute_cell_collisions()
                 cell->responsible_node->player_cells.remove(cell->id);
                 cell->responsible_node_bbox->player_cells_bbox.remove(cell->id);
                 pcells_to_delete.insert(cell);
-                cell->should_be_deleted = true;
             }
             else
             {
@@ -923,7 +922,7 @@ void CellGame::compute_first_collision_pass(QSet<CellGame::PlayerCell *> & pcell
     for (PlayerCell * cell : _player_cells)
     {
         // If "cell" has already been eaten by some other pcell, let it be ignored
-        if (pcells_to_delete.contains(cell))
+        if (cell->should_be_deleted)
             continue;
 
         // Let the nodes be traversed towards leaves to test collisions with objects
@@ -971,7 +970,7 @@ void CellGame::compute_pcells_collisions_inside_node(CellGame::PlayerCell * cell
         // If oth_pcell is close enough to "cell" to be absorbed by it
         if (dist < cell->radius_squared)
         {
-            if (cell->id != oth_pcell->id)
+            if ((cell->id != oth_pcell->id) && !oth_pcell->should_be_deleted && !cell->should_be_deleted)
             {
                 emit message(QString("Comparing (id=%1,pid=%2,mass=%3) and (id=%4,pid=%5,mass=%6").arg(
                                  cell->id).arg(cell->player_id).arg(cell->mass).arg(
@@ -979,8 +978,7 @@ void CellGame::compute_pcells_collisions_inside_node(CellGame::PlayerCell * cell
                 if (cell->player_id == oth_pcell->player_id)
                 {
                     if ((cell->remaining_isolated_turns == 0) &&
-                        (oth_pcell->remaining_isolated_turns == 0) &&
-                        !oth_pcell->should_be_deleted)
+                        (oth_pcell->remaining_isolated_turns == 0))
                     {
                         emit message(QString("    Collision: (id=%1,pid=%2,mass=%3) merges with (id=%4,pid=%5,mass=%6").arg(
                                          cell->id).arg(cell->player_id).arg(cell->mass).arg(
@@ -1173,7 +1171,7 @@ bool CellGame::compute_pcell_outer_collisions_inside_node(CellGame::PlayerCell *
         // If the oth_pcell distance to "cell" may lead to "cell" being eaten
         if (dist < oth_pcell->radius_squared)
         {
-            if (cell->id != oth_pcell->id)
+            if ((cell->id != oth_pcell->id) && !oth_pcell->should_be_deleted && !cell->should_be_deleted)
             {
                 if (cell->player_id == oth_pcell->player_id && oth_pcell->mass > cell->mass)
                 {
@@ -1185,6 +1183,7 @@ bool CellGame::compute_pcell_outer_collisions_inside_node(CellGame::PlayerCell *
                         //oth_pcell->position = g;
                         oth_pcell->addMass(cell->mass, _parameters);
                         pcells_to_recompute.insert(oth_pcell);
+                        cell->should_be_deleted = true;
 
                         did_something = true;
                         return true;
@@ -1199,6 +1198,7 @@ bool CellGame::compute_pcell_outer_collisions_inside_node(CellGame::PlayerCell *
                         oth_pcell->position = g;
                         oth_pcell->addMass(cell->mass * _parameters.mass_absorption, _parameters);
                         pcells_to_recompute.insert(oth_pcell);
+                        cell->should_be_deleted = true;
 
                         did_something = true;
                         return true;
