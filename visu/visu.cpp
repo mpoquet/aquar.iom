@@ -267,18 +267,25 @@ void Visu::afficheScore()
     // trier les joueurs par score décroissant; Pas besoin, déjà fait quand le tour est reçu
     //sort(players.begin(), players.end(), CompareScoresJoueurs());
 
-    // rectangles pour la représentation du score relatif des joueurs
-    sf::RectangleShape rect; // rectangle de dimensions (0,0)
-    float hauteur_rect(1.0/2.0 * ((bas.getSize().y))), largeur_rect(0); // la moitié de la distance qui reste entre le bas du plateau et le bas de la fenêtre
+    // rectangles pour la représentation du score et de la masse relatifs des joueurs
+    sf::RectangleShape rect_score; // rectangle de dimensions (0,0)
+    sf::RectangleShape rect_masse;
+    float hauteur_rect(1.0/4.0 * ((bas.getSize().y))); // la moitié de la distance qui reste entre le bas du plateau et le bas de la fenêtre
+    float largeur_rect_score = 0, largeur_rect_masse = 0;
+
     //std::cout << window_height*0.15 << " " << bas.getSize().y << " " << 0.85*window_height << " " << vue_carte.getViewport().height << std::endl;
-    float abscisse_rect(0), ordonnee_rect(vue_carte.getViewport().height*window_height + hauteur_rect);
+    float abscisse_rect_score(0), ordonnee_rect_score(vue_carte.getViewport().height*window_height + hauteur_rect);
+    float abscisse_rect_masse(0), ordonnee_rect_masse(vue_carte.getViewport().height*window_height + 3*hauteur_rect); // todo ajuster la position de l'affichage
 
     std::vector<ainet16::TurnPlayer>::iterator joueur;
-    float somme_scores(0);
+    float somme_scores = 0;
+    float somme_masse = 0;
     for (joueur=players.begin(); joueur!=players.end(); ++joueur) {
         somme_scores += (*joueur).score;
+        somme_masse += (*joueur).mass;
     }
     float facteur_score = bas.getSize().x / somme_scores;
+    float facteur_masse = bas.getSize().x / somme_masse;
 
     // pastilles pour la légende des couleurs des joueurs
     ainet16::Position pos_pastille;
@@ -310,22 +317,35 @@ void Visu::afficheScore()
         pos_pastille.y += window_height/15;
 
         window.setView(bas);
-        // création du rectangle qui représente le score du joueur
-        largeur_rect = (*joueur).score * facteur_score;
-        rect.setSize(sf::Vector2f(largeur_rect, hauteur_rect));
-        rect.setFillColor(colorFromPlayerId((*joueur).player_id, players.size()));
-        rect.setPosition(sf::Vector2f(abscisse_rect,ordonnee_rect));
-        abscisse_rect += largeur_rect; // on décale le rectangle pour afficher tous les rectangles côte à côte
-        window.draw(rect);
+        // création des rectangles qui représentent le score et la masse du joueur
+        largeur_rect_score = (*joueur).score * facteur_score;
+        largeur_rect_masse = (*joueur).mass * facteur_masse;
+
+        rect_score.setSize(sf::Vector2f(largeur_rect_score, hauteur_rect));
+        rect_score.setFillColor(colorFromPlayerId((*joueur).player_id, players.size()));
+        rect_score.setPosition(sf::Vector2f(abscisse_rect_score,ordonnee_rect_score));
+        abscisse_rect_score += largeur_rect_score; // on décale le rectangle pour afficher tous les rectangles côte à côte
+        window.draw(rect_score);
+
+        rect_masse.setSize(sf::Vector2f(largeur_rect_masse, hauteur_rect));
+        rect_masse.setFillColor(colorFromPlayerId((*joueur).player_id, players.size()));
+        rect_masse.setPosition(sf::Vector2f(abscisse_rect_masse,ordonnee_rect_masse));
+        abscisse_rect_masse += largeur_rect_masse; // on décale le rectangle pour afficher tous les rectangles côte à côte
+        window.draw(rect_masse);
     }
 
     // titre au-dessus de la barre des scores
     window.setView(bas);
-    sf::Text texteScores("Repartition des scores :", police, 25);
-    //texteScores.move(sf::Vector2f(0, vue_cadre.getViewport().height*window_height+hauteur_rect));
-    texteScores.move(sf::Vector2f(0, ordonnee_rect - 0.7*hauteur_rect));
+    sf::Text texteScores("Repartition des scores :", police, 20);
+    sf::Text texteMasses("Repartition des masses :", police, 20);
+
+    texteScores.move(sf::Vector2f(0, ordonnee_rect_score - 0.7*hauteur_rect));
     texteScores.setColor(sf::Color::Black);
     window.draw(texteScores);
+
+    texteMasses.move(sf::Vector2f(0, ordonnee_rect_masse - 0.7*hauteur_rect));
+    texteMasses.setColor(sf::Color::Black);
+    window.draw((texteMasses));
 }
 
 void Visu::afficheCadre()
