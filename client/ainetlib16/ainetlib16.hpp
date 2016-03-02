@@ -211,19 +211,19 @@ namespace ainet16
         void login_player(std::string name) throw(Exception);
         void login_visu(std::string name) throw(Exception);
 
-        void wait_for_welcome() throw(Exception);
-        void wait_for_game_starts() throw(Exception);
+        Welcome wait_for_welcome() throw(Exception);
+        int wait_for_game_starts() throw(Exception);
+        Turn wait_for_next_turn() throw(Exception);
         void send_actions(const Actions & actions) throw(Exception);
-        void wait_for_next_turn() throw(Exception);
+
 
         Welcome welcome() const;
         Turn turn() const;
         int player_id() const;
-        std::vector<NeutralCell> all_neutral_cells() const;
-        // todo: method to get our player cells
-        // todo: method to get ennemy player cells
-        // todo: method to get viruses
-        // todo: display something when one bot misses some turns
+        std::vector<NeutralCell> neutral_cells() const;
+        std::vector<TurnPlayerCell> my_player_cells() const;
+        std::vector<TurnPlayerCell> ennemy_player_cells() const;
+        std::vector<TurnVirus> viruses() const;
 
         bool is_connected() const;
         bool is_logged() const;
@@ -260,7 +260,7 @@ namespace ainet16
         Turn _turn;
         unsigned int _last_received_turn = 0;
         int _player_id = -1;
-        bool _debug = true;
+        bool _debug = false;
         std::vector<std::string> _stamp_to_string_vector;
     };
 

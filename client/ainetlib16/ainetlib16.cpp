@@ -170,7 +170,7 @@ void ainet16::Session::login_visu(string name) throw(Exception)
     }
 }
 
-void ainet16::Session::wait_for_welcome() throw(Exception)
+ainet16::Welcome ainet16::Session::wait_for_welcome() throw(Exception)
 {
     try
     {
@@ -252,6 +252,8 @@ void ainet16::Session::wait_for_welcome() throw(Exception)
             /*for (Position & position : _welcome.initial_ncells_positions)
                 printf("    (%f, %f)\n", position.x, position.y);*/
         }
+
+        return _welcome;
     }
     catch (const SocketErrorException & e)
     {
@@ -263,7 +265,7 @@ void ainet16::Session::wait_for_welcome() throw(Exception)
     }
 }
 
-void ainet16::Session::wait_for_game_starts() throw(Exception)
+int ainet16::Session::wait_for_game_starts() throw(Exception)
 {
     try
     {
@@ -368,6 +370,8 @@ void ainet16::Session::wait_for_game_starts() throw(Exception)
                        player.player_id, player.nb_cells,
                        player.mass, player.score);
         }
+        return _player_id;
+
     }
     catch (const SocketErrorException & e)
     {
@@ -435,7 +439,7 @@ void ainet16::Session::send_actions(const ainet16::Actions &actions) throw(Excep
     }
 }
 
-void ainet16::Session::wait_for_next_turn() throw(Exception)
+ainet16::Turn ainet16::Session::wait_for_next_turn() throw(Exception)
 {
     try
     {
@@ -460,7 +464,11 @@ void ainet16::Session::wait_for_next_turn() throw(Exception)
         sf::Uint32 gdc_size = read_uint32();
         (void) gdc_size;
 
-        _last_received_turn = read_uint32();
+        const unsigned int last_received_turn = read_uint32();
+        if (last_received_turn > _last_received_turn + 1)
+            printf("Warning: %d turns have been skipped before receiving turn %d\n",
+                   last_received_turn - _last_received_turn, last_received_turn);
+        _last_received_turn = last_received_turn;
 
         // Game-dependent protocol
         // Read initial neutral cells' positions
@@ -544,6 +552,8 @@ void ainet16::Session::wait_for_next_turn() throw(Exception)
                        player.player_id, player.nb_cells,
                        player.mass, player.score);
         }
+
+        return _turn;
     }
     catch (const SocketErrorException & e)
     {
@@ -572,7 +582,7 @@ int ainet16::Session::player_id() const
     return _player_id;
 }
 
-std::vector<ainet16::NeutralCell> ainet16::Session::all_neutral_cells() const
+std::vector<ainet16::NeutralCell> ainet16::Session::neutral_cells() const
 {
     std::vector<ainet16::NeutralCell> res;
     res.resize(_welcome.initial_ncells_positions.size() + _turn.non_initial_ncells.size());
@@ -604,6 +614,52 @@ std::vector<ainet16::NeutralCell> ainet16::Session::all_neutral_cells() const
     }
 
     return res;
+}
+
+std::vector<ainet16::TurnPlayerCell> ainet16::Session::my_player_cells() const
+{
+    vector<TurnPlayerCell> my_pcells;
+    int my_nb_pcells = 0;
+
+    for (const TurnPlayer & player : _turn.players)
+    {
+        if (player.player_id == _player_id)
+        {
+            my_nb_pcells = player.nb_cells;
+            continue;
+        }
+    }
+
+    my_pcells.reserve(my_nb_pcells);
+
+    for (const TurnPlayerCell & pcell : _turn.pcells)
+        if (pcell.player_id == _player_id)
+            my_pcells.push_back(pcell);
+
+    return my_pcells;
+}
+
+std::vector<ainet16::TurnPlayerCell> ainet16::Session::ennemy_player_cells() const
+{
+    vector<TurnPlayerCell> ennemy_pcells;
+    int ennemy_nb_pcells = 0;
+
+    for (const TurnPlayer & player : _turn.players)
+        if (player.player_id != _player_id)
+            ennemy_nb_pcells += player.nb_cells;
+
+    ennemy_pcells.reserve(ennemy_nb_pcells);
+
+    for (const TurnPlayerCell & pcell : _turn.pcells)
+        if (pcell.player_id != _player_id)
+            ennemy_pcells.push_back(pcell);
+
+    return ennemy_pcells;
+}
+
+std::vector<ainet16::TurnVirus> ainet16::Session::viruses() const
+{
+    return _turn.viruses;
 }
 
 bool ainet16::Session::is_connected() const
