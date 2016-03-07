@@ -58,7 +58,7 @@ void Visu::onWelcomeReceived(const ainet16::Welcome &welcome)
     parameters.initial_neutral_cells_mass = welcome.parameters.initial_neutral_cells_mass;
     parameters.initial_neutral_cells_repop_time = welcome.parameters.initial_neutral_cells_repop_time;
 
-    /// initialiser la vue
+    // initialiser la vue
     vue_carte.reset(sf::FloatRect(0, 0, parameters.map_width, parameters.map_height));
     vue_carte.setViewport(sf::FloatRect(0, 0, 0.85, 0.85));
 
@@ -67,7 +67,7 @@ void Visu::onWelcomeReceived(const ainet16::Welcome &welcome)
     cadre.setSize(sf::Vector2f(vue_carte.getViewport().width, vue_carte.getViewport().height));
     vue_cadre.reset(sf::FloatRect(0, 0, cadre.getSize().x, cadre.getSize().y));
 
-    /// initialiser l'ensemble des cellules avec leurs positions initiales
+    // initialiser l'ensemble des cellules avec leurs positions initiales
     std::vector<ainet16::Position>::const_iterator it;
     quint32 numero = 0;
 
@@ -264,8 +264,8 @@ void Visu::afficheScore()
     cache_droite.setFillColor(sf::Color::White);
     window.draw(cache_droite);
 
-    // trier les joueurs par score décroissant; Pas besoin, déjà fait quand le tour est reçu
-    //sort(players.begin(), players.end(), CompareScoresJoueurs());
+    // trier les joueurs par score décroissant
+    sort(players.begin(), players.end(), CompareScoresJoueurs());
 
     // rectangles pour la représentation du score et de la masse relatifs des joueurs
     sf::RectangleShape rect_score; // rectangle de dimensions (0,0)
@@ -382,14 +382,32 @@ void Visu::afficheFinPartie()
     police.loadFromFile("fonts/F-Zero GBA Text 1.ttf");
 
     QString gagnant = QString("%1").arg(players[0].player_id);
-    std::string score = "Partie terminee\nLe gagnant est:\nJoueur " + gagnant.toStdString();
 
-    sf::Text texte("n'importe quoi", police, 200);
-    texte.move(sf::Vector2f(0, 0));
-    texte.setColor(sf::Color::Red);
-    texte.setString(score);
+    sf::Color couleur(200, 200, 200, 128);
 
-    window.draw(texte);
+    sf::Text partie_terminee("Partie terminee", police, 200);
+    float x = vue_carte.getSize().x;
+    float y = vue_carte.getSize().y;
+    //std::cout << y << std::endl;
+    partie_terminee.setColor(couleur);
+    sf::FloatRect textRect = partie_terminee.getLocalBounds();
+    partie_terminee.setOrigin(textRect.left + textRect.width/2.0f, textRect.top + textRect.height/2.0f);
+    partie_terminee.setPosition(sf::Vector2f(x/2.0f, y/8.0f));
+    window.draw(partie_terminee);
+
+    sf::Text le_gagnant_est("Le gagnant est :", police, 200);
+    le_gagnant_est.setColor(couleur);
+    textRect = le_gagnant_est.getLocalBounds();
+    le_gagnant_est.setOrigin(textRect.left + textRect.width/2.0, textRect.top + textRect.height/2.0);
+    le_gagnant_est.setPosition(sf::Vector2f(x/2, y/2));
+    window.draw(le_gagnant_est);
+
+    sf::Text joueur("joueur " + gagnant.toStdString(), police, 200);
+    joueur.setColor(couleur);
+    textRect = joueur.getLocalBounds();
+    joueur.setOrigin(textRect.left + textRect.width/2.0, textRect.top + textRect.height/2.0);
+    joueur.setPosition(sf::Vector2f(x/2, y/2+y/6));
+    window.draw(joueur);
 
     window.display();
 }
@@ -482,12 +500,14 @@ void Visu::onGameEnd(int winnerPlayerId, std::vector<ainet16::GameEndsPlayer> en
     for (uint i=0; i<players.size(); ++i) {
         players[i].score = endPlayers[i].score;
     }
-    std::cout << "les scores sont mis à jour\n";
+    //std::cout << "les scores sont mis à jour\n";
+    std::sort(players.begin(), players.end(), CompareScoresJoueurs());
 }
 
 void Visu::onException()
 {
     partieEnCours = false;
+    std::sort(players.begin(), players.end(), CompareScoresJoueurs());
 
 }
 
