@@ -9,6 +9,7 @@ Visu::Visu()
     borders_color = sf::Color::White;
 
     afficheCellulesNeutres = false; // par défaut les cellules neutres ne sont pas affichées dans la fenêtre
+    partieEnCours = true;
 
     cadre.setFillColor(background_color);
     cadre.setOutlineColor(borders_color);
@@ -90,17 +91,16 @@ void Visu::onWelcomeReceived(const ainet16::Welcome &welcome)
 
 void Visu::onTurnReceived(const ainet16::Turn &turn)
 {
-    std::cout << "on a reçu un nouveau tour\n";
     if (players.size()==0) {
-        /// C'est la première fois qu'on reçoit un Turn : initialisation de la liste des joueurs
-        std::cout << "Création des joueurs\n";
+        // C'est la première fois qu'on reçoit un Turn : initialisation de la liste des joueurs
+        //std::cout << "Création des joueurs\n";
         for (unsigned int i=0; i<turn.players.size(); ++i) {
             addNewPlayer(turn.players[i]);
         }
     }
 
     else {
-        /// mettre à jour le score des joueurs
+        // mettre à jour le score des joueurs
 //        std::vector<ainet16::TurnPlayer> temp_Players;
 //        for (uint i=0; i<players.size(); ++i) {
 //            temp_Players.push_back(turn.players[i]);
@@ -124,13 +124,13 @@ void Visu::onTurnReceived(const ainet16::Turn &turn)
         cell->estVivante = false;
     }
 
-    std::cout << "màj des virus\n";
+    //std::cout << "màj des virus\n";
     for (unsigned int i=0; i<turn.viruses.size(); ++i) {
         int indice = turn.viruses[i].id;
         // vérifier si allCells[indice] existe déjà
         if (allCells.count(indice) == 0) {
             // créer la cellule et l'ajouter dans l'ensemble
-            std::cout << "Création du virus " << indice << std::endl;
+            //std::cout << "Création du virus " << indice << std::endl;
             Cellule* cell = new Cellule(turn.viruses[i], parameters.virus_mass);
             addNewCell(cell);
         }
@@ -141,13 +141,13 @@ void Visu::onTurnReceived(const ainet16::Turn &turn)
         }
     }
 
-    std::cout << "màj des cellules des joueurs\n";
+    //std::cout << "màj des cellules des joueurs\n";
     for (unsigned int i=0; i<turn.pcells.size(); ++i) {
         int indice = turn.pcells[i].pcell_id;
         // vérifier si allCells[indice] existe déjà
         if (allCells.count(indice) == 0) {
             // créer la cellule et l'ajouter dans l'ensemble
-            std::cout << "Création de la cellule joueuse " << indice << std::endl;
+            //std::cout << "Création de la cellule joueuse " << indice << std::endl;
             Cellule* cell = new Cellule(turn.pcells[i], players.size());
             addNewCell(cell);
         }
@@ -159,7 +159,7 @@ void Visu::onTurnReceived(const ainet16::Turn &turn)
             allCells[indice]->estVivante = true;
         }
     }
-    std::cout << "màj des cellules neutres initiales\n";
+    //std::cout << "màj des cellules neutres initiales\n";
     // On sait que les cellules initiales neutres ont les numéros de 0 à nbCellulesInitiales - 1
     int indice(0);
     for (unsigned int i=0; i<turn.initial_ncells.size(); ++i) {
@@ -168,13 +168,13 @@ void Visu::onTurnReceived(const ainet16::Turn &turn)
         allCells[indice]->estVivante = true;
         ++indice;
     }
-    std::cout << "màj des cellules neutres non initiales\n";
+    //std::cout << "màj des cellules neutres non initiales\n";
     for (unsigned int i=0; i<turn.non_initial_ncells.size(); ++i) {
         int indice = turn.non_initial_ncells[i].ncell_id;
         // vérifier si allCells[indice] existe déjà
         if (allCells.count(indice) == 0) {
             // créer la cellule et l'ajouter dans l'ensemble
-            std::cout << "Création de la cellule neutre" << indice << std::endl;
+            //std::cout << "Création de la cellule neutre" << indice << std::endl;
             Cellule* cell = new Cellule(turn.non_initial_ncells[i]);
             addNewCell(cell);
         }
@@ -366,6 +366,34 @@ void Visu::afficheTout()
     window.display(); // dessine tous les objets avec lesquels on a appelé draw
 }
 
+void Visu::afficheFinPartie()
+{
+    //std::cout << "affichage fin de partie\n";
+    window.clear(sf::Color::White);
+
+    afficheCadre();
+    afficheToutesCellules();
+    afficheScore();
+
+    // faire une zone de texte pour annoncer le gagnant
+    window.setView(vue_carte);
+
+    sf::Font police;
+    police.loadFromFile("fonts/F-Zero GBA Text 1.ttf");
+
+    QString gagnant = QString("%1").arg(players[0].player_id);
+    std::string score = "Partie terminee\nLe gagnant est:\nJoueur " + gagnant.toStdString();
+
+    sf::Text texte("n'importe quoi", police, 200);
+    texte.move(sf::Vector2f(0, 0));
+    texte.setColor(sf::Color::Red);
+    texte.setString(score);
+
+    window.draw(texte);
+
+    window.display();
+}
+
 void Visu::handleEvents()
 {
     sf::Event event;
@@ -438,6 +466,28 @@ void Visu::handleEvents()
 
         }
     }
+
+}
+
+void Visu::onGameEnd(int winnerPlayerId, std::vector<ainet16::GameEndsPlayer> endPlayers)
+{
+    partieEnCours = false;
+
+    winnerPlayerId ++;
+    players.size();
+    std::cout << "entrée dans onGameEnd\n";
+
+    // mettre à jour les scores pour l'affichage du classement
+    std::sort(players.begin(), players.end(), CompareIdJoueurs());
+    for (uint i=0; i<players.size(); ++i) {
+        players[i].score = endPlayers[i].score;
+    }
+    std::cout << "les scores sont mis à jour\n";
+}
+
+void Visu::onException()
+{
+    partieEnCours = false;
 
 }
 
@@ -530,6 +580,11 @@ void Visu::inverseCouleurs()
 int Visu::nbeJoueurs()
 {
     return players.size();
+}
+
+bool Visu::enCours()
+{
+    return partieEnCours;
 }
 
 sf::Color colorFromPlayerId(quint32 playerId, int nbePlayers)

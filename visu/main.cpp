@@ -129,6 +129,7 @@ void display_loop(const SharedData & data)
     sf::Time theoretical_time_to_sleep = sf::seconds(theoretical_seconds_to_sleep);
 
     bool is_window_open = true;
+    bool partie_en_cours = data.visu->enCours();
 
     sf::Clock clock;
 
@@ -137,12 +138,19 @@ void display_loop(const SharedData & data)
         data.m->lock();
         sf::Time t1 = clock.getElapsedTime();
         is_window_open = data.visu->window.isOpen();
+        partie_en_cours = data.visu->enCours();
 
         if (is_window_open)
         {
             data.visu->handleEvents();
             //printf("Display\n");
-            data.visu->afficheTout();
+
+            if (partie_en_cours) {
+                data.visu->afficheTout();
+            }
+            else {
+                data.visu->afficheFinPartie();
+            }
         }
 
         sf::Time t2 = clock.getElapsedTime();
@@ -152,6 +160,7 @@ void display_loop(const SharedData & data)
         float seconds_to_sleep = std::max(0.02f, (theoretical_time_to_sleep - elapsed).asSeconds());
         sf::sleep(sf::seconds(seconds_to_sleep));
     }
+
 }
 
 void network_loop(const SharedData & data)
@@ -196,11 +205,14 @@ void network_loop(const SharedData & data)
             printf("  (player_id=%d, score=%ld)\n", player.player_id, player.score);
 
         // todo: tell visu who won
+        cout << "appel de onGameEnd\n";
+        data.visu->onGameEnd(e.winner_player_id(), e.players());
     }
     catch (const ainet16::Exception & exception)
     {
         cout << exception.what() << endl;
         // todo: tell visu about it
+        data.visu->onException();
     }
 }
 
@@ -238,6 +250,7 @@ int main(int argc, char* argv[])
     {
         printf("Invalid PORT. An integer in range [1,65535] must be provided.\n");
     }
+
 
     return 0;
 }
