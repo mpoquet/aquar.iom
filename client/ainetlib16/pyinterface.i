@@ -145,7 +145,7 @@ namespace ainet16
     };
 
 
-    class Session
+    /*class Session
     {
     public:
         Session();
@@ -170,7 +170,7 @@ namespace ainet16
         bool is_connected() const;
         bool is_logged() const;
         bool is_player() const;
-    };
+    };*/
 }
 
 #if defined(SWIGPYTHON)

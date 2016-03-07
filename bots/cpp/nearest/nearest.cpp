@@ -57,7 +57,6 @@ int main(int argc, char ** argv)
             session.wait_for_next_turn();
 
             /// recevoir le tour
-            tour = session.turn();
             cellules_neutres.clear();
             distances.clear();
             cellules_neutres = session.neutral_cells();

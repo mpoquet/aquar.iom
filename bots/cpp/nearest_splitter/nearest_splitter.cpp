@@ -81,15 +81,13 @@ int main(int argc, char ** argv)
             printf("Waiting for next turn...\n");
             session.wait_for_next_turn();
 
-            Turn turn = session.turn();
-
             printf("\nNew turn!\n");
 
             vector<NeutralCell> ncells = session.neutral_cells();
 
             map<int, CellData> my_cells;
 
-            for (const TurnPlayerCell & cell : turn.pcells)
+            for (const TurnPlayerCell & cell : session.my_player_cells())
             {
                 if (cell.player_id == session.player_id())
                 {
