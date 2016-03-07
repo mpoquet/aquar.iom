@@ -5,7 +5,7 @@
 TEMPLATE = app
 TARGET = sleeper
 INCLUDEPATH += .
-LIBS += -lainetlib16 -lsfml-network -lsfml-system
+LIBS += -lainl16 -lsfml-network -lsfml-system
 QMAKE_CXXFLAGS += -std=c++11
 
 # Input

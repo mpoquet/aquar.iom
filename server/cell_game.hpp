@@ -338,5 +338,6 @@ private:
 };
 
 bool cellgame_player_score_comparator(const CellGame::Player * p1, const CellGame::Player * p2);
+bool cellgame_player_score_comparator_reversed(const CellGame::Player * p1, const CellGame::Player * p2);
 
 #endif // CELLGAME_HPP

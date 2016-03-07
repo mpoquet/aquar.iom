@@ -85,7 +85,7 @@ int main(int argc, char ** argv)
 
             printf("\nNew turn!\n");
 
-            vector<NeutralCell> ncells = session.all_neutral_cells();
+            vector<NeutralCell> ncells = session.neutral_cells();
 
             map<int, CellData> my_cells;
 

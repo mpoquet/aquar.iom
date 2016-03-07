@@ -2658,7 +2658,8 @@ QByteArray CellGame::generate_game_ends()
     for (const Player * player : _players)
         players_vector.append(player);
 
-    int winner = players_vector.last()->id;
+    sort(players_vector.begin(), players_vector.end(), cellgame_player_score_comparator_reversed);
+    int winner = players_vector.first()->id;
 
     // Display scores within the server
     QString display_message;
@@ -2860,4 +2861,11 @@ bool cellgame_player_score_comparator(const CellGame::Player *p1, const CellGame
     if (p1->score == p2->score)
         return p1->score_frac < p2->score_frac;
     return p1->score < p2->score;
+}
+
+bool cellgame_player_score_comparator_reversed(const CellGame::Player *p1, const CellGame::Player *p2)
+{
+    if (p1->score == p2->score)
+        return p1->score_frac > p2->score_frac;
+    return p1->score > p2->score;
 }
