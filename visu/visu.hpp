@@ -56,13 +56,14 @@ public:
 
     // Met à jour tout l'affichage
     void afficheTout();
+    void afficheFinPartie(); // utilisé quand la partie est terminée ou que la visu a une exception
 
     // Fait changer la couleur de l'arrière-plan entre blanc et noir
     void inverseCouleurs();
 
     // Gestion des évènements
     void handleEvents();
-    void onGameEnd(int winnerPlayerId, std::vector<ainet16::GameEndsPlayer> players);
+    void onGameEnd(int winnerPlayerId, std::vector<ainet16::GameEndsPlayer> endPlayers);
     void onException();
 
     // Ajustement du niveau de zoom
@@ -89,6 +90,7 @@ public:
 
 // Accesseurs
     int nbeJoueurs();
+    bool enCours();
 
 // Attributs
 private:
@@ -107,6 +109,7 @@ private:
     sf::RectangleShape cadre; // zone de la fenêtre où est affichée le plateau de jeu
 
     bool afficheCellulesNeutres;
+    bool partieEnCours; // si la partie est terminée le comportement sera différent
 
 
 public:

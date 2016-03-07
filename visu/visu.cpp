@@ -9,6 +9,7 @@ Visu::Visu()
     borders_color = sf::Color::White;
 
     afficheCellulesNeutres = false; // par défaut les cellules neutres ne sont pas affichées dans la fenêtre
+    partieEnCours = true;
 
     cadre.setFillColor(background_color);
     cadre.setOutlineColor(borders_color);
@@ -365,6 +366,31 @@ void Visu::afficheTout()
     window.display(); // dessine tous les objets avec lesquels on a appelé draw
 }
 
+void Visu::afficheFinPartie()
+{
+    std::cout << "affichage fin de partie\n";
+    window.clear(sf::Color::White);
+
+    afficheCadre();
+    afficheToutesCellules();
+    afficheScore();
+
+    // faire une zone de texte pour annoncer le gagnant
+    window.setView(vue_carte);
+
+    // le gagnant est le premier joueur de la liste (on vient de les mettre dans l'ordre lorsque l'exception de fin de partie s'est produite)
+
+    sf::Font police;
+    police.loadFromFile("fonts/F-Zero GBA Text 1.ttf");
+
+    sf::Text texte("partie terminée", police, 200);
+    texte.move(sf::Vector2f(0, 0));
+    texte.setColor(sf::Color::Red);
+    window.draw(texte);
+
+    window.display();
+}
+
 void Visu::handleEvents()
 {
     sf::Event event;
@@ -440,28 +466,26 @@ void Visu::handleEvents()
 
 }
 
-void Visu::onGameEnd(int winnerPlayerId, std::vector<ainet16::GameEndsPlayer> players)
+void Visu::onGameEnd(int winnerPlayerId, std::vector<ainet16::GameEndsPlayer> endPlayers)
 {
+    partieEnCours = false;
+
     winnerPlayerId ++;
     players.size();
     std::cout << "entrée dans onGameEnd\n";
-    window.clear(sf::Color::Green);
 
-    // afficher la map avec la position finale
-    afficheToutesCellules();
-    afficheCadre();
-
-    // afficher le gagnant
-
-    // afficher la liste des joueurs dans l'ordre des scores
-
-    window.display();
+    // mettre à jour les scores pour l'affichage du classement
+    std::sort(players.begin(), players.end(), CompareIdJoueurs());
+    for (uint i=0; i<players.size(); ++i) {
+        players[i].score = endPlayers[i].score;
+    }
+    std::cout << "les scores sont mis à jour\n";
 }
 
 void Visu::onException()
 {
-    window.clear(sf::Color::Cyan);
-    window.display();
+    partieEnCours = false;
+
 }
 
 void Visu::zoom()
@@ -553,6 +577,11 @@ void Visu::inverseCouleurs()
 int Visu::nbeJoueurs()
 {
     return players.size();
+}
+
+bool Visu::enCours()
+{
+    return partieEnCours;
 }
 
 sf::Color colorFromPlayerId(quint32 playerId, int nbePlayers)
