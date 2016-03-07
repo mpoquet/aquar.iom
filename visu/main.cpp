@@ -169,7 +169,7 @@ void network_loop(const SharedData & data)
     {
         ainet16::Session session;
         session.connect(data.address, data.port);
-        session.login_visu("Ta miniblouce");
+        session.login_visu("visu");
 
         session.wait_for_welcome();
         ainet16::Welcome welcome = session.welcome();
