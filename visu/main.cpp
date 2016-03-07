@@ -208,7 +208,7 @@ void network_loop(const SharedData & data)
         cout << "appel de onGameEnd\n";
         data.visu->onGameEnd(e.winner_player_id(), e.players());
     }
-    catch (const ainet16::Exception & exception)
+    catch (const ainet16::AINetException & exception)
     {
         cout << exception.what() << endl;
         // todo: tell visu about it

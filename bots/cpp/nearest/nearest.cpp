@@ -89,7 +89,7 @@ int main(int argc, char ** argv)
             session.send_actions(actions);
         }
     }
-    catch (ainet16::Exception & exception)
+    catch (ainet16::AINetException & exception)
     {
         cout << exception.what() << endl;
         return 1;

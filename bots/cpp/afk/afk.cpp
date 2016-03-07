@@ -54,7 +54,7 @@ int main(int argc, char ** argv)
         for (GameEndsPlayer player : players)
             printf("  (player_id=%d, score=%ld)\n", player.player_id, player.score);
     }
-    catch (const ainet16::Exception & exception)
+    catch (const ainet16::AINetException & exception)
     {
         cout << exception.what() << endl;
         return 1;

@@ -6,6 +6,7 @@
 %include "std_string.i"
 %include "std_vector.i"
 %include "stdint.i"
+%include "exception.i"
 
 %template(GameEndsPlayerVector) std::vector<ainet16::GameEndsPlayer>;
 %template(PositionVector) std::vector<ainet16::Position>;
@@ -24,44 +25,33 @@ namespace ainet16
         uint64_t score;
     };
 
-    /*class Exception
+    class AINetException
     {
     public:
-        Exception(const std::string & what);
+        AINetException(const std::string & what);
         virtual std::string what() const;
-
-    private:
-        std::string _what;
     };
 
-    class DisconnectedException : public Exception
+    class DisconnectedException : public AINetException
     {
     public:
         DisconnectedException(const std::string & what = "Disconnected");
+        std::string what() const;
     };
 
-    class KickException : public Exception
+    class KickException : public AINetException
     {
     public:
         KickException(const std::string & what = "Kicked");
+        std::string what() const;
     };
 
-    class SocketErrorException : public Exception
+    class SocketErrorException : public AINetException
     {
     public:
         SocketErrorException(const std::string & what = "Socket error");
+        std::string what() const;
     };
-
-    class GameFinishedException : public Exception
-    {
-    public:
-        GameFinishedException(int winner_player_id,
-                              std::vector<ainet16::GameEndsPlayer> players,
-                              const std::string & what = "Game finished");
-
-        int winner_player_id() const;
-        std::vector<ainet16::GameEndsPlayer> players() const;
-    };*/
 
     struct Position
     {
@@ -142,23 +132,24 @@ namespace ainet16
         float mass;
         bool is_initial;
         int remaining_turns_before_apparition;
+        bool is_alive;
     };
 
 
-    /*class Session
+    class Session
     {
     public:
         Session();
         ~Session();
 
-        void connect(std::string address, int port) throw(Exception);
-        void login_player(std::string name) throw(Exception);
-        void login_visu(std::string name) throw(Exception);
+        void connect(std::string address, int port) throw(AINetException);
+        void login_player(std::string name) throw(AINetException);
+        void login_visu(std::string name) throw(AINetException);
 
-        Welcome wait_for_welcome() throw(Exception);
-        int wait_for_game_starts() throw(Exception);
-        void wait_for_next_turn() throw(Exception);
-        void send_actions(const Actions & actions) throw(Exception);
+        Welcome wait_for_welcome() throw(AINetException);
+        int wait_for_game_starts() throw(AINetException);
+        void wait_for_next_turn() throw(AINetException);
+        void send_actions(const Actions & actions) throw(AINetException);
 
         Welcome welcome() const;
         int player_id() const;
@@ -170,7 +161,7 @@ namespace ainet16
         bool is_connected() const;
         bool is_logged() const;
         bool is_player() const;
-    };*/
+    };
 }
 
 #if defined(SWIGPYTHON)
