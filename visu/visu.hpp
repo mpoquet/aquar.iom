@@ -62,6 +62,8 @@ public:
 
     // Gestion des évènements
     void handleEvents();
+    void onGameEnd(int winnerPlayerId, std::vector<ainet16::GameEndsPlayer> players);
+    void onException();
 
     // Ajustement du niveau de zoom
     void zoom();

@@ -196,11 +196,14 @@ void network_loop(const SharedData & data)
             printf("  (player_id=%d, score=%ld)\n", player.player_id, player.score);
 
         // todo: tell visu who won
+        cout << "appel de onGameEnd\n";
+        data.visu->onGameEnd(e.winner_player_id(), e.players());
     }
     catch (const ainet16::Exception & exception)
     {
         cout << exception.what() << endl;
         // todo: tell visu about it
+        data.visu->onException();
     }
 }
 
@@ -238,6 +241,7 @@ int main(int argc, char* argv[])
     {
         printf("Invalid PORT. An integer in range [1,65535] must be provided.\n");
     }
+
 
     return 0;
 }
