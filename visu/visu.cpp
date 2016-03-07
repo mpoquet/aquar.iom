@@ -368,7 +368,7 @@ void Visu::afficheTout()
 
 void Visu::afficheFinPartie()
 {
-    std::cout << "affichage fin de partie\n";
+    //std::cout << "affichage fin de partie\n";
     window.clear(sf::Color::White);
 
     afficheCadre();
@@ -378,14 +378,17 @@ void Visu::afficheFinPartie()
     // faire une zone de texte pour annoncer le gagnant
     window.setView(vue_carte);
 
-    // le gagnant est le premier joueur de la liste (on vient de les mettre dans l'ordre lorsque l'exception de fin de partie s'est produite)
-
     sf::Font police;
     police.loadFromFile("fonts/F-Zero GBA Text 1.ttf");
 
-    sf::Text texte("partie terminée", police, 200);
+    QString gagnant = QString("%1").arg(players[0].player_id);
+    std::string score = "Partie terminee\nLe gagnant est:\nJoueur " + gagnant.toStdString();
+
+    sf::Text texte("n'importe quoi", police, 200);
     texte.move(sf::Vector2f(0, 0));
     texte.setColor(sf::Color::Red);
+    texte.setString(score);
+
     window.draw(texte);
 
     window.display();
