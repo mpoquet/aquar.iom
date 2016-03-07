@@ -20,6 +20,7 @@ try:
     session.wait_for_game_starts();
 
     while session.is_logged():
+        print("Waiting for next turn...")
         session.wait_for_next_turn()
 
         actions = Actions()

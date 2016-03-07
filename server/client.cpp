@@ -133,7 +133,7 @@ void Client::onReadyRead()
             bytesRead += 4;
             turn = qFromLittleEndian(turn);
 
-            QByteArray message = _buffer.mid(bytesRead, gameDependentSize - 4);
+            QByteArray message = _buffer.mid(bytesRead, gameDependentSize);
             bytesRead += gameDependentSize;
 
             _buffer = _buffer.mid(bytesRead);
@@ -167,6 +167,7 @@ void Client::onReadyRead()
 
 void Client::kick(const QString & reason)
 {
+    sendStamp(Stamp::KICK);
     sendSizedString("kicked: " + reason);
     emit message(QString("Client %1 kicked from server: %2").arg(_name, reason));
     _socket->close();
