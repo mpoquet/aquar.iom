@@ -213,17 +213,17 @@ namespace ainet16
 
         Welcome wait_for_welcome() throw(Exception);
         int wait_for_game_starts() throw(Exception);
-        Turn wait_for_next_turn() throw(Exception);
+        void wait_for_next_turn() throw(Exception);
         void send_actions(const Actions & actions) throw(Exception);
 
-
         Welcome welcome() const;
-        Turn turn() const;
         int player_id() const;
         std::vector<NeutralCell> neutral_cells() const;
+        std::vector<TurnPlayerCell> player_cells() const;
         std::vector<TurnPlayerCell> my_player_cells() const;
         std::vector<TurnPlayerCell> ennemy_player_cells() const;
         std::vector<TurnVirus> viruses() const;
+        std::vector<TurnPlayer> players() const;
 
         bool is_connected() const;
         bool is_logged() const;

@@ -439,7 +439,7 @@ void ainet16::Session::send_actions(const ainet16::Actions &actions) throw(Excep
     }
 }
 
-ainet16::Turn ainet16::Session::wait_for_next_turn() throw(Exception)
+void ainet16::Session::wait_for_next_turn() throw(Exception)
 {
     try
     {
@@ -552,8 +552,6 @@ ainet16::Turn ainet16::Session::wait_for_next_turn() throw(Exception)
                        player.player_id, player.nb_cells,
                        player.mass, player.score);
         }
-
-        return _turn;
     }
     catch (const SocketErrorException & e)
     {
@@ -568,11 +566,6 @@ ainet16::Turn ainet16::Session::wait_for_next_turn() throw(Exception)
 ainet16::Welcome ainet16::Session::welcome() const
 {
     return _welcome;
-}
-
-ainet16::Turn ainet16::Session::turn() const
-{
-    return _turn;
 }
 
 int ainet16::Session::player_id() const
@@ -614,6 +607,11 @@ std::vector<ainet16::NeutralCell> ainet16::Session::neutral_cells() const
     }
 
     return res;
+}
+
+std::vector<ainet16::TurnPlayerCell> ainet16::Session::player_cells() const
+{
+    return _turn.pcells;
 }
 
 std::vector<ainet16::TurnPlayerCell> ainet16::Session::my_player_cells() const
@@ -660,6 +658,11 @@ std::vector<ainet16::TurnPlayerCell> ainet16::Session::ennemy_player_cells() con
 std::vector<ainet16::TurnVirus> ainet16::Session::viruses() const
 {
     return _turn.viruses;
+}
+
+std::vector<ainet16::TurnPlayer> ainet16::Session::players() const
+{
+    return _turn.players;
 }
 
 bool ainet16::Session::is_connected() const
