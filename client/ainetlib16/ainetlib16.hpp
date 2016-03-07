@@ -217,6 +217,7 @@ namespace ainet16
         void send_actions(const Actions & actions) throw(Exception);
 
         Welcome welcome() const;
+        Turn turn() const;
         int player_id() const;
         std::vector<NeutralCell> neutral_cells() const;
         std::vector<TurnPlayerCell> player_cells() const;

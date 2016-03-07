@@ -568,6 +568,11 @@ ainet16::Welcome ainet16::Session::welcome() const
     return _welcome;
 }
 
+ainet16::Turn ainet16::Session::turn() const
+{
+    return _turn;
+}
+
 int ainet16::Session::player_id() const
 {
     if (_player_id == -1)
