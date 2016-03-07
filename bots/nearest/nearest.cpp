@@ -60,7 +60,7 @@ int main(int argc, char ** argv)
             tour = session.turn();
             cellules_neutres.clear();
             distances.clear();
-            cellules_neutres = session.all_neutral_cells();
+            cellules_neutres = session.neutral_cells();
 
             /// récupérer la liste de mes cellules
             for (unsigned int i=0; i<tour.pcells.size(); ++i) {
