@@ -2431,6 +2431,7 @@ void CellGame::generate_initial_players()
 
         Player * player = new Player;
         player->id = player_id;
+        player->name = p.client->name();
         player->mass = 0;
         player->nb_cells = 0;
         player->score = 0;
@@ -2633,6 +2634,14 @@ QByteArray CellGame::generate_turn()
         (*(quint32*)qba.data()) = player->id;
         message.append(qba);
 
+        QByteArray qba_player_name = player->name.toLatin1();
+
+        qba.resize(sizeof(quint32));
+        (*(quint32*)qba.data()) = qba_player_name.size();
+        message.append(qba);
+
+        message.append(qba_player_name);
+
         qba.resize(sizeof(quint32));
         (*(quint32*)qba.data()) = player->nb_cells;
         message.append(qba);
@@ -2690,6 +2699,14 @@ QByteArray CellGame::generate_game_ends()
         qba.resize(sizeof(quint32));
         (*(quint32*)qba.data()) = player->id;
         message.append(qba);
+
+        QByteArray qba_player_name = player->name.toLatin1();
+
+        qba.resize(sizeof(quint32));
+        (*(quint32*)qba.data()) = qba_player_name.size();
+        message.append(qba);
+
+        message.append(qba_player_name);
 
         qba.resize(sizeof(quint64));
         (*(quint64*)qba.data()) = (quint64) player->score;

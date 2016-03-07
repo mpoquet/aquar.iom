@@ -335,6 +335,7 @@ int ainet16::Session::wait_for_game_starts() throw(AINetException)
         for (TurnPlayer & player : _turn.players)
         {
             player.player_id = read_uint32();
+            player.name = read_string();
             player.nb_cells = read_uint32();
             player.mass = read_float();
             player.score = read_uint64();
@@ -367,8 +368,8 @@ int ainet16::Session::wait_for_game_starts() throw(AINetException)
 
             printf("  Players:\n");
             for (const TurnPlayer & player : _turn.players)
-                printf("    (id=%d,nb_pcells=%d,mass=%g,score=%ld)\n",
-                       player.player_id, player.nb_cells,
+                printf("    (id=%d,name='%s',nb_pcells=%d,mass=%g,score=%ld)\n",
+                       player.player_id, player.name.c_str(), player.nb_cells,
                        player.mass, player.score);
         }
         return _player_id;
@@ -518,6 +519,7 @@ void ainet16::Session::wait_for_next_turn() throw(AINetException)
         for (TurnPlayer & player : _turn.players)
         {
             player.player_id = read_uint32();
+            player.name = read_string();
             player.nb_cells = read_uint32();
             player.mass = read_float();
             player.score = read_uint64();
@@ -549,8 +551,8 @@ void ainet16::Session::wait_for_next_turn() throw(AINetException)
 
             printf("  Players:\n");
             for (const TurnPlayer & player : _turn.players)
-                printf("    (id=%d,nb_pcells=%d,mass=%g,score=%ld)\n",
-                       player.player_id, player.nb_cells,
+                printf("    (id=%d,name='%s',nb_pcells=%d,mass=%g,score=%ld)\n",
+                       player.player_id, player.name.c_str(), player.nb_cells,
                        player.mass, player.score);
         }
     }
@@ -1078,6 +1080,7 @@ void ainet16::Session::handle_game_ends() throw(AINetException)
         for (GameEndsPlayer & player : players)
         {
             player.player_id = read_uint32();
+            player.name = read_string();
             player.score = read_uint64();
         }
 

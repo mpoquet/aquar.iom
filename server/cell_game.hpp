@@ -140,6 +140,7 @@ public:
     struct Player
     {
         quint32 id;
+        QString name;
         quint32 nb_cells;
         float mass;
 

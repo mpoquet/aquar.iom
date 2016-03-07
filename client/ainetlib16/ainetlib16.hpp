@@ -25,6 +25,7 @@ namespace ainet16
     struct GameEndsPlayer
     {
         int player_id;
+        std::string name;
         uint64_t score;
     };
 
@@ -177,6 +178,7 @@ namespace ainet16
     struct TurnPlayer
     {
         int player_id;
+        std::string name;
         int nb_cells;
         float mass;
         uint64_t score;
