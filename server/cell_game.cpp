@@ -515,21 +515,28 @@ void CellGame::compute_cell_divisions()
         float distance = new_cell_radius + cell->radius;
 
         QVector2D new_cell_translation = move_vector * distance;
+        Position new_cell_position;
+        new_cell_position.x = std::max(0.f, std::min(cell->position.x + new_cell_translation.x(), _parameters.map_width));
+        new_cell_position.y = std::std::max(0.f, std::min(cell->position.y + new_cell_translation.y(), _parameters.map_height));
 
-        // Let the new cell be created
-        PlayerCell * new_cell = new PlayerCell;
-        new_cell->id = next_cell_id();
-        new_cell->player_id = cell->player_id;
-        new_cell->position.x = std::max(0.f, std::min(cell->position.x + new_cell_translation.x(), _parameters.map_width));
-        new_cell->position.y = std::max(0.f, std::min(cell->position.y + new_cell_translation.y(), _parameters.map_height));
-        new_cell->responsible_node = _tree_root;
-        new_cell->responsible_node_bbox = _tree_root;
-        new_cell->updateMass(action->new_cell_mass, _parameters);
-        new_cell->updateQuadtreeNodes();
+        // The new cell is not created if it would not be in the map boundaries
+        if ((new_cell_position.x >= 0) && (new_cell_position.x < _parameters.map_width) &&
+            (new_cell_position.y >= 0) && (new_cell_position.y < _parameters.map_height))
+        {
+            // Let the new cell be created
+            PlayerCell * new_cell = new PlayerCell;
+            new_cell->id = next_cell_id();
+            new_cell->player_id = cell->player_id;
+            new_cell->position = new_cell_position;
+            new_cell->responsible_node = _tree_root;
+            new_cell->responsible_node_bbox = _tree_root;
+            new_cell->updateMass(action->new_cell_mass, _parameters);
+            new_cell->updateQuadtreeNodes();
 
-        _player_cells[new_cell->id] = new_cell;
+            _player_cells[new_cell->id] = new_cell;
 
-        player->nb_cells++;
+            player->nb_cells++;
+        }
 
         delete action;
     }
