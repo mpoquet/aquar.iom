@@ -236,29 +236,37 @@ void Visu::afficheCellule(Cellule* cellule)
         (!afficheCellulesNeutres || cellule->remaining_turns_before_apparition > 0))
         return;
 
-    //qDebug() << cellule->id();
     float rayon = cellule->mass * parameters.radius_factor;
 
-    sf::CircleShape cercle(rayon, 128);
-    cercle.setFillColor(cellule->color);
 
-    // mettre un contour pour les cellules isolées, les cellules neutres et les virus
-    if ((cellule->remaining_isolated_turns != 0) | (cellule->typeDeCellule == initialNeutral) | (cellule->typeDeCellule == nonInitialNeutral) | (cellule->typeDeCellule == virus)) {
-        cercle.setOutlineColor(borders_color);
-        cercle.setOutlineThickness(rayon/6);
+    sf::CircleShape * cercle;
+
+    if (is_neutral_cell)
+        cercle = new sf::CircleShape(rayon, 8);
+    else
+        cercle = new sf::CircleShape(rayon, 64);
+
+    cercle->setFillColor(cellule->color);
+
+    // mettre un contour pour les cellules isolées et les virus
+    if ((cellule->remaining_isolated_turns != 0) || (cellule->typeDeCellule == virus))
+    {
+        cercle->setOutlineColor(borders_color);
+        cercle->setOutlineThickness(rayon/6);
         rayon = 5.0/6.0 * rayon; // on change la valeur du rayon car la bordure est rajoutée à l'extérieur du circleshape
-        cercle.setRadius(rayon);
+        cercle->setRadius(rayon);
     }
-    cercle.setPosition(cellule->position.x - rayon, cellule->position.y - rayon); // setPosition prend la position du coin supérieur gauche =(1
-    window.draw(cercle);
-
+    cercle->setPosition(cellule->position.x - rayon, cellule->position.y - rayon); // setPosition prend la position du coin supérieur gauche =(1
+    window.draw(*cercle);
+    delete cercle;
 }
 
 void Visu::afficheToutesCellules() {
     window.setView(vue_carte);
 
     std::vector<Cellule*>::iterator it;
-    for (it=allCellsByMass.begin() ; it!=allCellsByMass.end() ; ++it) {
+    for (it=allCellsByMass.begin() ; it!=allCellsByMass.end() ; ++it)
+    {
         afficheCellule(*it);
     }
 }

@@ -87,7 +87,6 @@ public:
     // Ajoute un joueur dans le conteneur players
     void addNewPlayer(ainet16::TurnPlayer p);
 
-
 // Accesseurs
     int nbeJoueurs();
     bool enCours();
