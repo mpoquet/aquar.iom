@@ -388,9 +388,9 @@ void Visu::afficheFinPartie()
 
     sf::Text partie_terminee("Partie terminee", police, 20);
     float x = vue_carte.getViewport().width*window_width/2.0f*vue_carte.getViewport().width;
-    std::cout << x << std::endl;
+    //std::cout << x << std::endl;
     float y = vue_carte.getViewport().height*window_height/2.0f*vue_carte.getViewport().height;
-    std::cout << y << std::endl;
+    //std::cout << y << std::endl;
     partie_terminee.setColor(couleur);
     sf::FloatRect textRect = partie_terminee.getLocalBounds();
     partie_terminee.setOrigin(textRect.left + textRect.width/2.0f, textRect.top + textRect.height/2.0f);
