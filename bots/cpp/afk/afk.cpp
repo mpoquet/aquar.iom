@@ -1,7 +1,6 @@
 #include <iostream>
 #include <stdio.h>
 #include <ainetlib16.hpp>
-#include <unistd.h>
 
 using namespace std;
 using namespace ainet16;
@@ -40,9 +39,6 @@ int main(int argc, char ** argv)
             printf("Waiting for next turn...\n");
             session.wait_for_next_turn();
 
-            // Sleeping
-            sleep(1 + session.player_id());
-
             Actions actions;
             printf("Sending actions...\n");
             session.send_actions(actions);
@@ -58,7 +54,7 @@ int main(int argc, char ** argv)
         for (GameEndsPlayer player : players)
             printf("  (player_id=%d, score=%ld)\n", player.player_id, player.score);
     }
-    catch (ainet16::Exception & exception)
+    catch (const ainet16::AINetException & exception)
     {
         cout << exception.what() << endl;
         return 1;

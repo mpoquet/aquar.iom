@@ -2,12 +2,13 @@
 
 using namespace std;
 
-ainet16::Exception::Exception(const string & what)
+ainet16::AINetException::AINetException(const string & what) :
+    std::runtime_error(what)
 {
     _what = what;
 }
 
-string ainet16::Exception::what() const
+string ainet16::AINetException::whatstr() const
 {
     return _what;
 }
@@ -87,20 +88,20 @@ ainet16::Session::~Session()
     _socket.disconnect();
 }
 
-void ainet16::Session::connect(string address, int port) throw(Exception)
+void ainet16::Session::connect(string address, int port) throw(AINetException)
 {
     if (port < 0 || port > 65535)
-        throw Exception("Bad port");
+        throw AINetException("Bad port");
 
     sf::Socket::Status status = _socket.connect(sf::IpAddress(address), port);
 
     if (status != sf::Socket::Done)
-        throw Exception("Impossible to connect on socket");
+        throw AINetException("Impossible to connect on socket");
 
     _is_connected = true;
 }
 
-void ainet16::Session::login_player(string name) throw(Exception)
+void ainet16::Session::login_player(string name) throw(AINetException)
 {
     try
     {
@@ -123,19 +124,19 @@ void ainet16::Session::login_player(string name) throw(Exception)
             throw KickException(kick_reason);
         }
         else
-            throw Exception("Invalid response to LOGIN_PLAYER, received_stamp=" + stamp_to_string(stamp));
+            throw AINetException("Invalid response to LOGIN_PLAYER, received_stamp=" + stamp_to_string(stamp));
     }
     catch (const SocketErrorException & e)
     {
-        throw SocketErrorException(e.what() + ", while attempting to login_player");
+        throw SocketErrorException(e.whatstr() + ", while attempting to login_player");
     }
     catch (const DisconnectedException & e)
     {
-        throw DisconnectedException(e.what() + ", while attempting to login_player");
+        throw DisconnectedException(e.whatstr() + ", while attempting to login_player");
     }
 }
 
-void ainet16::Session::login_visu(string name) throw(Exception)
+void ainet16::Session::login_visu(string name) throw(AINetException)
 {
     try
     {
@@ -158,19 +159,19 @@ void ainet16::Session::login_visu(string name) throw(Exception)
             throw KickException(kick_reason);
         }
         else
-            throw Exception("Invalid response to LOGIN_VISU, received_stamp=" + stamp_to_string(stamp));
+            throw AINetException("Invalid response to LOGIN_VISU, received_stamp=" + stamp_to_string(stamp));
     }
     catch (const SocketErrorException & e)
     {
-        throw SocketErrorException(e.what() + ", while attempting to login_visu");
+        throw SocketErrorException(e.whatstr() + ", while attempting to login_visu");
     }
     catch (const DisconnectedException & e)
     {
-        throw DisconnectedException(e.what() + ", while attempting to login_visu");
+        throw DisconnectedException(e.whatstr() + ", while attempting to login_visu");
     }
 }
 
-ainet16::Welcome ainet16::Session::wait_for_welcome() throw(Exception)
+ainet16::Welcome ainet16::Session::wait_for_welcome() throw(AINetException)
 {
     try
     {
@@ -185,7 +186,7 @@ ainet16::Welcome ainet16::Session::wait_for_welcome() throw(Exception)
                 throw KickException(kick_reason);
             }
             else
-                throw Exception("Invalid stamp received while waiting for WELCOME, received_stamp=" + stamp_to_string(stamp));
+                throw AINetException("Invalid stamp received while waiting for WELCOME, received_stamp=" + stamp_to_string(stamp));
         }
 
         sf::Uint32 gdc_size = read_uint32();
@@ -257,15 +258,15 @@ ainet16::Welcome ainet16::Session::wait_for_welcome() throw(Exception)
     }
     catch (const SocketErrorException & e)
     {
-        throw SocketErrorException(e.what() + ", while attempting to wait_for_welcome");
+        throw SocketErrorException(e.whatstr() + ", while attempting to wait_for_welcome");
     }
     catch (const DisconnectedException & e)
     {
-        throw DisconnectedException(e.what() + ", while attempting to wait_for_welcome");
+        throw DisconnectedException(e.whatstr() + ", while attempting to wait_for_welcome");
     }
 }
 
-int ainet16::Session::wait_for_game_starts() throw(Exception)
+int ainet16::Session::wait_for_game_starts() throw(AINetException)
 {
     try
     {
@@ -280,7 +281,7 @@ int ainet16::Session::wait_for_game_starts() throw(Exception)
                 throw KickException(kick_reason);
             }
             else
-                throw Exception("Invalid stamp received while waiting for GAME_STARTS, received_stamp=" + stamp_to_string(stamp));
+                throw AINetException("Invalid stamp received while waiting for GAME_STARTS, received_stamp=" + stamp_to_string(stamp));
         }
 
         sf::Uint32 gdc_size = read_uint32();
@@ -291,7 +292,7 @@ int ainet16::Session::wait_for_game_starts() throw(Exception)
         // Read initial neutral cells' positions
         sf::Uint32 nb_initial_ncells = read_uint32();
         if (nb_initial_ncells != _welcome.initial_ncells_positions.size())
-            throw Exception("Incoherent number of initial neutral cells received (welcome/turn)");
+            throw AINetException("Incoherent number of initial neutral cells received (welcome/turn)");
 
         _turn.initial_ncells.resize(nb_initial_ncells);
         for (TurnInitialNeutralCell & ncell : _turn.initial_ncells)
@@ -334,6 +335,7 @@ int ainet16::Session::wait_for_game_starts() throw(Exception)
         for (TurnPlayer & player : _turn.players)
         {
             player.player_id = read_uint32();
+            player.name = read_string();
             player.nb_cells = read_uint32();
             player.mass = read_float();
             player.score = read_uint64();
@@ -366,8 +368,8 @@ int ainet16::Session::wait_for_game_starts() throw(Exception)
 
             printf("  Players:\n");
             for (const TurnPlayer & player : _turn.players)
-                printf("    (id=%d,nb_pcells=%d,mass=%g,score=%ld)\n",
-                       player.player_id, player.nb_cells,
+                printf("    (id=%d,name='%s',nb_pcells=%d,mass=%g,score=%ld)\n",
+                       player.player_id, player.name.c_str(), player.nb_cells,
                        player.mass, player.score);
         }
         return _player_id;
@@ -375,15 +377,15 @@ int ainet16::Session::wait_for_game_starts() throw(Exception)
     }
     catch (const SocketErrorException & e)
     {
-        throw SocketErrorException(e.what() + ", while attempting to wait_for_game_starts");
+        throw SocketErrorException(e.whatstr() + ", while attempting to wait_for_game_starts");
     }
     catch (const DisconnectedException & e)
     {
-        throw DisconnectedException(e.what() + ", while attempting to wait_for_game_starts");
+        throw DisconnectedException(e.whatstr() + ", while attempting to wait_for_game_starts");
     }
 }
 
-void ainet16::Session::send_actions(const ainet16::Actions &actions) throw(Exception)
+void ainet16::Session::send_actions(const ainet16::Actions &actions) throw(AINetException)
 {
     try
     {
@@ -431,15 +433,15 @@ void ainet16::Session::send_actions(const ainet16::Actions &actions) throw(Excep
     }
     catch (const SocketErrorException & e)
     {
-        throw SocketErrorException(e.what() + ", while attempting to send_actions");
+        throw SocketErrorException(e.whatstr() + ", while attempting to send_actions");
     }
     catch (const DisconnectedException & e)
     {
-        throw DisconnectedException(e.what() + ", while attempting to send_actions");
+        throw DisconnectedException(e.whatstr() + ", while attempting to send_actions");
     }
 }
 
-ainet16::Turn ainet16::Session::wait_for_next_turn() throw(Exception)
+void ainet16::Session::wait_for_next_turn() throw(AINetException)
 {
     try
     {
@@ -458,7 +460,7 @@ ainet16::Turn ainet16::Session::wait_for_next_turn() throw(Exception)
                 handle_game_ends();
             }
             else
-                throw Exception("Invalid stamp received while waiting for TURN, received_stamp=" + stamp_to_string(stamp));
+                throw AINetException("Invalid stamp received while waiting for TURN, received_stamp=" + stamp_to_string(stamp));
         }
 
         sf::Uint32 gdc_size = read_uint32();
@@ -474,7 +476,7 @@ ainet16::Turn ainet16::Session::wait_for_next_turn() throw(Exception)
         // Read initial neutral cells' positions
         sf::Uint32 nb_initial_ncells = read_uint32();
         if (nb_initial_ncells != _welcome.initial_ncells_positions.size())
-            throw Exception("Incoherent number of initial neutral cells received (welcome/turn)");
+            throw AINetException("Incoherent number of initial neutral cells received (welcome/turn)");
 
         _turn.initial_ncells.resize(nb_initial_ncells);
         for (TurnInitialNeutralCell & ncell : _turn.initial_ncells)
@@ -517,6 +519,7 @@ ainet16::Turn ainet16::Session::wait_for_next_turn() throw(Exception)
         for (TurnPlayer & player : _turn.players)
         {
             player.player_id = read_uint32();
+            player.name = read_string();
             player.nb_cells = read_uint32();
             player.mass = read_float();
             player.score = read_uint64();
@@ -548,20 +551,18 @@ ainet16::Turn ainet16::Session::wait_for_next_turn() throw(Exception)
 
             printf("  Players:\n");
             for (const TurnPlayer & player : _turn.players)
-                printf("    (id=%d,nb_pcells=%d,mass=%g,score=%ld)\n",
-                       player.player_id, player.nb_cells,
+                printf("    (id=%d,name='%s',nb_pcells=%d,mass=%g,score=%ld)\n",
+                       player.player_id, player.name.c_str(), player.nb_cells,
                        player.mass, player.score);
         }
-
-        return _turn;
     }
     catch (const SocketErrorException & e)
     {
-        throw SocketErrorException(e.what() + ", while attempting to wait_for_next_turn");
+        throw SocketErrorException(e.whatstr() + ", while attempting to wait_for_next_turn");
     }
     catch (const DisconnectedException & e)
     {
-        throw DisconnectedException(e.what() + ", while attempting to wait_for_next_turn");
+        throw DisconnectedException(e.whatstr() + ", while attempting to wait_for_next_turn");
     }
 }
 
@@ -578,7 +579,7 @@ ainet16::Turn ainet16::Session::turn() const
 int ainet16::Session::player_id() const
 {
     if (_player_id == -1)
-        throw Exception("Session::player_id cannot be called before receiving the GAME_STARTS message");
+        throw AINetException("Session::player_id cannot be called before receiving the GAME_STARTS message");
     return _player_id;
 }
 
@@ -597,6 +598,7 @@ std::vector<ainet16::NeutralCell> ainet16::Session::neutral_cells() const
         res[i].mass = _welcome.parameters.initial_neutral_cells_mass;
         res[i].is_initial = true;
         res[i].remaining_turns_before_apparition = _turn.initial_ncells[i].remaining_turns_before_apparition;
+        res[i].is_alive = res[i].remaining_turns_before_apparition == 0;
 
         i++;
     }
@@ -614,6 +616,11 @@ std::vector<ainet16::NeutralCell> ainet16::Session::neutral_cells() const
     }
 
     return res;
+}
+
+std::vector<ainet16::TurnPlayerCell> ainet16::Session::player_cells() const
+{
+    return _turn.pcells;
 }
 
 std::vector<ainet16::TurnPlayerCell> ainet16::Session::my_player_cells() const
@@ -662,6 +669,11 @@ std::vector<ainet16::TurnVirus> ainet16::Session::viruses() const
     return _turn.viruses;
 }
 
+std::vector<ainet16::TurnPlayer> ainet16::Session::players() const
+{
+    return _turn.players;
+}
+
 bool ainet16::Session::is_connected() const
 {
     return _is_connected;
@@ -678,7 +690,7 @@ bool ainet16::Session::is_player() const
 }
 
 
-sf::Uint8 ainet16::Session::read_uint8() throw(Exception)
+sf::Uint8 ainet16::Session::read_uint8() throw(AINetException)
 {
     sf::Uint8 ui8;
 
@@ -705,7 +717,7 @@ sf::Uint8 ainet16::Session::read_uint8() throw(Exception)
     return ui8;
 }
 
-sf::Uint32 ainet16::Session::read_uint32() throw(Exception)
+sf::Uint32 ainet16::Session::read_uint32() throw(AINetException)
 {
     sf::Uint32 ui32;
 
@@ -732,7 +744,7 @@ sf::Uint32 ainet16::Session::read_uint32() throw(Exception)
     return ui32;
 }
 
-sf::Uint64 ainet16::Session::read_uint64() throw(Exception)
+sf::Uint64 ainet16::Session::read_uint64() throw(AINetException)
 {
     sf::Uint32 ui64;
 
@@ -759,7 +771,7 @@ sf::Uint64 ainet16::Session::read_uint64() throw(Exception)
     return ui64;
 }
 
-float ainet16::Session::read_float() throw(Exception)
+float ainet16::Session::read_float() throw(AINetException)
 {
     float f;
 
@@ -786,7 +798,7 @@ float ainet16::Session::read_float() throw(Exception)
     return f;
 }
 
-string ainet16::Session::read_string() throw(Exception)
+string ainet16::Session::read_string() throw(AINetException)
 {
     try
     {
@@ -802,15 +814,15 @@ string ainet16::Session::read_string() throw(Exception)
     }
     catch (const SocketErrorException & e)
     {
-        throw SocketErrorException(e.what() + ", while attempting to read string");
+        throw SocketErrorException(e.whatstr() + ", while attempting to read string");
     }
     catch (const DisconnectedException & e)
     {
-        throw DisconnectedException(e.what() + ", while attempting to read string");
+        throw DisconnectedException(e.whatstr() + ", while attempting to read string");
     }
 }
 
-ainet16::Position ainet16::Session::read_position() throw(Exception)
+ainet16::Position ainet16::Session::read_position() throw(AINetException)
 {
     try
     {
@@ -822,15 +834,15 @@ ainet16::Position ainet16::Session::read_position() throw(Exception)
     }
     catch (const SocketErrorException & e)
     {
-        throw SocketErrorException(e.what() + ", while attempting to read position");
+        throw SocketErrorException(e.whatstr() + ", while attempting to read position");
     }
     catch (const DisconnectedException & e)
     {
-        throw DisconnectedException(e.what() + ", while attempting to read position");
+        throw DisconnectedException(e.whatstr() + ", while attempting to read position");
     }
 }
 
-bool ainet16::Session::read_bool() throw(Exception)
+bool ainet16::Session::read_bool() throw(AINetException)
 {
     try
     {
@@ -840,41 +852,41 @@ bool ainet16::Session::read_bool() throw(Exception)
         else if (ui8 == 1)
             return false;
         else
-            throw Exception("Bad boolean received: not 0 nor 1");
+            throw AINetException("Bad boolean received: not 0 nor 1");
     }
     catch (const SocketErrorException & e)
     {
-        throw SocketErrorException(e.what() + ", while attempting to read bool");
+        throw SocketErrorException(e.whatstr() + ", while attempting to read bool");
     }
     catch (const DisconnectedException & e)
     {
-        throw DisconnectedException(e.what() + ", while attempting to read bool");
+        throw DisconnectedException(e.whatstr() + ", while attempting to read bool");
     }
 }
 
-ainet16::MetaProtocolStamp ainet16::Session::read_stamp() throw(Exception)
+ainet16::MetaProtocolStamp ainet16::Session::read_stamp() throw(AINetException)
 {
     try
     {
         sf::Uint8 ui8 = read_uint8();
 
         if (ui8 > 9)
-            throw Exception("Bad stamp received: not in [0,9]");
+            throw AINetException("Bad stamp received: not in [0,9]");
 
         MetaProtocolStamp stamp = (MetaProtocolStamp) ui8;
         return stamp;
     }
     catch (const SocketErrorException & e)
     {
-        throw SocketErrorException(e.what() + ", while attempting to read stamp");
+        throw SocketErrorException(e.whatstr() + ", while attempting to read stamp");
     }
     catch (const DisconnectedException & e)
     {
-        throw DisconnectedException(e.what() + ", while attempting to read stamp");
+        throw DisconnectedException(e.whatstr() + ", while attempting to read stamp");
     }
 }
 
-void ainet16::Session::send_uint8(sf::Uint8 ui8) throw(Exception)
+void ainet16::Session::send_uint8(sf::Uint8 ui8) throw(AINetException)
 {
     sf::Socket::Status status;
     std::size_t to_send = 1;
@@ -897,7 +909,7 @@ void ainet16::Session::send_uint8(sf::Uint8 ui8) throw(Exception)
     }
 }
 
-void ainet16::Session::send_uint32(sf::Uint32 ui32) throw(Exception)
+void ainet16::Session::send_uint32(sf::Uint32 ui32) throw(AINetException)
 {
     sf::Socket::Status status;
     std::size_t to_send = 4;
@@ -920,7 +932,7 @@ void ainet16::Session::send_uint32(sf::Uint32 ui32) throw(Exception)
     }
 }
 
-void ainet16::Session::send_uint64(sf::Uint64 ui64) throw(Exception)
+void ainet16::Session::send_uint64(sf::Uint64 ui64) throw(AINetException)
 {
     sf::Socket::Status status;
     std::size_t to_send = 8;
@@ -943,7 +955,7 @@ void ainet16::Session::send_uint64(sf::Uint64 ui64) throw(Exception)
     }
 }
 
-void ainet16::Session::send_float(float f) throw(Exception)
+void ainet16::Session::send_float(float f) throw(AINetException)
 {
     sf::Socket::Status status;
     std::size_t to_send = 4;
@@ -966,7 +978,7 @@ void ainet16::Session::send_float(float f) throw(Exception)
     }
 }
 
-void ainet16::Session::send_string(const string &s) throw(Exception)
+void ainet16::Session::send_string(const string &s) throw(AINetException)
 {
     try
     {
@@ -978,15 +990,15 @@ void ainet16::Session::send_string(const string &s) throw(Exception)
     }
     catch (const SocketErrorException & e)
     {
-        throw SocketErrorException(e.what() + ", while attempting to send string");
+        throw SocketErrorException(e.whatstr() + ", while attempting to send string");
     }
     catch (const DisconnectedException & e)
     {
-        throw DisconnectedException(e.what() + ", while attempting to send string");
+        throw DisconnectedException(e.whatstr() + ", while attempting to send string");
     }
 }
 
-void ainet16::Session::send_position(const ainet16::Position &pos) throw(Exception)
+void ainet16::Session::send_position(const ainet16::Position &pos) throw(AINetException)
 {
     try
     {
@@ -995,15 +1007,15 @@ void ainet16::Session::send_position(const ainet16::Position &pos) throw(Excepti
     }
     catch (const SocketErrorException & e)
     {
-        throw SocketErrorException(e.what() + ", while attempting to send position");
+        throw SocketErrorException(e.whatstr() + ", while attempting to send position");
     }
     catch (const DisconnectedException & e)
     {
-        throw DisconnectedException(e.what() + ", while attempting to send position");
+        throw DisconnectedException(e.whatstr() + ", while attempting to send position");
     }
 }
 
-void ainet16::Session::send_bool(bool b) throw(Exception)
+void ainet16::Session::send_bool(bool b) throw(AINetException)
 {
     try
     {
@@ -1012,15 +1024,15 @@ void ainet16::Session::send_bool(bool b) throw(Exception)
     }
     catch (const SocketErrorException & e)
     {
-        throw SocketErrorException(e.what() + ", while attempting to send bool");
+        throw SocketErrorException(e.whatstr() + ", while attempting to send bool");
     }
     catch (const DisconnectedException & e)
     {
-        throw DisconnectedException(e.what() + ", while attempting to send bool");
+        throw DisconnectedException(e.whatstr() + ", while attempting to send bool");
     }
 }
 
-void ainet16::Session::send_stamp(ainet16::MetaProtocolStamp stamp) throw(Exception)
+void ainet16::Session::send_stamp(ainet16::MetaProtocolStamp stamp) throw(AINetException)
 {
     try
     {
@@ -1029,11 +1041,11 @@ void ainet16::Session::send_stamp(ainet16::MetaProtocolStamp stamp) throw(Except
     }
     catch (const SocketErrorException & e)
     {
-        throw SocketErrorException(e.what() + ", while attempting to send stamp");
+        throw SocketErrorException(e.whatstr() + ", while attempting to send stamp");
     }
     catch (const DisconnectedException & e)
     {
-        throw DisconnectedException(e.what() + ", while attempting to send stamp");
+        throw DisconnectedException(e.whatstr() + ", while attempting to send stamp");
     }
 }
 
@@ -1046,7 +1058,7 @@ string ainet16::Session::stamp_to_string(ainet16::MetaProtocolStamp stamp) const
         return _stamp_to_string_vector[stamp_int];
 }
 
-void ainet16::Session::handle_game_ends() throw(Exception)
+void ainet16::Session::handle_game_ends() throw(AINetException)
 {
     // 7	GAME_ENDS		(GDC.size:ui32, GDC)			The server tells the client the game is over
     // Content : (win_player_id:ui32, nb_players:ui32, (player_id:ui32, score:ui64)*nb_players)
@@ -1068,6 +1080,7 @@ void ainet16::Session::handle_game_ends() throw(Exception)
         for (GameEndsPlayer & player : players)
         {
             player.player_id = read_uint32();
+            player.name = read_string();
             player.score = read_uint64();
         }
 
@@ -1075,28 +1088,28 @@ void ainet16::Session::handle_game_ends() throw(Exception)
     }
     catch (const SocketErrorException & e)
     {
-        throw SocketErrorException(e.what() + ", while attempting to handle_game_ends");
+        throw SocketErrorException(e.whatstr() + ", while attempting to handle_game_ends");
     }
     catch (const DisconnectedException & e)
     {
-        throw DisconnectedException(e.what() + ", while attempting to handle_game_endsœ");
+        throw DisconnectedException(e.whatstr() + ", while attempting to handle_game_endsœ");
     }
 }
 
 ainet16::KickException::KickException(const string &what) :
-    ainet16::Exception(what)
+    ainet16::AINetException(what)
 {
 
 }
 
 ainet16::DisconnectedException::DisconnectedException(const string &what) :
-    ainet16::Exception(what)
+    ainet16::AINetException(what)
 {
 
 }
 
 ainet16::SocketErrorException::SocketErrorException(const string &what) :
-    ainet16::Exception(what)
+    ainet16::AINetException(what)
 {
 
 }
@@ -1104,7 +1117,7 @@ ainet16::SocketErrorException::SocketErrorException(const string &what) :
 ainet16::GameFinishedException::GameFinishedException(int winner_player_id,
                                                       std::vector<ainet16::GameEndsPlayer> players,
                                                       const string &what) :
-    Exception(what),
+    AINetException(what),
     _winner_player_id(winner_player_id),
     _players(players)
 {

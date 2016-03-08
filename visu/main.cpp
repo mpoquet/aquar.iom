@@ -169,7 +169,7 @@ void network_loop(const SharedData & data)
     {
         ainet16::Session session;
         session.connect(data.address, data.port);
-        session.login_visu("Ta miniblouce");
+        session.login_visu("visu");
 
         session.wait_for_welcome();
         ainet16::Welcome welcome = session.welcome();
@@ -208,7 +208,7 @@ void network_loop(const SharedData & data)
         cout << "appel de onGameEnd\n";
         data.visu->onGameEnd(e.winner_player_id(), e.players());
     }
-    catch (const ainet16::Exception & exception)
+    catch (const ainet16::AINetException & exception)
     {
         cout << exception.what() << endl;
         // todo: tell visu about it

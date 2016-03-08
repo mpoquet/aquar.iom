@@ -25,38 +25,39 @@ namespace ainet16
     struct GameEndsPlayer
     {
         int player_id;
+        std::string name;
         uint64_t score;
     };
 
-    class Exception
+    class AINetException : public std::runtime_error
     {
     public:
-        Exception(const std::string & what);
-        virtual std::string what() const;
+        AINetException(const std::string & what);
+        virtual std::string whatstr() const;
 
     private:
         std::string _what;
     };
 
-    class DisconnectedException : public Exception
+    class DisconnectedException : public AINetException
     {
     public:
         DisconnectedException(const std::string & what = "Disconnected");
     };
 
-    class KickException : public Exception
+    class KickException : public AINetException
     {
     public:
         KickException(const std::string & what = "Kicked");
     };
 
-    class SocketErrorException : public Exception
+    class SocketErrorException : public AINetException
     {
     public:
         SocketErrorException(const std::string & what = "Socket error");
     };
 
-    class GameFinishedException : public Exception
+    class GameFinishedException : public AINetException
     {
     public:
         GameFinishedException(int winner_player_id,
@@ -177,6 +178,7 @@ namespace ainet16
     struct TurnPlayer
     {
         int player_id;
+        std::string name;
         int nb_cells;
         float mass;
         uint64_t score;
@@ -198,6 +200,7 @@ namespace ainet16
         float mass;
         bool is_initial;
         int remaining_turns_before_apparition;
+        bool is_alive;
     };
 
 
@@ -207,49 +210,50 @@ namespace ainet16
         Session();
         ~Session();
 
-        void connect(std::string address, int port) throw(Exception);
-        void login_player(std::string name) throw(Exception);
-        void login_visu(std::string name) throw(Exception);
+        void connect(std::string address, int port) throw(AINetException);
+        void login_player(std::string name) throw(AINetException);
+        void login_visu(std::string name) throw(AINetException);
 
-        Welcome wait_for_welcome() throw(Exception);
-        int wait_for_game_starts() throw(Exception);
-        Turn wait_for_next_turn() throw(Exception);
-        void send_actions(const Actions & actions) throw(Exception);
-
+        Welcome wait_for_welcome() throw(AINetException);
+        int wait_for_game_starts() throw(AINetException);
+        void wait_for_next_turn() throw(AINetException);
+        void send_actions(const Actions & actions) throw(AINetException);
 
         Welcome welcome() const;
         Turn turn() const;
         int player_id() const;
         std::vector<NeutralCell> neutral_cells() const;
+        std::vector<TurnPlayerCell> player_cells() const;
         std::vector<TurnPlayerCell> my_player_cells() const;
         std::vector<TurnPlayerCell> ennemy_player_cells() const;
         std::vector<TurnVirus> viruses() const;
+        std::vector<TurnPlayer> players() const;
 
         bool is_connected() const;
         bool is_logged() const;
         bool is_player() const;
 
     private:
-        sf::Uint8 read_uint8() throw(Exception);
-        sf::Uint32 read_uint32() throw(Exception);
-        sf::Uint64 read_uint64() throw(Exception);
-        float read_float() throw(Exception);
-        std::string read_string() throw(Exception);
-        Position read_position() throw(Exception);
-        bool read_bool() throw(Exception);
-        MetaProtocolStamp read_stamp() throw(Exception);
+        sf::Uint8 read_uint8() throw(AINetException);
+        sf::Uint32 read_uint32() throw(AINetException);
+        sf::Uint64 read_uint64() throw(AINetException);
+        float read_float() throw(AINetException);
+        std::string read_string() throw(AINetException);
+        Position read_position() throw(AINetException);
+        bool read_bool() throw(AINetException);
+        MetaProtocolStamp read_stamp() throw(AINetException);
 
-        void send_uint8(sf::Uint8 ui8) throw(Exception);
-        void send_uint32(sf::Uint32 ui32) throw(Exception);
-        void send_uint64(sf::Uint64 ui64) throw(Exception);
-        void send_float(float f) throw(Exception);
-        void send_string(const std::string & s) throw(Exception);
-        void send_position(const Position & pos) throw(Exception);
-        void send_bool(bool b) throw(Exception);
-        void send_stamp(MetaProtocolStamp stamp) throw(Exception);
+        void send_uint8(sf::Uint8 ui8) throw(AINetException);
+        void send_uint32(sf::Uint32 ui32) throw(AINetException);
+        void send_uint64(sf::Uint64 ui64) throw(AINetException);
+        void send_float(float f) throw(AINetException);
+        void send_string(const std::string & s) throw(AINetException);
+        void send_position(const Position & pos) throw(AINetException);
+        void send_bool(bool b) throw(AINetException);
+        void send_stamp(MetaProtocolStamp stamp) throw(AINetException);
 
         std::string stamp_to_string(MetaProtocolStamp stamp) const;
-        void handle_game_ends() throw (Exception);
+        void handle_game_ends() throw (AINetException);
 
     private:
         sf::TcpSocket _socket;

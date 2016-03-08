@@ -29,6 +29,7 @@ public:
 
     ClientType type() const { return _type; }
     int id() const { return _id; }
+    QString name() const { return _name; }
     QByteArray & buffer() { return _buffer; }
     const QByteArray & buffer() const { return _buffer; }
 

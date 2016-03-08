@@ -3,75 +3,61 @@
 #include "ainetlib16.hpp"
 %}
 
-// Very simple C++ example for linked list
+%include "std_string.i"
+%include "std_vector.i"
+%include "stdint.i"
+%include "exception.i"
+
+%template(GameEndsPlayerVector) std::vector<ainet16::GameEndsPlayer>;
+%template(PositionVector) std::vector<ainet16::Position>;
+%template(TurnInitialNeutralCellVector) std::vector<ainet16::TurnInitialNeutralCell>;
+%template(TurnNonInitialNeutralCellVector) std::vector<ainet16::TurnNonInitialNeutralCell>;
+%template(TurnVirusVector) std::vector<ainet16::TurnVirus>;
+%template(TurnPlayerCellVector) std::vector<ainet16::TurnPlayerCell>;
+%template(TurnPlayerVector) std::vector<ainet16::TurnPlayer>;
+%template(NeutralCellVector) std::vector<ainet16::NeutralCell>;
 
 namespace ainet16
 {
     struct GameEndsPlayer
     {
         int player_id;
+        std::string name;
         uint64_t score;
     };
 
-    class Exception
+    class AINetException
     {
     public:
-        Exception(const std::string & what);
+        AINetException(const std::string & what);
         virtual std::string what() const;
     };
 
-    class DisconnectedException : public Exception
+    class DisconnectedException : public AINetException
     {
     public:
         DisconnectedException(const std::string & what = "Disconnected");
+        std::string what() const;
     };
 
-    class KickException : public Exception
+    class KickException : public AINetException
     {
     public:
         KickException(const std::string & what = "Kicked");
+        std::string what() const;
     };
 
-    class SocketErrorException : public Exception
+    class SocketErrorException : public AINetException
     {
     public:
         SocketErrorException(const std::string & what = "Socket error");
-    };
-
-    class GameFinishedException : public Exception
-    {
-    public:
-        GameFinishedException(int winner_player_id,
-                              std::vector<GameEndsPlayer> players,
-                              const std::string & what = "Game finished");
-
-        int winner_player_id() const;
-        std::vector<GameEndsPlayer> players() const;
+        std::string what() const;
     };
 
     struct Position
     {
         float x;
         float y;
-    };
-
-    struct MoveAction
-    {
-        int pcell_id;
-        Position position;
-    };
-
-    struct DivideAction
-    {
-        int pcell_id;
-        Position position;
-        float mass;
-    };
-
-    struct CreateVirusAction
-    {
-        int pcell_id;
-        Position position;
     };
 
     class Actions
@@ -86,8 +72,6 @@ namespace ainet16
         void add_create_virus_action(int pcell_id, float position_x, float position_y);
         void add_surrender_action();
     };
-
-
 
     struct GameParameters
     {
@@ -116,19 +100,7 @@ namespace ainet16
     struct Welcome
     {
         GameParameters parameters;
-        std::vector<Position> initial_ncells_positions;
-    };
-
-    struct TurnInitialNeutralCell
-    {
-        int remaining_turns_before_apparition;
-    };
-
-    struct TurnNonInitialNeutralCell
-    {
-        int ncell_id;
-        float mass;
-        Position position;
+        std::vector<ainet16::Position> initial_ncells_positions;
     };
 
     struct TurnVirus
@@ -149,18 +121,10 @@ namespace ainet16
     struct TurnPlayer
     {
         int player_id;
+        std::string name;
         int nb_cells;
         float mass;
         uint64_t score;
-    };
-
-    struct Turn
-    {
-        std::vector<TurnInitialNeutralCell> initial_ncells;
-        std::vector<TurnNonInitialNeutralCell> non_initial_ncells;
-        std::vector<TurnVirus> viruses;
-        std::vector<TurnPlayerCell> pcells;
-        std::vector<TurnPlayer> players;
     };
 
     struct NeutralCell
@@ -170,8 +134,8 @@ namespace ainet16
         float mass;
         bool is_initial;
         int remaining_turns_before_apparition;
+        bool is_alive;
     };
-
 
 
     class Session
@@ -180,25 +144,33 @@ namespace ainet16
         Session();
         ~Session();
 
-        void connect(std::string address, int port) throw(Exception);
-        void login_player(std::string name) throw(Exception);
-        void login_visu(std::string name) throw(Exception);
+        void connect(std::string address, int port) throw(AINetException);
+        void login_player(std::string name) throw(AINetException);
+        void login_visu(std::string name) throw(AINetException);
 
-        Welcome wait_for_welcome() throw(Exception);
-        int wait_for_game_starts() throw(Exception);
-        Turn wait_for_next_turn() throw(Exception);
-        void send_actions(const Actions & actions) throw(Exception);
+        Welcome wait_for_welcome() throw(AINetException);
+        int wait_for_game_starts() throw(AINetException);
+        void wait_for_next_turn() throw(AINetException);
+        void send_actions(const Actions & actions) throw(AINetException);
 
         Welcome welcome() const;
-        Turn turn() const;
         int player_id() const;
-        std::vector<NeutralCell> neutral_cells() const;
-        std::vector<TurnPlayerCell> my_player_cells() const;
-        std::vector<TurnPlayerCell> ennemy_player_cells() const;
-        std::vector<TurnVirus> viruses() const;
+        std::vector<ainet16::NeutralCell> neutral_cells() const;
+        std::vector<ainet16::TurnPlayerCell> my_player_cells() const;
+        std::vector<ainet16::TurnPlayerCell> ennemy_player_cells() const;
+        std::vector<ainet16::TurnVirus> viruses() const;
 
         bool is_connected() const;
         bool is_logged() const;
         bool is_player() const;
     };
 }
+
+#if defined(SWIGPYTHON)
+    %extend ainet16::Position {
+        %pythoncode %{
+            def __repr__(self):
+                return '({}, {})'.format(self.x, self.y)
+        %}
+    }
+#endif

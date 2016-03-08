@@ -243,6 +243,7 @@ void CellGame::onPlayerMove(Client *client, int turn, QByteArray data)
                     if (!pcell->acted_this_turn)
                     {
                         pcell->acted_this_turn = true;
+
                         _create_virus_actions.append(cvirus_action);
                     }
                     else
@@ -551,7 +552,7 @@ void CellGame::compute_virus_creations()
         }
 
         PlayerCell * cell = _player_cells[action->cell_id];
-        float mass_loss = cell->mass * _parameters.virus_creation_mass_loss - _parameters.virus_mass;
+        float mass_loss = cell->mass * _parameters.virus_creation_mass_loss + _parameters.virus_mass;
 
         // If the cell cannot remain alive by creating the virus, the action is ignored
         if (cell->mass - mass_loss <= 0)
@@ -959,7 +960,6 @@ void CellGame::compute_pcells_collisions_inside_node(CellGame::PlayerCell * cell
                                                      QSet<CellGame::PlayerCell *> & pcells_to_delete,
                                                      bool & did_something)
 {
-    emit message("Hello?");
     // Let us check if "cell" collides with other player cells.
     // To do so, let us iterate over the oth_pcells whose position is inside the current node
     QMutableMapIterator<int, PlayerCell *> oth_pcell_it(node->player_cells);
@@ -1638,6 +1638,7 @@ void CellGame::setServer(Server *server)
         disconnect(this, &Game::wantToSendWelcome, _server, &Server::sendWelcome);
         disconnect(this, &Game::wantToSendTurn, _server, &Server::sendTurn);
         disconnect(this, &Game::wantToSendGameEnds, _server, &Server::sendGameEnds);
+        disconnect(this, &Game::wantToKick, _server, &Server::kick);
         disconnect(this, &Game::gameLaunched, _server, &Server::onGameLaunched);
         disconnect(this, &Game::gameFinished, _server, &Server::onGameFinished);
     }
@@ -1650,6 +1651,7 @@ void CellGame::setServer(Server *server)
         connect(this, &Game::wantToSendWelcome, _server, &Server::sendWelcome);
         connect(this, &Game::wantToSendTurn, _server, &Server::sendTurn);
         connect(this, &Game::wantToSendGameEnds, _server, &Server::sendGameEnds);
+        connect(this, &Game::wantToKick, _server, &Server::kick);
         connect(this, &Game::gameLaunched, _server, &Server::onGameLaunched);
         connect(this, &Game::gameFinished, _server, &Server::onGameFinished);
     }
@@ -2429,6 +2431,7 @@ void CellGame::generate_initial_players()
 
         Player * player = new Player;
         player->id = player_id;
+        player->name = p.client->name();
         player->mass = 0;
         player->nb_cells = 0;
         player->score = 0;
@@ -2631,6 +2634,14 @@ QByteArray CellGame::generate_turn()
         (*(quint32*)qba.data()) = player->id;
         message.append(qba);
 
+        QByteArray qba_player_name = player->name.toLatin1();
+
+        qba.resize(sizeof(quint32));
+        (*(quint32*)qba.data()) = qba_player_name.size();
+        message.append(qba);
+
+        message.append(qba_player_name);
+
         qba.resize(sizeof(quint32));
         (*(quint32*)qba.data()) = player->nb_cells;
         message.append(qba);
@@ -2688,6 +2699,14 @@ QByteArray CellGame::generate_game_ends()
         qba.resize(sizeof(quint32));
         (*(quint32*)qba.data()) = player->id;
         message.append(qba);
+
+        QByteArray qba_player_name = player->name.toLatin1();
+
+        qba.resize(sizeof(quint32));
+        (*(quint32*)qba.data()) = qba_player_name.size();
+        message.append(qba);
+
+        message.append(qba_player_name);
 
         qba.resize(sizeof(quint64));
         (*(quint64*)qba.data()) = (quint64) player->score;

@@ -105,22 +105,17 @@ int main(int argc, char ** argv)
             printf("Waiting for next turn...\n");
             session.wait_for_next_turn();
 
-            Turn turn = session.turn();
-
             // Let's check whether all cells reached the objective
             int nb_cells_mine = 0;
             int nb_cells_mine_at_obj = 0;
 
-            for (const TurnPlayerCell & cell : turn.pcells)
+            for (const TurnPlayerCell & cell : session.my_player_cells())
             {
-                if (cell.player_id == session.player_id())
-                {
-                    ++nb_cells_mine;
+                ++nb_cells_mine;
 
-                    if (distance(cell.position, obj.target) < epsilon)
-                        ++nb_cells_mine_at_obj;
-                    //actions.add_move_action(cell.pcell_id, obj.target.x, obj.target.y);
-                }
+                if (distance(cell.position, obj.target) < epsilon)
+                    ++nb_cells_mine_at_obj;
+                //actions.add_move_action(cell.pcell_id, obj.target.x, obj.target.y);
             }
 
             // If all our cells are dead, let's surrender
@@ -134,9 +129,8 @@ int main(int argc, char ** argv)
                 if (nb_cells_mine == nb_cells_mine_at_obj)
                     obj = generate_objective(welcome.parameters);
 
-                for (const TurnPlayerCell & cell : turn.pcells)
-                    if (cell.player_id == session.player_id())
-                        actions.add_move_action(cell.pcell_id, obj.target.x, obj.target.y);
+                for (const TurnPlayerCell & cell : session.my_player_cells())
+                    actions.add_move_action(cell.pcell_id, obj.target.x, obj.target.y);
             }
 
             printf("Sending actions...\n");
@@ -153,7 +147,7 @@ int main(int argc, char ** argv)
         for (GameEndsPlayer player : players)
             printf("  (player_id=%d, score=%ld)\n", player.player_id, player.score);
     }
-    catch (ainet16::Exception & exception)
+    catch (ainet16::AINetException & exception)
     {
         cout << exception.what() << endl;
         return 1;

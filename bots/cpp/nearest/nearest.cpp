@@ -57,7 +57,6 @@ int main(int argc, char ** argv)
             session.wait_for_next_turn();
 
             /// recevoir le tour
-            tour = session.turn();
             cellules_neutres.clear();
             distances.clear();
             cellules_neutres = session.neutral_cells();
@@ -90,7 +89,7 @@ int main(int argc, char ** argv)
             session.send_actions(actions);
         }
     }
-    catch (ainet16::Exception & exception)
+    catch (ainet16::AINetException & exception)
     {
         cout << exception.what() << endl;
         return 1;

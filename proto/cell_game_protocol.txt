@@ -10,6 +10,8 @@ Cell game: network protocol description
     ui32     32-bit unsigned integer (server native-endian)
     ui64     64-bit unsigned integer (server native-endian)
     float32  one 32-bit IEEE 754 single-precision binary floating-point (server native-endian)
+    char    one Latin-1 character (sent as ui8)
+    string  (s.size:ui32, s[0]:char, s[1]:char, ..., s[s.size-1]:char)
     pos      (x:float32, y:float32)
     bool     (b:ui8). b=1 means true, b=0 means false
 
@@ -41,7 +43,7 @@ Cell game: network protocol description
 2.3 GAME_ENDS
     This message is sent from the server to the client when the game is finished.
 
-    Content : (win_player_id:ui32, nb_players:ui32, (player_id:ui32, score:ui64)*nb_players)
+    Content : (win_player_id:ui32, nb_players:ui32, (player_id:ui32, player_name:string, score:ui64)*nb_players)
 
 2.4 TURN
     This message is sent from the server to the client when a new turn starts.
@@ -52,7 +54,7 @@ Cell game: network protocol description
     Non_initial_neutral_cells: (nb_non_initial_ncells:ui32, (ncell_id:ui32, mass:float32, position:pos)*nb_non_initial_ncells)
     Viruses: (nb_viruses:ui32, (virus_id:ui32, position:pos)*nb_viruses)
     Player_cells: (nb_player_cells:ui32, (pcell_id:ui32, position:pos, player_id:ui32, mass:float32, remaining_isolated_turns:ui32)*nb_player_cells)
-    Players: (nb_players:ui32, (player_id:ui32, nb_pcells:ui32, mass:float32, score:ui64)*nb_players)
+    Players: (nb_players:ui32, (player_id:ui32, player_name:string, nb_pcells:ui32, mass:float32, score:ui64)*nb_players)
 
 2.5 TURN_ACK
     This message contains the player actions of one turn.

@@ -49,16 +49,11 @@ int main(int argc, char ** argv)
             printf("Waiting for next turn...\n");
             session.wait_for_next_turn();
 
-            Turn turn = session.turn();
-
-            for (const TurnPlayerCell & cell : turn.pcells)
+            for (const TurnPlayerCell & cell : session.my_player_cells())
             {
-                if (cell.player_id == session.player_id())
-                {
-                    printf("Adding move_action (pcell_id=%d, dest=(%g,%g))\n",
-                           cell.pcell_id, destx, desty);
-                    actions.add_move_action(cell.pcell_id, destx, desty);
-                }
+                printf("Adding move_action (pcell_id=%d, dest=(%g,%g))\n",
+                       cell.pcell_id, destx, desty);
+                actions.add_move_action(cell.pcell_id, destx, desty);
             }
 
             printf("Sending actions...\n");
@@ -75,7 +70,7 @@ int main(int argc, char ** argv)
         for (GameEndsPlayer player : players)
             printf("  (player_id=%d, score=%ld)\n", player.player_id, player.score);
     }
-    catch (ainet16::Exception & exception)
+    catch (ainet16::AINetException & exception)
     {
         cout << exception.what() << endl;
         return 1;
