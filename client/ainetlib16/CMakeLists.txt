@@ -52,3 +52,14 @@ swig_add_module(jainl16 java jinterface.i ainetlib16.cpp)
 # include_directories(${JNI_INCLUDE_DIRS})
 
 swig_link_libraries(jainl16 ${JAVA_LIBRARIES} ${SFML_LIBRARIES})
+
+# Documentation
+find_package(Doxygen)
+if(DOXYGEN_FOUND)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
+    add_custom_target(doc
+        ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+        ainetlib16.hpp ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Generating API documentation with Doxygen" VERBATIM
+    )
+endif()
