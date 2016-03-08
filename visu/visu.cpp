@@ -385,7 +385,13 @@ void Visu::afficheFinPartie()
 
     //QString gagnant = QString("%1").arg(players[0].player_id);
 
-    sf::Color couleur(200, 200, 200);
+    sf::Color couleur;
+    if (background_color == sf::Color::White) {
+        couleur = sf::Color::Black;
+    }
+    else {
+        couleur = sf::Color::White;
+    }
 
     sf::Text partie_terminee("Partie terminee", police, 20);
     float x = vue_carte.getViewport().width*window_width/2.0f*vue_carte.getViewport().width;
