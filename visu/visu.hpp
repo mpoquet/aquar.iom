@@ -43,7 +43,7 @@ public:
     ~Visu();
 
     void onWelcomeReceived(const ainet16::Welcome &welcome);
-    void onTurnReceived(const ainet16::Turn &turn);
+    void onTurnReceived(ainet16::Turn &turn);
 
     // Affiche une cellule dans la fenêtre
     void afficheCellule(Cellule *cellule);
@@ -110,7 +110,6 @@ private:
 
     bool afficheCellulesNeutres;
     bool partieEnCours; // si la partie est terminée le comportement sera différent
-
 
 public:
     std::map<quint32, Cellule*> allCells; // toutes les cellules, tous types confondus, par m_id croissant. Les premières sont les initiales neutres

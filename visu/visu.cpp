@@ -90,26 +90,25 @@ void Visu::onWelcomeReceived(const ainet16::Welcome &welcome)
     // pas besoin d'initialiser les joueurs : on va les recevoir dans un Turn
 }
 
-void Visu::onTurnReceived(const ainet16::Turn &turn)
+void Visu::onTurnReceived(ainet16::Turn &turn)
 {
-    if (players.size()==0) {
+    if (players.size()==0)
+    {
         // C'est la première fois qu'on reçoit un Turn : initialisation de la liste des joueurs
-        //std::cout << "Création des joueurs\n";
-        for (unsigned int i=0; i<turn.players.size(); ++i) {
+        for (unsigned int i=0; i<turn.players.size(); ++i)
             addNewPlayer(turn.players[i]);
-        }
     }
 
-    else {
+    else
+    {
         // mettre à jour le score des joueurs
-//        std::vector<ainet16::TurnPlayer> temp_Players;
-//        for (uint i=0; i<players.size(); ++i) {
-//            temp_Players.push_back(turn.players[i]);
-//        }
-//        std::sort(temp_Players.begin(), temp_Players.end(), CompareIdJoueurs()); // génère erreurs de compilation quand on utilise directement turn.players
+        // Les deux listes sont triées par player_id croissant, afin
+        // que les indices des deux listes correspondent
         std::sort(players.begin(), players.end(), CompareIdJoueurs());
+        std::sort(turn.players.begin(), turn.players.end(), CompareIdJoueurs());
 
-        for (uint i=0; i<players.size(); ++i) {
+        for (uint i=0; i<players.size(); ++i)
+        {
             players[i].mass = turn.players[i].mass;
             players[i].nb_cells = turn.players[i].nb_cells;
             players[i].score = turn.players[i].score;
@@ -125,66 +124,79 @@ void Visu::onTurnReceived(const ainet16::Turn &turn)
         cell->estVivante = false;
     }
 
-    //std::cout << "màj des virus\n";
-    for (unsigned int i=0; i<turn.viruses.size(); ++i) {
-        int indice = turn.viruses[i].id;
+    // Mise à jour des virus
+    for (unsigned int i=0; i<turn.viruses.size(); ++i)
+    {
+        int cell_id = turn.viruses[i].id;
         // vérifier si allCells[indice] existe déjà
-        if (allCells.count(indice) == 0) {
+        if (allCells.count(cell_id) == 0)
+        {
             // créer la cellule et l'ajouter dans l'ensemble
-            //std::cout << "Création du virus " << indice << std::endl;
             Cellule* cell = new Cellule(turn.viruses[i], parameters.virus_mass);
             addNewCell(cell);
         }
-        else {
-            allCells[indice]->position.x = turn.viruses[i].position.x;
-            allCells[indice]->position.y = turn.viruses[i].position.y;
-            allCells[indice]->estVivante = true;
+        else
+        {
+            allCells[cell_id]->position.x = turn.viruses[i].position.x;
+            allCells[cell_id]->position.y = turn.viruses[i].position.y;
+            allCells[cell_id]->estVivante = true;
         }
     }
 
-    //std::cout << "màj des cellules des joueurs\n";
-    for (unsigned int i=0; i<turn.pcells.size(); ++i) {
-        int indice = turn.pcells[i].pcell_id;
+    // Mise à jour des cellules des joueurs
+    for (unsigned int i=0; i<turn.pcells.size(); ++i)
+    {
+        int cell_id = turn.pcells[i].pcell_id;
         // vérifier si allCells[indice] existe déjà
-        if (allCells.count(indice) == 0) {
+        if (allCells.count(cell_id) == 0)
+        {
             // créer la cellule et l'ajouter dans l'ensemble
-            //std::cout << "Création de la cellule joueuse " << indice << std::endl;
             Cellule* cell = new Cellule(turn.pcells[i], players.size());
             addNewCell(cell);
         }
-        else {
-            allCells[indice]->position.x = turn.pcells[i].position.x;
-            allCells[indice]->position.y = turn.pcells[i].position.y;
-            allCells[indice]->mass = turn.pcells[i].mass;
-            allCells[indice]->remaining_isolated_turns = turn.pcells[i].remaining_isolated_turns;
-            allCells[indice]->estVivante = true;
+        else
+        {
+            allCells[cell_id]->position.x = turn.pcells[i].position.x;
+            allCells[cell_id]->position.y = turn.pcells[i].position.y;
+            allCells[cell_id]->mass = turn.pcells[i].mass;
+            allCells[cell_id]->remaining_isolated_turns = turn.pcells[i].remaining_isolated_turns;
+            allCells[cell_id]->estVivante = true;
         }
     }
-    //std::cout << "màj des cellules neutres initiales\n";
+
+    // Mise à jour des cellules neutres initiales
     // On sait que les cellules initiales neutres ont les numéros de 0 à nbCellulesInitiales - 1
-    int indice(0);
-    for (unsigned int i=0; i<turn.initial_ncells.size(); ++i) {
+    int incell_id = 0;
+    for (unsigned int i=0; i<turn.initial_ncells.size(); ++i)
+    {
         // Les cellules initiales neutres ne se déplacent pas
-        allCells[indice]->remaining_turns_before_apparition = turn.initial_ncells[i].remaining_turns_before_apparition;
-        allCells[indice]->estVivante = true;
-        ++indice;
+        allCells[incell_id]->remaining_turns_before_apparition = turn.initial_ncells[i].remaining_turns_before_apparition;
+        allCells[incell_id]->estVivante = true;
+        ++incell_id;
     }
-    //std::cout << "màj des cellules neutres non initiales\n";
-    for (unsigned int i=0; i<turn.non_initial_ncells.size(); ++i) {
-        int indice = turn.non_initial_ncells[i].ncell_id;
+
+    // Mise à jour des cellules neutres non initiales
+    for (unsigned int i=0; i<turn.non_initial_ncells.size(); ++i)
+    {
+        int ncell_id = turn.non_initial_ncells[i].ncell_id;
         // vérifier si allCells[indice] existe déjà
-        if (allCells.count(indice) == 0) {
+        if (allCells.count(ncell_id) == 0)
+        {
             // créer la cellule et l'ajouter dans l'ensemble
-            //std::cout << "Création de la cellule neutre" << indice << std::endl;
             Cellule* cell = new Cellule(turn.non_initial_ncells[i]);
             addNewCell(cell);
         }
-        else {
-            //std::cout << "Mise à jour de la cellule neutre" << indice << std::endl;
-            allCells[indice]->position.x = turn.non_initial_ncells[i].position.x;
-            allCells[indice]->position.y = turn.non_initial_ncells[i].position.y;
-            allCells[indice]->mass = turn.non_initial_ncells[i].mass;
-            allCells[indice]->estVivante = true;
+        else
+        {
+            Cellule * cell = allCells[ncell_id];
+
+            if (cell->player_id() != -1)
+                cell->transformToNeutralCell();
+
+            cell->position.x = turn.non_initial_ncells[i].position.x;
+            cell->position.y = turn.non_initial_ncells[i].position.y;
+            cell->mass = turn.non_initial_ncells[i].mass;
+            cell->estVivante = true;
         }
     }
 
@@ -201,6 +213,7 @@ void Visu::onTurnReceived(const ainet16::Turn &turn)
 
     for (Cellule * cell : cells_to_remove)
     {
+        printf("Removing pcell (id=%d)\n", cell->id());
         // Removes the cell from data structures
         removeCell(cell->id());
         // Cleans memory
@@ -209,6 +222,9 @@ void Visu::onTurnReceived(const ainet16::Turn &turn)
 
     // Let all the cells be sorted by ascending mass
     sort(allCellsByMass.begin(), allCellsByMass.end(), CompareMasseCellules());
+
+    // trier les joueurs par score décroissant
+    sort(players.begin(), players.end(), CompareScoresJoueurs());
 }
 
 void Visu::afficheCellule(Cellule* cellule)
@@ -265,9 +281,6 @@ void Visu::afficheScore()
     cache_droite.setFillColor(sf::Color::White);
     window.draw(cache_droite);
 
-    // trier les joueurs par score décroissant
-    sort(players.begin(), players.end(), CompareScoresJoueurs());
-
     // rectangles pour la représentation du score et de la masse relatifs des joueurs
     sf::RectangleShape rect_score; // rectangle de dimensions (0,0)
     sf::RectangleShape rect_masse;
@@ -300,7 +313,8 @@ void Visu::afficheScore()
     sf::Text etiquette("Random text", police, 9);
     etiquette.setColor(sf::Color::Black);
 
-    for (joueur=players.begin(); joueur!=players.end(); ++joueur) {
+    for (joueur=players.begin(); joueur!=players.end(); ++joueur)
+    {
         window.setView(droite);
         // création de l'étiquette de chaque joueur
         pos_pastille.x = window_width*vue_carte.getViewport().width+ 10;
@@ -569,8 +583,6 @@ void Visu::addNewCell(Cellule *cellule)
 
 void Visu::removeCell(quint32 id)
 {
-    //qDebug() << "entrée dans removeCell\n";
-
     // Let the cell be removed from the allCellsByMass vector
     auto it = std::find_if(allCellsByMass.begin(), allCellsByMass.end(),
                         [id](const Cellule * cell) -> bool

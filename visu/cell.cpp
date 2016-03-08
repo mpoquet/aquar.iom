@@ -9,12 +9,12 @@ Cellule::Cellule(ainet16::TurnPlayerCell cellule, int nbe_players)
     position.x = cellule.position.x;
     position.y = cellule.position.y;
     typeDeCellule = player;
-    player_id = cellule.player_id;
+    m_player_id = cellule.player_id;
     remaining_turns_before_apparition = 0;
     remaining_isolated_turns = cellule.remaining_isolated_turns;
 
     // déterminer la couleur en fonction du numéro du joueur
-    color = colorFromPlayerId(player_id, nbe_players); // todo: associate the color to the player to avoid O(n) computes instead of O(1)
+    color = colorFromPlayerId(m_player_id, nbe_players); // todo: associate the color to the player to avoid O(n) computes instead of O(1)
 
     estVivante = true;
 }
@@ -25,7 +25,7 @@ Cellule::Cellule(ainet16::TurnNonInitialNeutralCell cellule) {
     position.x = cellule.position.x;
     position.y = cellule.position.y;
     typeDeCellule = nonInitialNeutral;
-    player_id = -1;
+    m_player_id = -1;
     remaining_turns_before_apparition = 0;
     remaining_isolated_turns = 0;
 
@@ -43,7 +43,7 @@ Cellule::Cellule(ainet16::TurnInitialNeutralCell cellule, float initialNeutralCe
     position.x = 0;
     position.y = 0;
     typeDeCellule = initialNeutral;
-    player_id = -1;
+    m_player_id = -1;
     remaining_turns_before_apparition = cellule.remaining_turns_before_apparition;
     remaining_isolated_turns = 0;
 
@@ -60,7 +60,7 @@ Cellule::Cellule(ainet16::TurnVirus cellule, float virus_mass) {
     position.y = cellule.position.y;
     typeDeCellule = virus;
     // todo : player id
-    player_id = -1;
+    m_player_id = -1;
     remaining_turns_before_apparition = 0;
     remaining_isolated_turns = 0;
 
@@ -78,7 +78,7 @@ Cellule::Cellule(ainet16::Position cellule, float initial_mass, quint32 id)
     position.y = cellule.y;
     typeDeCellule = initialNeutral;
     // todo : player id
-    player_id = -1;
+    m_player_id = -1;
     remaining_turns_before_apparition = 0;
     remaining_isolated_turns = 0;
 
@@ -88,9 +88,25 @@ Cellule::Cellule(ainet16::Position cellule, float initial_mass, quint32 id)
     estVivante = true;
 }
 
+void Cellule::transformToNeutralCell()
+{
+    m_player_id = -1;
+    typeDeCellule = nonInitialNeutral;
+    remaining_turns_before_apparition = 0;
+    remaining_isolated_turns = 0;
+
+    color = sf::Color::White;
+    estVivante = true;
+}
+
 quint32 Cellule::id() const
 {
     return m_id;
+}
+
+qint32 Cellule::player_id() const
+{
+    return m_player_id;
 }
 
 void Cellule::print() const
@@ -101,7 +117,7 @@ void Cellule::print() const
     std::cout << "type : " << typeDeCellule << std::endl;
     std::cout << "apparition dans " << remaining_turns_before_apparition << " tours\n";
     if (typeDeCellule == player) {
-        std::cout << "appartient au joueur " << player_id << std::endl;
+        std::cout << "appartient au joueur " << m_player_id << std::endl;
         if (remaining_isolated_turns != 0) {
             std::cout << "isolée pour " << remaining_isolated_turns << " tours\n";
         }

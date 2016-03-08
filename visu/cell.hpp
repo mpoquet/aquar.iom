@@ -26,8 +26,12 @@ public:
     Cellule(ainet16::TurnVirus cellule, float virus_mass);
     Cellule(ainet16::Position cellule, float initial_mass, quint32 id);
 
+    void transformToNeutralCell();
+
     // accesseurs:
     quint32 id() const;
+    qint32 player_id() const;
+
 
     // autres:
     void print() const; // affichage des attributs en console
@@ -40,7 +44,7 @@ public:
     float mass;
     ainet16::Position position;
     cellType typeDeCellule;
-    qint32 player_id; // vaut -1 si ce n'est pas une cellule de joueur
+    qint32 m_player_id; // vaut -1 si ce n'est pas une cellule de joueur
     quint32 remaining_turns_before_apparition;
     quint32 remaining_isolated_turns; // vaut 0 pour toutes les cellules non joueuses
     bool estVivante;
