@@ -40,7 +40,7 @@ SWIG_LINK_LIBRARIES(pyainl16 ${PYTHON_LIBRARIES} ${SFML_LIBRARIES})
 
 # Java wrap
 find_package(Java REQUIRED)
-#find_package(JNI REQUIRED)
+find_package(JNI)
 include(UseJava)
 SET_SOURCE_FILES_PROPERTIES(jinterface.i PROPERTIES CPLUSPLUS ON)
 SET_SOURCE_FILES_PROPERTIES(jinterface.i PROPERTIES SWIG_FLAGS "-includeall")
@@ -49,7 +49,7 @@ set(CMAKE_SWIG_FLAGS -package org.contest16)
 set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR}/src/main/java/org/contest16)
 
 swig_add_module(jainl16 java jinterface.i ainetlib16.cpp)
-# include_directories(${JNI_INCLUDE_DIRS})
+include_directories(${JNI_INCLUDE_DIRS})
 
 swig_link_libraries(jainl16 ${JAVA_LIBRARIES} ${SFML_LIBRARIES})
 
