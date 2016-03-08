@@ -310,8 +310,9 @@ void Visu::afficheScore()
 
         etiquette.setPosition(pos_pastille.x + 2*pastille.getRadius(), pos_pastille.y);
         QString points = QString("%1").arg((*joueur).score);
-        QString numero = QString("%1").arg((*joueur).player_id);
-        std::string score = "Joueur " + numero.toStdString() + " : \n" + points.toStdString() + " points";
+        //QString numero = QString("%1").arg((*joueur).player_id);
+        //std::string score = "Joueur " + numero.toStdString() + " : \n" + points.toStdString() + " points";
+        std::string score = (*joueur).name + " : \n" + points.toStdString() + " points";
         etiquette.setString(score);
         window.draw(etiquette);
 
@@ -382,7 +383,7 @@ void Visu::afficheFinPartie()
     sf::Font police;
     police.loadFromFile("fonts/F-Zero GBA Text 1.ttf");
 
-    QString gagnant = QString("%1").arg(players[0].player_id);
+    //QString gagnant = QString("%1").arg(players[0].player_id);
 
     sf::Color couleur(200, 200, 200);
 
@@ -404,7 +405,7 @@ void Visu::afficheFinPartie()
     le_gagnant_est.setPosition(sf::Vector2f(x/2, y/2));
     window.draw(le_gagnant_est);
 
-    sf::Text joueur("joueur " + gagnant.toStdString(), police, 20);
+    sf::Text joueur(players[0].name, police, 20);
     joueur.setColor(couleur);
     textRect = joueur.getLocalBounds();
     joueur.setOrigin(textRect.left + textRect.width/2.0, textRect.top + textRect.height/2.0);
