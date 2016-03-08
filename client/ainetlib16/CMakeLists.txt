@@ -29,25 +29,26 @@ INCLUDE(${SWIG_USE_FILE})
 
 #SET(CMAKE_SWIG_FLAGS "-modern")
 
-SET_SOURCE_FILES_PROPERTIES(pyinterface.i PROPERTIES CPLUSPLUS ON)
-SET_SOURCE_FILES_PROPERTIES(pyinterface.i PROPERTIES SWIG_FLAGS "-includeall")
-
 # Python wrap
 FIND_PACKAGE(PythonLibs)
 INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_PATH})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+SET_SOURCE_FILES_PROPERTIES(pyinterface.i PROPERTIES CPLUSPLUS ON)
+SET_SOURCE_FILES_PROPERTIES(pyinterface.i PROPERTIES SWIG_FLAGS "-includeall")
 SWIG_ADD_MODULE(pyainl16 python pyinterface.i ainetlib16.cpp)
 SWIG_LINK_LIBRARIES(pyainl16 ${PYTHON_LIBRARIES} ${SFML_LIBRARIES})
 
 # Java wrap
-# find_package(Java REQUIRED)
-# #find_package(JNI REQUIRED)
-# include(UseJava)
+find_package(Java REQUIRED)
+#find_package(JNI REQUIRED)
+include(UseJava)
+SET_SOURCE_FILES_PROPERTIES(jinterface.i PROPERTIES CPLUSPLUS ON)
+SET_SOURCE_FILES_PROPERTIES(jinterface.i PROPERTIES SWIG_FLAGS "-includeall")
 
-# set(CMAKE_SWIG_FLAGS -package org.mycompany)
-# set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR}/src/main/java/org/mycompany)
+set(CMAKE_SWIG_FLAGS -package org.contest16)
+set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR}/src/main/java/org/contest16)
 
-# swig_add_module(jainetlib16 java interface.i)
+swig_add_module(jainl16 java jinterface.i ainetlib16.cpp)
 # include_directories(${JNI_INCLUDE_DIRS})
 
-#swig_link_libraries(jainetlib16 Example)
+swig_link_libraries(jainl16 ${JAVA_LIBRARIES} ${SFML_LIBRARIES})
