@@ -517,7 +517,7 @@ void CellGame::compute_cell_divisions()
         QVector2D new_cell_translation = move_vector * distance;
         Position new_cell_position;
         new_cell_position.x = std::max(0.f, std::min(cell->position.x + new_cell_translation.x(), _parameters.map_width));
-        new_cell_position.y = std::std::max(0.f, std::min(cell->position.y + new_cell_translation.y(), _parameters.map_height));
+        new_cell_position.y = std::max(0.f, std::min(cell->position.y + new_cell_translation.y(), _parameters.map_height));
 
         // The new cell is not created if it would not be in the map boundaries
         if ((new_cell_position.x >= 0) && (new_cell_position.x < _parameters.map_width) &&
