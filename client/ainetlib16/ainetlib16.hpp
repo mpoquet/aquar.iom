@@ -198,6 +198,7 @@ namespace ainet16
         float player_cells_starting_mass; //! Définit la masse initiale des cellules des joueurs
         float initial_neutral_cells_mass; //! Définit la masse des cellules neutres initiales
         int initial_neutral_cells_repop_time; //! Définit le temps (en nombre de tours) nécessaires à la réapparition d'une cellule neutre initiale
+        int nb_turns; //! Définit le nombre de tours de jeu
     };
 
     /**
@@ -344,6 +345,13 @@ namespace ainet16
          * @pre Le tour a déjà été reçu : la fonction wait_for_next_turn a été appelée avec succès
          */
         Turn turn() const;
+
+        /**
+         * @brief Renvoie le numéro du dernier tour reçu
+         * @return Le numéro du dernier tour reçu
+         * @pre Le tour a déjà été reçu : la fonction wait_for_next_turn a été appelée avec succès
+         */
+        int current_turn_number() const;
 
         /**
          * @brief Renvoie le numéro de joueur nous correspondant. Cette fonction renvoie 42 si on est une visualisation et ce résultat est à ignorer.

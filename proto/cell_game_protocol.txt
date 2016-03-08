@@ -31,7 +31,7 @@ Cell game: network protocol description
                virus_max_split:ui32,
                nb_starting_cells_per_player:ui32, player_cells_starting_mass:float,
                initial_neutral_cells_mass:float32, initial_neutral_cells_repop_time:ui32,
-               Initial_neutral_cells)
+               nb_turns:ui32, Initial_neutral_cells)
 
     Initial_neutral_cells: (nb_initial_ncells:ui32, (position:pos)*nb_initial_ncells)
 

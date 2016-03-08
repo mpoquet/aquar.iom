@@ -214,6 +214,7 @@ ainet16::Welcome ainet16::Session::wait_for_welcome() throw(AINetException)
         _welcome.parameters.player_cells_starting_mass = read_float();
         _welcome.parameters.initial_neutral_cells_mass = read_float();
         _welcome.parameters.initial_neutral_cells_repop_time = read_uint32();
+        _welcome.parameters.nb_turns = read_uint32();
 
         // Reading the position of the initial neutral cells
         sf::Uint32 nb_initial_neutral_cells = read_uint32();
@@ -247,6 +248,7 @@ ainet16::Welcome ainet16::Session::wait_for_welcome() throw(AINetException)
             printf("  player_cells_starting_mass=%f\n", _welcome.parameters.player_cells_starting_mass);
             printf("  initial_neutral_cells_mass=%f\n", _welcome.parameters.initial_neutral_cells_mass);
             printf("  initial_neutral_cells_repop_time=%d\n", _welcome.parameters.initial_neutral_cells_repop_time);
+            printf("  nb_turns=%d\n", _welcome.parameters.nb_turns);
 
             printf("  nb_initial_ncells=%d\n", (int)nb_initial_neutral_cells);
 
@@ -574,6 +576,11 @@ ainet16::Welcome ainet16::Session::welcome() const
 ainet16::Turn ainet16::Session::turn() const
 {
     return _turn;
+}
+
+int ainet16::Session::current_turn_number() const
+{
+    return _last_received_turn;
 }
 
 int ainet16::Session::player_id() const

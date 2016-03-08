@@ -2809,6 +2809,10 @@ QByteArray CellGame::generate_welcome()
     (*(quint32*)qba.data()) = _parameters.initial_neutral_cells_repop_time;
     message.append(qba);
 
+    qba.resize(sizeof(quint32));
+    (*(quint32*)qba.data()) = _parameters.nb_turns;
+    message.append(qba);
+
     // Initial neutral cells' positions
     qba.resize(sizeof(quint32));
     (*(quint32*)qba.data()) = (quint32) _initial_neutral_cells.size();

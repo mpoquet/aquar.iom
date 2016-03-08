@@ -116,6 +116,7 @@ namespace ainet16
         float player_cells_starting_mass;
         float initial_neutral_cells_mass;
         int initial_neutral_cells_repop_time;
+        int nb_turns;
     };
 
     struct Welcome
@@ -175,6 +176,7 @@ namespace ainet16
         void send_actions(const Actions & actions) throw(AINetException);
 
         Welcome welcome() const;
+        int current_turn_number() const;
         int player_id() const;
         std::vector<ainet16::NeutralCell> neutral_cells() const;
         std::vector<ainet16::TurnPlayerCell> my_player_cells() const;
