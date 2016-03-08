@@ -377,7 +377,7 @@ void Visu::afficheFinPartie()
     afficheScore();
 
     // faire une zone de texte pour annoncer le gagnant
-    window.setView(vue_carte);
+    window.setView(vue_cadre);
 
     sf::Font police;
     police.loadFromFile("fonts/F-Zero GBA Text 1.ttf");
@@ -386,29 +386,29 @@ void Visu::afficheFinPartie()
 
     sf::Color couleur(200, 200, 200);
 
-    sf::Text partie_terminee("Partie terminee", police, 200);
-    float x = vue_cadre.getViewport().width*window_width;
+    sf::Text partie_terminee("Partie terminee", police, 20);
+    float x = vue_carte.getViewport().width*window_width/2.0f*vue_carte.getViewport().width;
     std::cout << x << std::endl;
-    float y = vue_cadre.getViewport().height*window_height;
+    float y = vue_carte.getViewport().height*window_height/2.0f*vue_carte.getViewport().height;
     std::cout << y << std::endl;
     partie_terminee.setColor(couleur);
     sf::FloatRect textRect = partie_terminee.getLocalBounds();
     partie_terminee.setOrigin(textRect.left + textRect.width/2.0f, textRect.top + textRect.height/2.0f);
-    partie_terminee.setPosition(sf::Vector2f(x, y/6));
+    partie_terminee.setPosition(sf::Vector2f(x/2, y/6));
     window.draw(partie_terminee);
 
-    sf::Text le_gagnant_est("Le gagnant est :", police, 200);
+    sf::Text le_gagnant_est("Le gagnant est :", police, 20);
     le_gagnant_est.setColor(couleur);
     textRect = le_gagnant_est.getLocalBounds();
     le_gagnant_est.setOrigin(textRect.left + textRect.width/2.0, textRect.top + textRect.height/2.0);
-    le_gagnant_est.setPosition(sf::Vector2f(x, y));
+    le_gagnant_est.setPosition(sf::Vector2f(x/2, y/2));
     window.draw(le_gagnant_est);
 
-    sf::Text joueur("joueur " + gagnant.toStdString(), police, 200);
+    sf::Text joueur("joueur " + gagnant.toStdString(), police, 20);
     joueur.setColor(couleur);
     textRect = joueur.getLocalBounds();
     joueur.setOrigin(textRect.left + textRect.width/2.0, textRect.top + textRect.height/2.0);
-    joueur.setPosition(sf::Vector2f(x, y+y/6));
+    joueur.setPosition(sf::Vector2f(x/2, y/2+y/6));
     window.draw(joueur);
 
     window.display();
