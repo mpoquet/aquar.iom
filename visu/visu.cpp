@@ -64,8 +64,9 @@ void Visu::onWelcomeReceived(const ainet16::Welcome &welcome)
 
     /*cadre.setSize(sf::Vector2f(parameters.map_width, parameters.map_height));
     vue_cadre.reset(sf::FloatRect(0, 0, parameters.map_width/0.85, parameters.map_height/0.85));*/
-    cadre.setSize(sf::Vector2f(vue_carte.getViewport().width, vue_carte.getViewport().height));
+    cadre.setSize(sf::Vector2f(vue_carte.getViewport().width*window_width, vue_carte.getViewport().height*window_height));
     vue_cadre.reset(sf::FloatRect(0, 0, cadre.getSize().x, cadre.getSize().y));
+    vue_cadre.setViewport(sf::FloatRect(0, 0, vue_carte.getViewport().width+cadre.getOutlineThickness(), vue_cadre.getViewport().height+cadre.getOutlineThickness()));
 
     // initialiser l'ensemble des cellules avec leurs positions initiales
     std::vector<ainet16::Position>::const_iterator it;
@@ -383,30 +384,31 @@ void Visu::afficheFinPartie()
 
     QString gagnant = QString("%1").arg(players[0].player_id);
 
-    sf::Color couleur(200, 200, 200, 128);
+    sf::Color couleur(200, 200, 200);
 
     sf::Text partie_terminee("Partie terminee", police, 200);
-    float x = vue_carte.getSize().x;
-    float y = vue_carte.getSize().y;
-    //std::cout << y << std::endl;
+    float x = vue_cadre.getViewport().width*window_width;
+    std::cout << x << std::endl;
+    float y = vue_cadre.getViewport().height*window_height;
+    std::cout << y << std::endl;
     partie_terminee.setColor(couleur);
     sf::FloatRect textRect = partie_terminee.getLocalBounds();
     partie_terminee.setOrigin(textRect.left + textRect.width/2.0f, textRect.top + textRect.height/2.0f);
-    partie_terminee.setPosition(sf::Vector2f(x/2.0f, y/8.0f));
+    partie_terminee.setPosition(sf::Vector2f(x, y/6));
     window.draw(partie_terminee);
 
     sf::Text le_gagnant_est("Le gagnant est :", police, 200);
     le_gagnant_est.setColor(couleur);
     textRect = le_gagnant_est.getLocalBounds();
     le_gagnant_est.setOrigin(textRect.left + textRect.width/2.0, textRect.top + textRect.height/2.0);
-    le_gagnant_est.setPosition(sf::Vector2f(x/2, y/2));
+    le_gagnant_est.setPosition(sf::Vector2f(x, y));
     window.draw(le_gagnant_est);
 
     sf::Text joueur("joueur " + gagnant.toStdString(), police, 200);
     joueur.setColor(couleur);
     textRect = joueur.getLocalBounds();
     joueur.setOrigin(textRect.left + textRect.width/2.0, textRect.top + textRect.height/2.0);
-    joueur.setPosition(sf::Vector2f(x/2, y/2+y/6));
+    joueur.setPosition(sf::Vector2f(x, y+y/6));
     window.draw(joueur);
 
     window.display();
@@ -490,9 +492,9 @@ void Visu::handleEvents()
 void Visu::onGameEnd(int winnerPlayerId, std::vector<ainet16::GameEndsPlayer> endPlayers)
 {
     partieEnCours = false;
+    int a=winnerPlayerId;
+    a++;
 
-    winnerPlayerId ++;
-    players.size();
     std::cout << "entrée dans onGameEnd\n";
 
     // mettre à jour les scores pour l'affichage du classement
