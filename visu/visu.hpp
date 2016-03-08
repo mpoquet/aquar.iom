@@ -75,6 +75,7 @@ public:
     void deplaceVueGauche();
     void deplaceVueHaut();
     void deplaceVueBas();
+    void centreVueSouris();
     void resetCarte(); // Remet la vue comme au démarrage (carte entière dans le cadre)
 
     // Active/désactive l'affichage des cellules neutres
