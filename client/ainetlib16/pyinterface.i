@@ -8,13 +8,15 @@
 %include "stdint.i"
 %include "exception.i"
 
+%rename(Virus) ainet16::TurnVirus;
+%rename(PlayerCell) ainet16::TurnPlayerCell;
+%rename(Player) ainet16::TurnPlayer;
+
 %template(GameEndsPlayerVector) std::vector<ainet16::GameEndsPlayer>;
 %template(PositionVector) std::vector<ainet16::Position>;
-%template(TurnInitialNeutralCellVector) std::vector<ainet16::TurnInitialNeutralCell>;
-%template(TurnNonInitialNeutralCellVector) std::vector<ainet16::TurnNonInitialNeutralCell>;
-%template(TurnVirusVector) std::vector<ainet16::TurnVirus>;
-%template(TurnPlayerCellVector) std::vector<ainet16::TurnPlayerCell>;
-%template(TurnPlayerVector) std::vector<ainet16::TurnPlayer>;
+%template(VirusVector) std::vector<ainet16::TurnVirus>;
+%template(PlayerCellVector) std::vector<ainet16::TurnPlayerCell>;
+%template(PlayerVector) std::vector<ainet16::TurnPlayer>;
 %template(NeutralCellVector) std::vector<ainet16::NeutralCell>;
 
 namespace ainet16
@@ -170,7 +172,35 @@ namespace ainet16
     %extend ainet16::Position {
         %pythoncode %{
             def __repr__(self):
-                return '({}, {})'.format(self.x, self.y)
+                return '{{x:{}, y:{}}}'.format(self.x, self.y)
+        %}
+    }
+
+    %extend ainet16::TurnVirus {
+        %pythoncode %{
+            def __repr__(self):
+                return '{{id:{}, pos:{}}}'.format(self.id, self.position)
+        %}
+    }
+
+    %extend ainet16::NeutralCell {
+        %pythoncode %{
+            def __repr__(self):
+                return '{{id:{}, pos:{}, mass:{}, remaining:{}, alive:{}}}'.format(self.id, self.position, self.mass, self.remaining_turns_before_apparition, self.is_alive)
+        %}
+    }
+
+    %extend ainet16::TurnPlayerCell {
+        %pythoncode %{
+            def __repr__(self):
+                return '{{id:{}, player_id:{}, pos:{}, mass:{}, isolated:{}}}'.format(self.pcell_id, self.player_id, self.position, self.mass, self.remaining_isolated_turns)
+        %}
+    }
+
+    %extend ainet16::TurnPlayer {
+        %pythoncode %{
+            def __repr__(self):
+                return "{{player_id:{}, name:'{}', nb_cells:{}, mass:{}, score:{}}}".format(self.player_id, self.name, self.nb_cells, self.mass, self.score)
         %}
     }
 #endif
