@@ -454,6 +454,29 @@ void Visu::handleEvents()
             window.close();
             break;
 
+            // clic de souris
+        case sf::Event::MouseButtonPressed:
+            switch(event.mouseButton.button) {
+
+            case sf::Mouse::Left:
+                centreVueSouris();
+                break;
+
+            default:
+                break;
+            }
+
+            // roulette de souris
+        case sf::Event::MouseWheelMoved:
+
+            if (event.mouseWheel.delta > 0) {
+                zoom();
+            }
+
+            if (event.mouseWheel.delta < 0) {
+                dezoom();
+            }
+
             // appui sur un bouton du clavier
         case sf::Event::KeyPressed:
             //qDebug() << "une touche a été pressée\n";
@@ -466,17 +489,6 @@ void Visu::handleEvents()
             case sf::Keyboard::N:
                 toggleNeutralCells();
                 break;
-
-//            case sf::Keyboard::T:
-//                // test de la fonction onTurnReceived
-//                tour.viruses[0].position.y += 100;
-//                tour.pcells[0].position.x += 100;
-//                tour.pcells[2].position.y -= 20;
-//                tour.initial_ncells[0].remaining_turns_before_apparition = 0;
-//                tour.non_initial_ncells[0].mass = 50;
-//                onTurnReceived(tour);
-//                tour.players[2].score = 21;
-//                break;
 
             case sf::Keyboard::Add:
                 zoom();
@@ -580,6 +592,20 @@ void Visu::deplaceVueHaut()
 void Visu::deplaceVueBas()
 {
     vue_carte.move(0, 5);
+}
+
+void Visu::centreVueSouris()
+{
+    std::cout << "centre vue souris\n";
+
+    // coordonnées de la souris dans la fenêtre
+    sf::Vector2i pixelPos = sf::Mouse::getPosition(window);
+    std::cout << "window x " << pixelPos.x << std::endl;
+    // conversion dans la carte
+    sf::Vector2f worldPos = window.mapPixelToCoords(pixelPos, vue_carte);
+    std::cout << "map x " << worldPos.x << std::endl;
+
+    vue_carte.setCenter(worldPos);
 }
 
 void Visu::addNewCell(Cellule *cellule)
