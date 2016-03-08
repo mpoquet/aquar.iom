@@ -64,8 +64,9 @@ void Visu::onWelcomeReceived(const ainet16::Welcome &welcome)
 
     /*cadre.setSize(sf::Vector2f(parameters.map_width, parameters.map_height));
     vue_cadre.reset(sf::FloatRect(0, 0, parameters.map_width/0.85, parameters.map_height/0.85));*/
-    cadre.setSize(sf::Vector2f(vue_carte.getViewport().width, vue_carte.getViewport().height));
+    cadre.setSize(sf::Vector2f(vue_carte.getViewport().width*window_width, vue_carte.getViewport().height*window_height));
     vue_cadre.reset(sf::FloatRect(0, 0, cadre.getSize().x, cadre.getSize().y));
+    vue_cadre.setViewport(sf::FloatRect(0, 0, vue_carte.getViewport().width+cadre.getOutlineThickness(), vue_cadre.getViewport().height+cadre.getOutlineThickness()));
 
     // initialiser l'ensemble des cellules avec leurs positions initiales
     std::vector<ainet16::Position>::const_iterator it;
@@ -309,8 +310,9 @@ void Visu::afficheScore()
 
         etiquette.setPosition(pos_pastille.x + 2*pastille.getRadius(), pos_pastille.y);
         QString points = QString("%1").arg((*joueur).score);
-        QString numero = QString("%1").arg((*joueur).player_id);
-        std::string score = "Joueur " + numero.toStdString() + " : \n" + points.toStdString() + " points";
+        //QString numero = QString("%1").arg((*joueur).player_id);
+        //std::string score = "Joueur " + numero.toStdString() + " : \n" + points.toStdString() + " points";
+        std::string score = (*joueur).name + " : \n" + points.toStdString() + " points";
         etiquette.setString(score);
         window.draw(etiquette);
 
@@ -376,33 +378,40 @@ void Visu::afficheFinPartie()
     afficheScore();
 
     // faire une zone de texte pour annoncer le gagnant
-    window.setView(vue_carte);
+    window.setView(vue_cadre);
 
     sf::Font police;
     police.loadFromFile("fonts/F-Zero GBA Text 1.ttf");
 
-    QString gagnant = QString("%1").arg(players[0].player_id);
+    //QString gagnant = QString("%1").arg(players[0].player_id);
 
-    sf::Color couleur(200, 200, 200, 128);
+    sf::Color couleur;
+    if (background_color == sf::Color::White) {
+        couleur = sf::Color::Black;
+    }
+    else {
+        couleur = sf::Color::White;
+    }
 
-    sf::Text partie_terminee("Partie terminee", police, 200);
-    float x = vue_carte.getSize().x;
-    float y = vue_carte.getSize().y;
+    sf::Text partie_terminee("Partie terminee", police, 20);
+    float x = vue_carte.getViewport().width*window_width/2.0f*vue_carte.getViewport().width;
+    //std::cout << x << std::endl;
+    float y = vue_carte.getViewport().height*window_height/2.0f*vue_carte.getViewport().height;
     //std::cout << y << std::endl;
     partie_terminee.setColor(couleur);
     sf::FloatRect textRect = partie_terminee.getLocalBounds();
     partie_terminee.setOrigin(textRect.left + textRect.width/2.0f, textRect.top + textRect.height/2.0f);
-    partie_terminee.setPosition(sf::Vector2f(x/2.0f, y/8.0f));
+    partie_terminee.setPosition(sf::Vector2f(x/2, y/6));
     window.draw(partie_terminee);
 
-    sf::Text le_gagnant_est("Le gagnant est :", police, 200);
+    sf::Text le_gagnant_est("Le gagnant est :", police, 20);
     le_gagnant_est.setColor(couleur);
     textRect = le_gagnant_est.getLocalBounds();
     le_gagnant_est.setOrigin(textRect.left + textRect.width/2.0, textRect.top + textRect.height/2.0);
     le_gagnant_est.setPosition(sf::Vector2f(x/2, y/2));
     window.draw(le_gagnant_est);
 
-    sf::Text joueur("joueur " + gagnant.toStdString(), police, 200);
+    sf::Text joueur(players[0].name, police, 20);
     joueur.setColor(couleur);
     textRect = joueur.getLocalBounds();
     joueur.setOrigin(textRect.left + textRect.width/2.0, textRect.top + textRect.height/2.0);
@@ -490,9 +499,9 @@ void Visu::handleEvents()
 void Visu::onGameEnd(int winnerPlayerId, std::vector<ainet16::GameEndsPlayer> endPlayers)
 {
     partieEnCours = false;
+    int a=winnerPlayerId;
+    a++;
 
-    winnerPlayerId ++;
-    players.size();
     std::cout << "entrée dans onGameEnd\n";
 
     // mettre à jour les scores pour l'affichage du classement
