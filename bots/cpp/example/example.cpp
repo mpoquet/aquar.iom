@@ -138,7 +138,7 @@ int main(int argc, char ** argv)
             printf("Ennemy player cells:\n");
             for (const TurnPlayerCell & cell : session.ennemy_player_cells())
             {
-                float max_speed = std::max(0.f, p.base_cell_speed - cell.mass * p.speed_loss_factor);
+                float max_speed = max(0.f, p.base_cell_speed - cell.mass * p.speed_loss_factor);
                 float radius = cell.mass * p.radius_factor;
 
                 printf("  (id=%d, mass=%g, player_id=%d, pos=(%g,%g), iso_turns=%d, max_speed=%g, radius=%g)\n",
@@ -176,10 +176,8 @@ int main(int argc, char ** argv)
             // Action 3: let us try to create a virus from cell (id=42) towards the (map_width,map_height) corner
             actions.add_create_virus_action(42, p.map_width, p.map_height);
             // Action 4: one time over 420, let us abandon our cells to get new ones the next turn
-            if (rand() % 420 == 0)
-            {
+            if (rand() % 420 == 42)
                 actions.add_surrender_action();
-            }
 
             printf("Sending actions...\n");
             session.send_actions(actions);

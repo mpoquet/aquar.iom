@@ -28,4 +28,18 @@ cp ../bots/python/example.py ./aquariom/example_bot_python/
 ########
 # Java #
 ########
-#mkdir -p ./aquariom/example_bot_java
+mkdir -p ./aquariom/example_bot_java/bots
+mkdir -p ./aquariom/example_bot_java/bin/bots
+cp ../client/ainetlib16/build/libjainl16.so ./aquariom/example_bot_java/
+cp -r ../client/ainetlib16/build/src/main/java/org ./aquariom/example_bot_java/
+cp ../bots/java/example/bots/Example.java ./aquariom/example_bot_java/bots/
+
+cat > ./aquariom/example_bot_java/Makefile.tmp << EOF
+bin/bots/Example.class: bots/Example.java
+    javac -d bin -sourcepath . bots/Example.java
+
+run: bin/bots/Example.class
+    java -Djava.library.path=. -cp bin bots.Example ::1 4242
+EOF
+unexpand -t 4 --first-only ./aquariom/example_bot_java/Makefile.tmp > ./aquariom/example_bot_java/Makefile
+rm ./aquariom/example_bot_java/Makefile.tmp
