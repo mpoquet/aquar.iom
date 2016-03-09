@@ -61,3 +61,10 @@ run: bin/bots/Example.class
 EOF
 unexpand -t 4 --first-only ./aquariom/example_bot_java/Makefile.tmp > ./aquariom/example_bot_java/Makefile
 rm ./aquariom/example_bot_java/Makefile.tmp
+
+#####################
+# API documentation #
+#####################
+mkdir -p ./aquariom/doc
+cp -r ../client/ainetlib16/doc/html ./aquariom/doc/
+cp ../client/ainetlib16/doc/latex/refman.pdf ./aquariom/doc

@@ -33,3 +33,10 @@ cd bots/cpp
 qmake
 make clean
 make -j 4
+
+# Client C++ API documentation
+cd ${base_dir}
+cd client/ainetlib16
+doxygen
+cd doc/latex
+make
