@@ -8,6 +8,8 @@
 #include <tgmath.h>
 #include <string>
 #include <QDebug>
+#include <sstream>
+#include <iomanip>
 
 #include "cell.hpp"
 
@@ -43,7 +45,7 @@ public:
     ~Visu();
 
     void onWelcomeReceived(const ainet16::Welcome &welcome);
-    void onTurnReceived(ainet16::Turn &turn);
+    void onTurnReceived(ainet16::Turn &turn, int numeroTour);
 
     // Affiche une cellule dans la fenêtre
     void afficheCellule(Cellule *cellule);
@@ -53,6 +55,8 @@ public:
     void afficheScore();
     // Affiche le cadre qui délimite le plateau de jeu
     void afficheCadre();
+    // Affiche le tour de jeu
+    void afficheTour();
 
     // Met à jour tout l'affichage
     void afficheTout();
@@ -110,6 +114,8 @@ private:
 
     bool afficheCellulesNeutres;
     bool partieEnCours; // si la partie est terminée le comportement sera différent
+    int tourCourant;
+    sf::Font police;
 
 public:
     std::map<quint32, Cellule*> allCells; // toutes les cellules, tous types confondus, par m_id croissant. Les premières sont les initiales neutres

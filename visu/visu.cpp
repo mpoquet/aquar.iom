@@ -10,6 +10,7 @@ Visu::Visu()
 
     afficheCellulesNeutres = false; // par défaut les cellules neutres ne sont pas affichées dans la fenêtre
     partieEnCours = true;
+    tourCourant = 0;
 
     cadre.setFillColor(background_color);
     cadre.setOutlineColor(borders_color);
@@ -28,6 +29,8 @@ Visu::Visu()
 
     bas.reset(sf::FloatRect(0, 0.85*window_height+1, window_width, 0.15*window_height));
     bas.setViewport(sf::FloatRect(0, 0.85, 1, 0.15));
+
+    police.loadFromFile("fonts/F-Zero GBA Text 1.ttf");
 
 }
 
@@ -90,8 +93,10 @@ void Visu::onWelcomeReceived(const ainet16::Welcome &welcome)
     // pas besoin d'initialiser les joueurs : on va les recevoir dans un Turn
 }
 
-void Visu::onTurnReceived(ainet16::Turn &turn)
+void Visu::onTurnReceived(ainet16::Turn &turn, int numeroTour)
 {
+    tourCourant = numeroTour;
+
     if (players.size()==0)
     {
         // C'est la première fois qu'on reçoit un Turn : initialisation de la liste des joueurs
@@ -311,7 +316,7 @@ void Visu::afficheScore()
 
     // pastilles pour la légende des couleurs des joueurs
     ainet16::Position pos_pastille;
-    pos_pastille.y = 20;
+    pos_pastille.y = 50;
     sf::CircleShape pastille(10, 128);
 
     sf::Font police;
@@ -379,6 +384,24 @@ void Visu::afficheCadre()
     window.draw(cadre);
 }
 
+void Visu::afficheTour()
+{
+    std::string max_nb_turns_str = std::to_string(parameters.nb_turns);
+    int nb_digits_max = max_nb_turns_str.size();
+
+    std::ostringstream oss;
+    oss << std::setw(nb_digits_max) << tourCourant;
+    std::string str = oss.str(); // Contient le padding de nb_digits_max espaces
+
+    window.setView(droite);
+    sf::Text numero_tour("Tour " + str + "/" + max_nb_turns_str, police, 9);
+    numero_tour.setColor(sf::Color::Black);
+    numero_tour.setPosition(window_width*vue_carte.getViewport().width+ 10, 10);
+
+    window.draw(numero_tour);
+
+}
+
 void Visu::afficheTout()
 {
     window.clear(sf::Color::White);
@@ -386,6 +409,7 @@ void Visu::afficheTout()
     afficheCadre();
     afficheToutesCellules();
     afficheScore();
+    afficheTour();
 
     window.display(); // dessine tous les objets avec lesquels on a appelé draw
 }
@@ -400,10 +424,7 @@ void Visu::afficheFinPartie()
     afficheScore();
 
     // faire une zone de texte pour annoncer le gagnant
-    window.setView(vue_cadre);
-
-    sf::Font police;
-    police.loadFromFile("fonts/F-Zero GBA Text 1.ttf");
+    window.setView(vue_cadre);    
 
     //QString gagnant = QString("%1").arg(players[0].player_id);
 
@@ -440,7 +461,6 @@ void Visu::afficheFinPartie()
     joueur.setPosition(sf::Vector2f(x/2, y/2+y/6));
     window.draw(joueur);
 
-    window.display();
 }
 
 void Visu::handleEvents()
@@ -600,10 +620,9 @@ void Visu::centreVueSouris()
 
     // coordonnées de la souris dans la fenêtre
     sf::Vector2i pixelPos = sf::Mouse::getPosition(window);
-    std::cout << "window x " << pixelPos.x << std::endl;
+
     // conversion dans la carte
     sf::Vector2f worldPos = window.mapPixelToCoords(pixelPos, vue_carte);
-    std::cout << "map x " << worldPos.x << std::endl;
 
     vue_carte.setCenter(worldPos);
 }
