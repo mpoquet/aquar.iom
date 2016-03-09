@@ -85,10 +85,11 @@ int main(int argc, char ** argv)
 
         if (welcome.initial_ncells_positions.size() > 3)
         {
+            printf("The first 3 initial neutral cells:\n");
             for (int i = 0; i < 3; ++i)
             {
                 Position & pos = welcome.initial_ncells_positions[i];
-                printf("    Initial neutral cell: (id=%d, mass=%g, pos=(%g,%g))\n",
+                printf("  (id=%d, mass=%g, pos=(%g,%g))\n",
                        i, p.initial_neutral_cells_mass, pos.x, pos.y);
             }
         }

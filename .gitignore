@@ -6,14 +6,20 @@ moc_*.cpp
 bots/cpp/Makefile
 bots/cpp/*/Makefile
 bots/cpp/afk/afk
-bots/cpp/sleeper/sleeper
+bots/cpp/example/example
+bots/cpp/move_to_corner/move_to_corner
 bots/cpp/nearest/nearest
+bots/cpp/sleeper/sleeper
 bots/cpp/nearest_splitter/nearest_splitter
 bots/cpp/sonic/sonic
-bots/cpp/move_to_corner/move_to_corner
 
 visu/Makefile
 visu/visu
+
 server/Makefile
 server/server
+
 client/ainetlib16/build
+client/ainetlib16/doc
+
+redist/aquariom

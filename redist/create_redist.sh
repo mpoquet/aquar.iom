@@ -3,7 +3,9 @@
 # Remove previous exports
 rm -rf ./aquariom
 
-# C++
+#######
+# C++ #
+#######
 mkdir -p ./aquariom/example_bot_cpp
 cp ../client/ainetlib16/build/libainl16.so ./aquariom/example_bot_cpp/
 cp ../bots/cpp/example/example.cpp ./aquariom/example_bot_cpp/
@@ -15,8 +17,15 @@ EOF
 unexpand -t 4 --first-only ./aquariom/example_bot_cpp/Makefile.tmp > ./aquariom/example_bot_cpp/Makefile
 rm ./aquariom/example_bot_cpp/Makefile.tmp
 
-# Python
-#mkdir -p ./aquariom/example_bot_python
+##########
+# Python #
+##########
+mkdir -p ./aquariom/example_bot_python
+cp ../client/ainetlib16/build/pyainl16.py ./aquariom/example_bot_python/
+cp ../client/ainetlib16/build/_pyainl16.so ./aquariom/example_bot_python/
+cp ../bots/python/example.py ./aquariom/example_bot_python/
 
-# Java
+########
+# Java #
+########
 #mkdir -p ./aquariom/example_bot_java
