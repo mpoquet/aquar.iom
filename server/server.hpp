@@ -10,7 +10,8 @@ class Server : public QObject
 {
     Q_OBJECT
 public:
-    explicit Server(quint16 port = 4242, QObject *parent = 0);
+    explicit Server(QObject *parent = 0);
+    void listen(quint16 port = 4242);
     ~Server();
 
 signals:

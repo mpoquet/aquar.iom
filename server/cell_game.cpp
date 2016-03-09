@@ -1254,7 +1254,7 @@ void CellGame::load_parameters(const QString &filename)
     }
 
     _parameters.clear();
-    emit message("Loading parameters...");
+    emit message(QString("Loading game parameters from '%1'...").arg(filename));
 
     QFile file(filename);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
@@ -1634,7 +1634,7 @@ void CellGame::load_parameters(const QString &filename)
     Q_ASSERT(_server != nullptr);
     _server->setServerMaxPlayers(_parameters.max_nb_players);
 
-    emit message("Parameters have been loaded");
+    emit message("Parameters have been loaded successfully");
 }
 
 void CellGame::setServer(Server *server)

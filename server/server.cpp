@@ -5,16 +5,16 @@
 #include "client.hpp"
 #include "protocol.hpp"
 
-Server::Server(quint16 port, QObject *parent) : QObject(parent)
+Server::Server(QObject *parent) : QObject(parent)
 {
     _server = new QTcpServer(this);
     connect(_server, SIGNAL(newConnection()), this, SLOT(onClientConnected()));
+}
 
+void Server::listen(quint16 port)
+{
     if (!_server->listen(QHostAddress::Any, port))
-    {
         emit message(QString("Cannot listen port %1").arg(port));
-        qApp->exit(1);
-    }
     else
         emit message(QString("Listening port %1").arg(port));
 }

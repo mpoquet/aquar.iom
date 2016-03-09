@@ -1,4 +1,7 @@
 #include <QCoreApplication>
+#include <QCommandLineParser>
+
+#include <stdio.h>
 
 #include "server.hpp"
 #include "cli.hpp"
@@ -8,6 +11,25 @@
 int main(int argc, char **argv)
 {
     QCoreApplication a(argc, argv);
+
+    QCommandLineParser parser;
+    parser.setApplicationDescription("Aquar.iom server");
+    parser.addHelpOption();
+    parser.addOption({"map", "The map used in the game", "FILENAME", ""});
+    parser.addOption({"port", "The network port used by the server", "NUMBER", "4242"});
+
+    parser.process(a);
+
+    QString map_filename = parser.value("map");
+    QString port_string = parser.value("port");
+    bool ok;
+    int port = port_string.toInt(&ok);
+
+    if (!ok)
+    {
+        printf("Impossible to convert port '%s' to a valid integer, aborting.\n", port_string.toStdString().c_str());
+        return 1;
+    }
 
     auto s = new Server();
     auto cli = new CLI();
@@ -41,10 +63,8 @@ int main(int argc, char **argv)
     a.connect(cli, SIGNAL(wantToStopGame()), game, SLOT(onStop()));
     a.connect(cli, SIGNAL(wantToSetGameTurnTimer(quint32)), game, SLOT(onTurnTimerChanged(quint32)));
 
-    game->load_parameters("../maps/map2p.json");
-
-    //game->load_parameters("../maps/map2p_test_merge.json");
-    //game->onTurnTimerChanged(2000);
+    s->listen(port);
+    game->load_parameters(map_filename);
 
     return a.exec();
 }
