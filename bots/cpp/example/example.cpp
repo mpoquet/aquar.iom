@@ -80,7 +80,6 @@ int main(int argc, char ** argv)
         printf("  the mass of initial neutral cells is %g\n", p.initial_neutral_cells_mass);
         printf("  initial neutral cells need %d turns to reappear after being eaten\n", p.initial_neutral_cells_repop_time);
 
-
         printf("  there are %zu initial neutral cells \n", welcome.initial_ncells_positions.size());
         printf("  the unique id numbers of initial neutral cells are in [0,%zu]\n", welcome.initial_ncells_positions.size() - 1);
 
