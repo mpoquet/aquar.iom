@@ -1008,9 +1008,10 @@ void CellGame::compute_pcells_collisions_inside_node(CellGame::PlayerCell * cell
                 {
                     if (cell->mass > _parameters.minimum_mass_ratio_to_absorb * oth_pcell->mass)
                     {
-                        /*emit message(QString("    Collision: (id=%1,pid=%2,mass=%3) eats (id=%4,pid=%5,mass=%6").arg(
+                        emit message(QString("    Collision: (id=%1,pid=%2,pname='%7',mass=%3) eats (id=%4,pid=%5,pname='%8',mass=%6)").arg(
                                          cell->id).arg(cell->player_id).arg(cell->mass).arg(
-                                         oth_pcell->id).arg(oth_pcell->player_id).arg(oth_pcell->mass));*/
+                                         oth_pcell->id).arg(oth_pcell->player_id).arg(oth_pcell->mass).arg(
+                                         _players[cell->player_id]->name).arg(_players[oth_pcell->player_id]->name));
                         // "cell" absorbs oth_pcell (not belonging to the same player)
                         Position g = compute_barycenter(cell->position, cell->mass, oth_pcell->position, oth_pcell->mass);
                         cell->position = g;
@@ -1093,6 +1094,10 @@ void CellGame::compute_viruses_collisions_inside_node(CellGame::PlayerCell * cel
 
         if ((dist < cell->radius_squared) && (cell->mass > _parameters.virus_mass))
         {
+            emit message(QString("  (id=%1,pid=%2,pname='%3',mass=%4) just ate a virus :(").arg(
+                             cell->id).arg(cell->player_id).arg(_players[cell->player_id]->name).arg(
+                             cell->mass));
+
             // The poor "cell" just ate a virus :(
             cell->remaining_isolated_turns = _parameters.virus_isolation_duration;
 
@@ -1198,6 +1203,10 @@ bool CellGame::compute_pcell_outer_collisions_inside_node(CellGame::PlayerCell *
                 {
                     if (oth_pcell->mass > _parameters.minimum_mass_ratio_to_absorb * cell->mass)
                     {
+                        emit message(QString("  (id=%4,pid=%5,pname='%8',mass=%6) eats (id=%1,pid=%2,pname='%7',mass=%3)").arg(
+                                         cell->id).arg(cell->player_id).arg(cell->mass).arg(
+                                         oth_pcell->id).arg(oth_pcell->player_id).arg(oth_pcell->mass).arg(
+                                         _players[cell->player_id]->name).arg(_players[oth_pcell->player_id]->name));
                         // oth_pcell absorbs "cell" (not belonging to the same player)
                         Position g = compute_barycenter(cell->position, cell->mass, oth_pcell->position, oth_pcell->mass);
                         oth_pcell->position = g;
