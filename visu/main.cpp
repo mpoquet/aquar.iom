@@ -85,7 +85,8 @@ void network_loop(const SharedData & data)
 
             data.m->lock();
             //printf("Turn update\n");
-            data.visu->onTurnReceived(turn);
+            int turn_number = 1246;
+            data.visu->onTurnReceived(turn, turn_number);
             data.m->unlock();
 
             ainet16::Actions actions;
