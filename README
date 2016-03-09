@@ -11,8 +11,31 @@ Dependencies
             libudev-dev libjpeg-dev libfreetype6-dev libxcb-image0-dev
             libudev-dev libjpeg-dev libfretype6-dev libopenal-dev
             libflac-dev libvorbis-dev
+    Python 3 (tested on 3.5m). Python 2.7+ might work but it has not been tested at all.
+    JDK (tested on openjdk8.u74-1)
 
-Installation
+Automatic build & export
+========================
+    Two scripts in the 'redist' directory can be used to compile everything
+    and to export all what is needed into a directory containing:
+        - the server binary
+        - the visualisation binary
+        - a directory which contains everything to use a C++ bot example
+        - a directory which contains everything to use a Python bot example
+        - a directory which contains everything to use a Java bot example
+
+    Compile everything
+    ==================
+        cd redist
+        bash -e build_everything.sh
+
+    Export
+    ======
+        cd redist
+        bash -e create_redist.sh
+        # Creates a directory ./aquariom
+
+Manual Installation
 ============
     Server
     ======
@@ -41,7 +64,7 @@ Installation
         qmake
         make
 
-Execution
+Manual Execution
 =========
     Server
     ======
@@ -65,8 +88,10 @@ User manuals
     ======
     The server has a little Command Line Interface.
     Typing 'help' in it should display the list of available options.
+    Its command-line options can be shown with --help or -h.
 
     Visu
     ====
     The visualization has many shortkeys.
     More details can be found in file 'visu/readme.txt'.
+    Its command-line options can be shown with --help or -h.
