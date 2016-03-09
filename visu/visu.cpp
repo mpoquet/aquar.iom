@@ -40,26 +40,8 @@ Visu::~Visu()
 
 void Visu::onWelcomeReceived(const ainet16::Welcome &welcome)
 {
-    /// enregistrer les paramètres de la partie dans la classe
-    parameters.map_width = welcome.parameters.map_width;
-    parameters.map_height = welcome.parameters.map_height;
-    parameters.min_nb_players = welcome.parameters.min_nb_players;
-    parameters.max_nb_players = welcome.parameters.max_nb_players;
-    parameters.mass_absorption = welcome.parameters.mass_absorption;
-    parameters.minimum_mass_ratio_to_absorb = welcome.parameters.minimum_mass_ratio_to_absorb;
-    parameters.minimum_pcell_mass = welcome.parameters.minimum_pcell_mass;
-    parameters.radius_factor = welcome.parameters.radius_factor;
-    parameters.max_cells_per_player = welcome.parameters.max_cells_per_player;
-    parameters.mass_loss_per_frame = welcome.parameters.mass_loss_per_frame; // not useful for visu
-    parameters.base_cell_speed = welcome.parameters.base_cell_speed; // not useful for visu
-    parameters.speed_loss_factor = welcome.parameters.speed_loss_factor; // not useful for visu
-    parameters.virus_mass = welcome.parameters.virus_mass; // tous les virus ont la même masse
-    parameters.virus_creation_mass_loss = welcome.parameters.virus_creation_mass_loss; // not useful for visu
-    parameters.virus_max_split = welcome.parameters.virus_max_split; // not useful for visu
-    parameters.nb_starting_cells_per_player = welcome.parameters.nb_starting_cells_per_player; // not useful for visu
-    parameters.player_cells_starting_mass = welcome.parameters.player_cells_starting_mass; // not useful for visu
-    parameters.initial_neutral_cells_mass = welcome.parameters.initial_neutral_cells_mass;
-    parameters.initial_neutral_cells_repop_time = welcome.parameters.initial_neutral_cells_repop_time;
+    // enregistrer les paramètres de la partie dans la classe
+    parameters = welcome.parameters;
 
     // initialiser la vue
     vue_carte.reset(sf::FloatRect(0, 0, parameters.map_width, parameters.map_height));
@@ -424,7 +406,7 @@ void Visu::afficheFinPartie()
     afficheScore();
 
     // faire une zone de texte pour annoncer le gagnant
-    window.setView(vue_cadre);    
+    window.setView(vue_cadre);
 
     //QString gagnant = QString("%1").arg(players[0].player_id);
 

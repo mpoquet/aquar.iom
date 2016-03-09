@@ -85,7 +85,7 @@ void network_loop(const SharedData & data)
 
             data.m->lock();
             //printf("Turn update\n");
-            int turn_number = 1246;
+            int turn_number = session.current_turn_number();
             data.visu->onTurnReceived(turn, turn_number);
             data.m->unlock();
 
