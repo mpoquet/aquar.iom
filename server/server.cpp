@@ -209,43 +209,82 @@ void Server::listServerClients()
     QString resp = "Players:\n";
     QString resv = "Visus:\n";
 
+    int nbu = 0;
+    int nbp = 0;
+    int nbv = 0;
+
     for (Client * client : _clients)
     {
         if (client->_type == Client::ClientType::UNKNOWN)
-            resu += QString("(%1:%2)\n").arg(client->_socket->peerAddress().toString()).arg(client->_socket->localPort());
+        {
+            resu += QString("  (%1:%2)\n").arg(client->_socket->peerAddress().toString()).arg(client->_socket->localPort());
+            ++nbu;
+        }
         else if (client->_type == Client::ClientType::PLAYER)
-            resp += QString("%3 (%1:%2)\n").arg(client->_socket->peerAddress().toString()).arg(client->_socket->localPort()).arg(client->_nick);
+        {
+            resp += QString("  %3 (%1:%2)\n").arg(client->_socket->peerAddress().toString()).arg(client->_socket->localPort()).arg(client->_nick);
+            ++nbp;
+        }
         else
-            resv += QString("%3 (%1:%2)\n").arg(client->_socket->peerAddress().toString()).arg(client->_socket->localPort()).arg(client->_nick);
+        {
+            resv += QString("  %3 (%1:%2)\n").arg(client->_socket->peerAddress().toString()).arg(client->_socket->localPort()).arg(client->_nick);
+            ++nbv;
+        }
     }
 
-    emit message(resu + resp + resv);
+    if ((nbu == 0) && (nbp == 0) && (nbv == 0))
+        emit message("No client connected.");
+    else
+    {
+        QString s;
+        if (nbu > 0)
+            s += resu;
+        if (nbp > 0)
+            s += resp;
+        if (nbv > 0)
+            s += resv;
+        emit message(s);
+    }
 }
 
 void Server::listServerPlayers()
 {
+    int nbp = 0;
     QString resp = "Players:\n";
 
     for (Client * client : _clients)
     {
         if (client->_type == Client::ClientType::PLAYER)
-            resp += QString("%3 (%1:%2)\n").arg(client->_socket->peerAddress().toString()).arg(client->_socket->localPort()).arg(client->_nick);
+        {
+            resp += QString("  %3 (%1:%2)\n").arg(client->_socket->peerAddress().toString()).arg(client->_socket->localPort()).arg(client->_nick);
+            ++nbp;
+        }
     }
 
-    emit message(resp);
+    if (nbp > 0)
+        emit message(resp);
+    else
+        emit message("No player connected.");
 }
 
 void Server::listServerVisus()
 {
+    int nbv = 0;
     QString resv = "Visus:\n";
 
     for (Client * client : _clients)
     {
         if (client->_type == Client::ClientType::VISU)
+        {
             resv += QString("%3 (%1:%2)\n").arg(client->_socket->peerAddress().toString()).arg(client->_socket->localPort()).arg(client->_nick);
+            ++nbv;
+        }
     }
 
-    emit message(resv);
+    if (nbv > 0)
+        emit message(resv);
+    else
+        emit message("No visu connected.");
 }
 
 void Server::resetClients()

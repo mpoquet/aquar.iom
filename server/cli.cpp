@@ -31,7 +31,7 @@ CLI::CLI(QObject *parent) : QObject(parent)
             "  resume     unpauses the game\n"
             "  stop       stops the game\n";
 
-    _invalidCommand = "Invalid command. Type 'help' to list available commands.";
+    _invalidCommand = ": invalid command. Type 'help' to list available commands.";
 }
 
 void CLI::displayMessage(const QString &message)
@@ -77,7 +77,7 @@ void CLI::onCommandEntered(int socket)
         else if (w == "stop")
             emit wantToStopGame();
         else
-            displayMessage(_invalidCommand);
+            displayMessage(QString("'%1': %2").arg(qline, _invalidCommand));
     }
     else if (words.size() == 2)
     {
@@ -101,11 +101,11 @@ void CLI::onCommandEntered(int socket)
             else if (w == "reset")
                 emit wantToResetAndChangeServerPort(argUI);
             else
-                displayMessage(_invalidCommand);
+                displayMessage(QString("'%1': %2").arg(qline, _invalidCommand));
         }
         else
-            displayMessage(_invalidCommand);
+            displayMessage(QString("'%1': %2").arg(qline, _invalidCommand));
     }
     else
-        displayMessage(_invalidCommand);
+        displayMessage(QString("'%1': %2").arg(qline, _invalidCommand));
 }

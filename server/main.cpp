@@ -66,6 +66,12 @@ int main(int argc, char **argv)
     s->listen(port);
     if (!map_filename.isEmpty())
         game->load_parameters(map_filename);
+    else
+    {
+        cli->displayMessage(QString("No map has been loaded yet.\n"
+                                    "You can load one via the CLI (try 'help' to display available commands).\n"
+                                    "You can also load one via command-line options (rerun server with -h)"));
+    }
 
     return a.exec();
 }

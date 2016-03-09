@@ -408,6 +408,8 @@ void CellGame::onTurnEnd()
      *
      */
 
+    emit message(QString("Turn %1/%2").arg(_current_turn).arg(_parameters.nb_turns));
+
     compute_cell_divisions();
     compute_virus_creations();
     compute_cell_moves();
@@ -419,10 +421,10 @@ void CellGame::onTurnEnd()
     update_dead_neutral_cells();
     long double total_mass_before = compute_total_player_mass();
 
-    QString qtree_dbg = "%%%%%%%%%%%%\n";
+    /*QString qtree_dbg = "%%%%%%%%%%%%\n";
     qtree_dbg += _tree_root->display_debug(0);
     qtree_dbg += "\n%%%%%%%%%%%%";
-    emit message(qtree_dbg);
+    emit message(qtree_dbg);*/
 
     compute_cell_collisions();
     long double total_mass_after = compute_total_player_mass();
@@ -444,16 +446,13 @@ void CellGame::onTurnEnd()
 
     update_players_info();
 
-    emit message(QString("Turn %1 is over!").arg(_current_turn));
-
-    ++_current_turn;
-
     if (_current_turn < _parameters.nb_turns)
-        send_turn_to_everyone();
-    else
     {
-        onStop();
+        send_turn_to_everyone();
+        ++_current_turn;
     }
+    else
+        onStop();
 }
 
 void CellGame::compute_cell_divisions()
@@ -916,8 +915,6 @@ void CellGame::compute_first_collision_pass(QSet<CellGame::PlayerCell *> & pcell
                                             QSet<CellGame::Virus *> & viruses_to_delete,
                                             bool &did_something)
 {
-    emit message("First collision pass");
-
     pcells_to_recompute.clear();
     pcells_to_delete.clear();
     pcells_to_create.clear();
@@ -981,17 +978,17 @@ void CellGame::compute_pcells_collisions_inside_node(CellGame::PlayerCell * cell
         {
             if ((cell->id != oth_pcell->id) && !oth_pcell->should_be_deleted && !cell->should_be_deleted)
             {
-                emit message(QString("Comparing (id=%1,pid=%2,mass=%3) and (id=%4,pid=%5,mass=%6").arg(
+                /*emit message(QString("Comparing (id=%1,pid=%2,mass=%3) and (id=%4,pid=%5,mass=%6").arg(
                                  cell->id).arg(cell->player_id).arg(cell->mass).arg(
-                                 oth_pcell->id).arg(oth_pcell->player_id).arg(oth_pcell->mass));
+                                 oth_pcell->id).arg(oth_pcell->player_id).arg(oth_pcell->mass));*/
                 if (cell->player_id == oth_pcell->player_id)
                 {
                     if ((cell->remaining_isolated_turns == 0) &&
                         (oth_pcell->remaining_isolated_turns == 0))
                     {
-                        emit message(QString("    Collision: (id=%1,pid=%2,mass=%3) merges with (id=%4,pid=%5,mass=%6").arg(
+                        /*emit message(QString("    Collision: (id=%1,pid=%2,mass=%3) merges with (id=%4,pid=%5,mass=%6").arg(
                                          cell->id).arg(cell->player_id).arg(cell->mass).arg(
-                                         oth_pcell->id).arg(oth_pcell->player_id).arg(oth_pcell->mass));
+                                         oth_pcell->id).arg(oth_pcell->player_id).arg(oth_pcell->mass));*/
                         // Two cells of the same player merge
                         //Position g = compute_barycenter(cell->position, cell->mass, oth_pcell->position, oth_pcell->mass);
                         //cell->position = g;
@@ -1011,9 +1008,9 @@ void CellGame::compute_pcells_collisions_inside_node(CellGame::PlayerCell * cell
                 {
                     if (cell->mass > _parameters.minimum_mass_ratio_to_absorb * oth_pcell->mass)
                     {
-                        emit message(QString("    Collision: (id=%1,pid=%2,mass=%3) eats (id=%4,pid=%5,mass=%6").arg(
+                        /*emit message(QString("    Collision: (id=%1,pid=%2,mass=%3) eats (id=%4,pid=%5,mass=%6").arg(
                                          cell->id).arg(cell->player_id).arg(cell->mass).arg(
-                                         oth_pcell->id).arg(oth_pcell->player_id).arg(oth_pcell->mass));
+                                         oth_pcell->id).arg(oth_pcell->player_id).arg(oth_pcell->mass));*/
                         // "cell" absorbs oth_pcell (not belonging to the same player)
                         Position g = compute_barycenter(cell->position, cell->mass, oth_pcell->position, oth_pcell->mass);
                         cell->position = g;
