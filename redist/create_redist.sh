@@ -1,11 +1,29 @@
 #!/bin/bash
 
-# Remove previous exports
+# Remove previous export
 rm -rf ./aquariom
 
-#######
-# C++ #
-#######
+##########
+# Server #
+##########
+mkdir -p ./aquariom/bin
+cp ../server/server ./aquariom/bin/
+
+########
+# Visu #
+########
+mkdir -p ./aquariom/bin
+cp ../visu/visu ./aquariom/bin/
+
+########
+# Maps #
+########
+mkdir -p ./aquariom/maps
+cp ../maps/map2p.json ./aquariom/maps/
+
+######################
+# C++ client example #
+######################
 mkdir -p ./aquariom/example_bot_cpp
 cp ../client/ainetlib16/build/libainl16.so ./aquariom/example_bot_cpp/
 cp ../bots/cpp/example/example.cpp ./aquariom/example_bot_cpp/
@@ -17,17 +35,17 @@ EOF
 unexpand -t 4 --first-only ./aquariom/example_bot_cpp/Makefile.tmp > ./aquariom/example_bot_cpp/Makefile
 rm ./aquariom/example_bot_cpp/Makefile.tmp
 
-##########
-# Python #
-##########
+#########################
+# Python client example #
+#########################
 mkdir -p ./aquariom/example_bot_python
 cp ../client/ainetlib16/build/pyainl16.py ./aquariom/example_bot_python/
 cp ../client/ainetlib16/build/_pyainl16.so ./aquariom/example_bot_python/
 cp ../bots/python/example.py ./aquariom/example_bot_python/
 
-########
-# Java #
-########
+#######################
+# Java client example #
+#######################
 mkdir -p ./aquariom/example_bot_java/bots
 mkdir -p ./aquariom/example_bot_java/bin/bots
 cp ../client/ainetlib16/build/libjainl16.so ./aquariom/example_bot_java/
