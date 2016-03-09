@@ -64,7 +64,8 @@ int main(int argc, char **argv)
     a.connect(cli, SIGNAL(wantToSetGameTurnTimer(quint32)), game, SLOT(onTurnTimerChanged(quint32)));
 
     s->listen(port);
-    game->load_parameters(map_filename);
+    if (!map_filename.isEmpty())
+        game->load_parameters(map_filename);
 
     return a.exec();
 }
