@@ -200,7 +200,7 @@ void Visu::onTurnReceived(ainet16::Turn &turn, int numeroTour)
 
     for (Cellule * cell : cells_to_remove)
     {
-        printf("Removing pcell (id=%d)\n", cell->id());
+        //printf("Removing pcell (id=%d)\n", cell->id());
         // Removes the cell from data structures
         removeCell(cell->id());
         // Cleans memory
@@ -404,6 +404,7 @@ void Visu::afficheFinPartie()
     afficheCadre();
     afficheToutesCellules();
     afficheScore();
+    afficheTour();
 
     // faire une zone de texte pour annoncer le gagnant
     window.setView(vue_cadre);
@@ -443,6 +444,7 @@ void Visu::afficheFinPartie()
     joueur.setPosition(sf::Vector2f(x/2, y/2+y/6));
     window.draw(joueur);
 
+    window.display();
 }
 
 void Visu::handleEvents()
@@ -553,7 +555,6 @@ void Visu::onException()
 {
     partieEnCours = false;
     std::sort(players.begin(), players.end(), CompareScoresJoueurs());
-
 }
 
 void Visu::zoom()

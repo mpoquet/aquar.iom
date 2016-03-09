@@ -41,12 +41,13 @@ void display_loop(const SharedData & data)
         if (is_window_open)
         {
             data.visu->handleEvents();
-            //printf("Display\n");
 
-            if (partie_en_cours) {
+            if (partie_en_cours)
+            {
                 data.visu->afficheTout();
             }
-            else {
+            else
+            {
                 data.visu->afficheFinPartie();
             }
         }
