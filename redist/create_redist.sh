@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 # Remove previous export
 rm -rf ./aquariom
