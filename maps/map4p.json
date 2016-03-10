@@ -1,0 +1,34 @@
+{
+    "map_width": 4000,
+    "map_height": 3000,
+
+    "min_nb_players": 2,
+    "max_nb_players": 4,
+    "nb_starting_cells_per_player": 1,
+    "players_starting_positions": [[1000, 1000], [3000, 2000], [1000, 2000], [3000, 1000]],
+    "max_cells_per_player": 16,
+
+    "mass_absorption": 0.8,
+    "minimum_mass_ratio_to_absorb": 1.25,
+    "radius_factor": 1,
+    "player_cells_starting_mass": 20.0,
+    "mass_loss_per_frame": 0.007,
+    "base_cell_speed": 80,
+    "speed_loss_factor": 0.15,
+    "minimum_player_cell_mass": 1,
+    "maximum_player_cell_mass": 400,
+
+    "initial_neutral_cells_matrix_width": 100,
+    "initial_neutral_cells_matrix_height": 75,
+    "initial_neutral_cells_mass": 0.5,
+    "initial_neutral_cells_repop_time": 30,
+
+    "max_viruses": 64,
+    "virus_mass": 100.0,
+    "virus_creation_mass_loss": 0.2,
+    "virus_isolation_duration": 30,
+    "virus_max_split": 8,
+    "viruses_starting_positions": [[2000, 1500], [1000, 1500], [3000, 1500]],
+
+    "nb_turns": 1000
+}

@@ -17,7 +17,7 @@ int main(int argc, char ** argv)
     string address = argv[1];
     string port_str = argv[2];
     int port = std::stoi(port_str);
-    string name = "AFK";
+    string name = "sleeper";
 
     try
     {

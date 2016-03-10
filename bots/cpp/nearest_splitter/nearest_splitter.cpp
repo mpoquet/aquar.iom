@@ -55,7 +55,7 @@ int main(int argc, char ** argv)
     string address = argv[1];
     string port_str = argv[2];
     int port = std::stoi(port_str);
-    string name = "nearest";
+    string name = "splitter";
 
     try
     {
@@ -70,6 +70,7 @@ int main(int argc, char ** argv)
         printf("Waiting for WELCOME...\n");
         session.wait_for_welcome();
         Welcome welcome = session.welcome();
+        GameParameters p = welcome.parameters;
 
         printf("Waiting for GAME_STARTS...\n");
         session.wait_for_game_starts();
@@ -94,7 +95,7 @@ int main(int argc, char ** argv)
                     CellData data;
                     data.pcell = cell;
 
-                    if (cell.mass > 50)
+                    if (cell.mass > p.minimum_pcell_mass * 2)
                         data.can_split = true;
 
                     my_cells[cell.pcell_id] = data;
@@ -109,14 +110,13 @@ int main(int argc, char ** argv)
             }
             else
             {
+                int nb_pcells = my_cells.size();
                 // If the maximum number of cells is not reached, let's split!
-                int max_split_to_do = max(my_cells.size()/2, welcome.parameters.max_cells_per_player - my_cells.size());
-                int nb_split_done = 0;
 
                 for (auto mit : my_cells)
                 {
                     CellData & data = mit.second;
-                    if ((nb_split_done < max_split_to_do) && data.can_split)
+                    if (data.can_split && nb_pcells < p.max_cells_per_player)
                     {
                         int pcell_id = data.pcell.pcell_id;
                         float target_x = 0;
@@ -125,7 +125,7 @@ int main(int argc, char ** argv)
                         printf("Split action: (pcell_id=%d, pos=(%g,%g), mass=%g)\n",
                                pcell_id, target_x, target_y, mass);
                         actions.add_divide_action(pcell_id, target_x, target_y, mass);
-                        ++ nb_split_done;
+                        ++nb_pcells;
                     }
                     else if (ncells.size() > 0)
                     {

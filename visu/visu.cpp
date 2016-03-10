@@ -8,7 +8,7 @@ Visu::Visu()
     background_color = sf::Color::Black;
     borders_color = sf::Color::White;
 
-    afficheCellulesNeutres = false; // par défaut les cellules neutres ne sont pas affichées dans la fenêtre
+    afficheCellulesNeutres = true; // par défaut les cellules neutres sont affichées dans la fenêtre
     partieEnCours = true;
     tourCourant = 0;
 
@@ -537,6 +537,7 @@ void Visu::handleEvents()
 void Visu::onGameEnd(int winnerPlayerId, std::vector<ainet16::GameEndsPlayer> endPlayers)
 {
     partieEnCours = false;
+    tourCourant++;
     int a=winnerPlayerId;
     a++;
 
