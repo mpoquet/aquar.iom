@@ -62,6 +62,11 @@ EOF
 unexpand -t 4 --first-only ./aquariom/example_bot_java/Makefile.tmp > ./aquariom/example_bot_java/Makefile
 rm ./aquariom/example_bot_java/Makefile.tmp
 
+#########
+# Proto #
+#########
+cp -r ../proto ./aquariom/
+
 #####################
 # API documentation #
 #####################
