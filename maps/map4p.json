@@ -12,7 +12,7 @@
     "minimum_mass_ratio_to_absorb": 1.25,
     "radius_factor": 1,
     "player_cells_starting_mass": 20.0,
-    "mass_loss_per_frame": 0.007,
+    "mass_loss_per_frame": 0.012,
     "base_cell_speed": 80,
     "speed_loss_factor": 0.15,
     "minimum_player_cell_mass": 1,
