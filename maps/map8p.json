@@ -3,9 +3,9 @@
     "map_height": 3000,
 
     "min_nb_players": 2,
-    "max_nb_players": 2,
+    "max_nb_players": 8,
     "nb_starting_cells_per_player": 1,
-    "players_starting_positions": [[1000, 1500], [3000, 1500]],
+    "players_starting_positions": [[1000, 1000], [3000, 2000], [1000, 2000], [3000, 1000], [2000, 1000], [2000, 2000], [1000, 1500], [3000, 1500]],
     "max_cells_per_player": 16,
 
     "mass_absorption": 0.8,
