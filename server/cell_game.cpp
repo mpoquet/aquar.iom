@@ -718,6 +718,7 @@ void CellGame::compute_player_surrenders()
                 neutral_cell->responsible_node = cell->responsible_node;
 
                 _alive_neutral_cells[neutral_cell->id] = neutral_cell;
+                cell->responsible_node->alive_neutral_cells[neutral_cell->id] = neutral_cell;
 
                 cells_to_delete.append(cell);
             }
@@ -1068,7 +1069,6 @@ void CellGame::compute_ncells_collisions_inside_node(CellGame::PlayerCell * cell
             else
             {
                 ncells_to_delete.insert(ncell);
-                _alive_neutral_cells.remove(ncell->id);
                 ncell_it.remove();
             }
         }
